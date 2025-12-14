@@ -140,6 +140,6 @@ http://localhost:5000
 
 ## 📄 License
 
-This project is developed for academic and learning purposes.
+Anna University @ 2025
 
 ```
