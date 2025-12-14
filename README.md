@@ -1,5 +1,4 @@
 
-```md
 # AU Healthcare Centre Management System
 
 AU Healthcare Centre Management System is a web-based application designed to digitalize and automate healthcare center operations.  
@@ -144,5 +143,3 @@ http://localhost:5000
 This project is developed for academic and learning purposes.
 
 ```
-
----
