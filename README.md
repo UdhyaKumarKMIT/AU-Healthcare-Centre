@@ -1,7 +1,3 @@
-Here is a **clean, professional, ready-to-paste `README.md`** for your
-👉 **AU-Healthcare-Centre** repository, exactly matching your **Frontend + Backend** setup.
-
----
 
 ```md
 # AU Healthcare Centre Management System
