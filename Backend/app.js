@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 const authenticate = require('./middlewares/auth.middleware');
 const authorize = require('./middlewares/role.middleware');
 const ROLES = require('./constants/roles');
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Testing protected routes
 app.get('/api/admin/protected', authenticate, authorize(ROLES.ADMIN), (req, res) => {
