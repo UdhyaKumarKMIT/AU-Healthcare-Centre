@@ -1,6 +1,6 @@
 const authService = require('../services/auth.service');
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if(!email || !password) {
@@ -9,7 +9,7 @@ const login = async (req, res) => {
     const result = await authService.login(email, password);
     res.json(result);
   } catch (error) {
-    res.status(401).json({ message: error.message });
+      next(error);
   }
 };
 
