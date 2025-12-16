@@ -1,19 +1,14 @@
-const pool = require('../config/db');
+import pool from '../config/db.js';
 
-const findByEmail = async (email) => {
+export const findByEmail = async (email) => {
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     return rows[0];
 }
 
-const createUser = async ({name, email, password, role}) => {
+export const createUser = async ({name, email, password, role}) => {
     const [result] = await pool.query(
         'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
         [name, email, password, role]
     );
     return result.insertId;
-}
-
-module.exports = {
-    findByEmail,
-    createUser
-};
+}   

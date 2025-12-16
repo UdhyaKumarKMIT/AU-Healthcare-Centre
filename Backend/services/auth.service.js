@@ -1,10 +1,11 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const pool = require('../config/db');
-const ApiError = require('../utils/ApiError');
-require('dotenv').config();
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import pool from '../config/db.js';
+import ApiError from '../utils/ApiError.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const login = async (email, password) => {
+export const login = async (email, password) => {
   const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
   if (rows.length === 0) {
     throw new ApiError(404, 'User not found');
@@ -34,5 +35,3 @@ const login = async (email, password) => {
     }
   };
 };
-
-module.exports = { login };

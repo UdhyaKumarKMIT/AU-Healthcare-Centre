@@ -1,10 +1,10 @@
-const { json } = require('express');
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
+import ApiError from '../utils/ApiError.js';
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if(!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Authorization header missing' });
+        return next(new ApiError(401, 'Unauthorized: No token provided'));
     }
     const token = authHeader.split(' ')[1];
     try{
@@ -16,4 +16,4 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-module.exports = authenticateToken;
+export default authenticateToken;

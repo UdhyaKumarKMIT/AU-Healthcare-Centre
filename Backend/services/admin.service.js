@@ -1,9 +1,9 @@
-const bcrypt = require('bcrypt');
-const user = require('../models/user.model');
-const ROLES = require('../constants/roles');
-const ApiError = require('../utils/ApiError');
+import bcrypt from 'bcrypt';
+import * as user from '../models/user.model.js';
+import ROLES from '../constants/roles.js';
+import ApiError from '../utils/ApiError.js';
 
-const createUser = async ({name, email, password, role}) => {
+export const createUser = async ({name, email, password, role}) => {
     if(!name || !email || !password || !role) {
         throw new ApiError(400, 'All fields are required');
     }
@@ -19,6 +19,6 @@ const createUser = async ({name, email, password, role}) => {
     return {id: userId, name, email, role};
 };
 
-module.exports = {
-    createUser
-};
+// module.exports = {
+//     createUser
+// };
