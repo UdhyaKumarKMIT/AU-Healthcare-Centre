@@ -1,0 +1,7 @@
+module.exports = {
+  RECEPTIONIST: 'RECEPTIONIST',
+  DOCTOR: 'DOCTOR',
+  NURSE: 'NURSE',
+  PHARMACIST: 'PHARMACIST',
+  ADMIN: 'ADMIN'
+};
