@@ -3,8 +3,18 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import errorHandler from './middlewares/error.middleware.js';
+import swaggerUi from 'swagger-ui-express';
+import {readFileSync} from 'fs';
+import path from 'path';
+import {fileURLToPath} from 'url';
 
 const app = express();
+
+// Swagger setup
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const swaggerDocument = JSON.parse(readFileSync(path.join(__dirname, 'docs', 'api.json'), 'utf-8'));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Global middlewares
 app.use(cors());
