@@ -5,7 +5,7 @@
       "type": "java",
       "request": "launch",
       "name": "Launch Java App",
-      "mainClass": "HelloWorld"   // replace with your actual class
+      "mainClass": "HelloWorld"  
     }
   ]
 }
