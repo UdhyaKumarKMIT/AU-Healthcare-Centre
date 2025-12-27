@@ -126,6 +126,4 @@ CREATE TABLE medicine_stock_log (
     FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id),
     FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id)
 );
-
-Gmail: mitsih25@gmail.com
-App password: nsky bknt yygy fwny
+ 
