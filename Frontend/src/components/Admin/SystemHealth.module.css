@@ -1,0 +1,90 @@
+/* src/components/Admin/SystemHealth.module.css */
+.container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 24px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metricItem {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+}
+
+.metricLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.metricValue {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.statusIndicator {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.healthStatus {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.statusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.statusLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.statusValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.statusBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.statusFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}

@@ -1,0 +1,9 @@
+const ROLES = {
+  RECEPTIONIST: 'RECEPTIONIST',
+  DOCTOR: 'DOCTOR',
+  NURSE: 'NURSE',
+  PHARMACIST: 'PHARMACIST',
+  ADMIN: 'ADMIN'
+};
+
+export default ROLES;

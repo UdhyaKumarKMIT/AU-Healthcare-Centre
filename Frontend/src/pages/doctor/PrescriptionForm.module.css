@@ -1,0 +1,322 @@
+/* src/pages/doctor/PrescriptionForm.module.css */
+.dashboard {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.mainContent {
+  padding-top: 70px; /* Account for fixed header */
+  min-height: calc(100vh - 70px);
+}
+
+.header {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  color: white;
+  padding: 20px 40px;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.9;
+}
+
+.backBtn:hover {
+  opacity: 1;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.patientInfo {
+  display: flex;
+  gap: 20px;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.patientName,
+.diagnosis {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px 40px;
+}
+
+.section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sectionLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.totalDaysInput {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 200px;
+}
+
+.daysInput {
+  width: 100px;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: #1a237e;
+}
+
+.daysInput:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.daysLabel {
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0;
+}
+
+.addBtn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.addBtn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.injectionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 24px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.radioLabel input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #1a237e;
+}
+
+.injectionInput {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.textInput {
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  max-width: 400px;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.notesTextarea {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.notesTextarea:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.saveBtn,
+.submitBtn {
+  padding: 16px 40px;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 200px;
+}
+
+.saveBtn {
+  background: #f1f5f9;
+  color: #334155;
+  border: 2px solid #cbd5e1;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.25);
+}
+
+.saveBtn:disabled,
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    max-width: 800px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding-top: 60px;
+  }
+  
+  .header {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .patientInfo {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .content {
+    padding: 0 16px 32px;
+  }
+  
+  .section {
+    padding: 20px;
+  }
+  
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .addBtn {
+    align-self: flex-start;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .saveBtn,
+  .submitBtn {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .radioGroup {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

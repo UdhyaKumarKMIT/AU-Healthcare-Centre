@@ -1,0 +1,168 @@
+/* src/components/receptionist/CreateVisitForm.module.css */
+.container {
+  padding: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 24px 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.vitalsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.label::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.select,
+.input,
+.textarea {
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: white;
+}
+
+.select:focus,
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.select.error,
+.input.error,
+.textarea.error {
+  border-color: #f56565;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.inputWithUnit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWithUnit .input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.unit {
+  position: absolute;
+  right: 12px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #f56565;
+  font-weight: 500;
+}
+
+.submitSection {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.createButton {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.createButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 35, 126, 0.25);
+}
+
+.createButton:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 1024px) {
+  .vitalsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .formGrid,
+  .vitalsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .formGroup[style*="grid-column: span 2"] {
+    grid-column: span 1;
+  }
+  
+  .section {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,284 @@
+/* src/pages/doctor/VisitDetails.module.css */
+.dashboard {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.mainContent {
+  padding-top: 70px; /* Account for fixed header */
+  min-height: calc(100vh - 70px);
+}
+
+.header {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  color: white;
+  padding: 24px 40px;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.9;
+}
+
+.backBtn:hover {
+  opacity: 1;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.visitInfo {
+  display: flex;
+  gap: 24px;
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+.visitId,
+.token {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.content {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cardTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.patientGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 18px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.formLabel::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.formInput,
+.formTextarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.saveBtn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.saveBtn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.savedInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.savedText {
+  color: #059669;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.actionCard {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+}
+
+.actionContent {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.actionTitle {
+  font-size: 24px;
+  color: #1a237e;
+  margin-bottom: 12px;
+}
+
+.actionText {
+  color: #64748b;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.prescriptionBtn {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 250px;
+}
+
+.prescriptionBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(26, 35, 126, 0.25);
+}
+
+.prescriptionBtn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding-top: 60px;
+  }
+  
+  .header {
+    padding: 20px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .visitInfo {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .content {
+    padding: 0 16px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .patientGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .prescriptionBtn {
+    min-width: 200px;
+    padding: 14px 24px;
+  }
+}

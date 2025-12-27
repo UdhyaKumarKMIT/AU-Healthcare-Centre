@@ -1,0 +1,261 @@
+.card {
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 600;
+}
+
+.referralBadge {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.referralContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.referralHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e8ecef;
+}
+
+.doctorInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.doctorAvatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doctorInitial {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.doctorDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.specialistName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 0.25rem 0;
+}
+
+.specialization {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.referralDate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.dateLabel {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin-bottom: 0.25rem;
+}
+
+.dateValue {
+  font-size: 0.95rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.referralDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e8ecef;
+}
+
+.reasonText {
+  margin: 0;
+  color: #2c3e50;
+  line-height: 1.6;
+}
+
+.notesText {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e8ecef;
+  color: #2c3e50;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.urgencySection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border-radius: 8px;
+  border: 1px solid #ffd166;
+}
+
+.urgencyIcon {
+  font-size: 1.5rem;
+}
+
+.urgencyInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.urgencyLabel {
+  font-size: 0.85rem;
+  color: #856404;
+}
+
+.urgencyLevel {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.urgencyLevel.high {
+  background: #e74c3c;
+  color: white;
+}
+
+.urgencyLevel.medium {
+  background: #f39c12;
+  color: white;
+}
+
+.urgencyLevel.low {
+  background: #27ae60;
+  color: white;
+}
+
+.testsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.testsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 1rem;
+}
+
+.testItem {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.testBullet {
+  color: #3498db;
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+.testName {
+  color: #2c3e50;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.actionSection {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #e8ecef;
+}
+
+.bookButton {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.bookButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+.actionNote {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin: 0;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .referralHeader {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .referralDate {
+    align-items: flex-start;
+  }
+}

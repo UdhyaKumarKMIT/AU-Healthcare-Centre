@@ -1,0 +1,146 @@
+/* src/pages/doctor/DoctorDashboard.module.css */
+.dashboard {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.mainContent {
+  padding-top: 70px; /* Account for fixed header */
+  min-height: calc(100vh - 70px);
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+.header {
+  background: white;
+  border-radius: 12px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doctorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctorName {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a237e;
+  margin: 0;
+}
+
+.specialization {
+  font-size: 18px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 16px;
+}
+
+.stats {
+  display: flex;
+  gap: 24px;
+}
+
+.statItem {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.statItem strong {
+  font-size: 20px;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.queueSection,
+.diagnosisSection {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.sectionHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0;
+}
+
+.queueCount {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding-top: 60px;
+  }
+  
+  .container {
+    padding: 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  .statItem {
+    flex: 1;
+    text-align: center;
+    padding: 10px 16px;
+  }
+}

@@ -1,0 +1,83 @@
+/* src/components/receptionist/DashboardStats.module.css */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.statIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.icon {
+  display: block;
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a237e;
+  margin: 0 0 4px 0;
+  line-height: 1;
+}
+
+.statTitle {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .statCard {
+    padding: 20px;
+  }
+  
+  .statIcon {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+  
+  .statValue {
+    font-size: 28px;
+  }
+}

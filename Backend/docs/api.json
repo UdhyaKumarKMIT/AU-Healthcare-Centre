@@ -1,0 +1,661 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MIT Healthcare Centre Backend API",
+    "version": "1.0.0",
+    "description": "Backend API for MIT Healthcare Centre system"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Staff login",
+        "description": "Authenticate staff users (receptionist, doctor, nurse, pharmacist, admin) and issue JWT",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@annauniv.edu"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "admin@123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "token": {
+                      "type": "string",
+                      "description": "JWT access token"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "name": {
+                          "type": "string",
+                          "example": "Test Admin"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "admin@annauniv.edu"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "RECEPTIONIST",
+                            "DOCTOR",
+                            "NURSE",
+                            "PHARMACIST",
+                            "ADMIN"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "User not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Email and password are required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid credentials"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Internal Server Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/admin/users": {
+      "post": {
+        "summary": "Create staff user",
+        "description": "Admin-only endpoint to register new staff members (no public signup)",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password", "role"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Dr. Arjun"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "arjun@annauniv.edu"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "doctor@123"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "RECEPTIONIST",
+                      "DOCTOR",
+                      "NURSE",
+                      "PHARMACIST",
+                      "ADMIN"
+                    ],
+                    "example": "DOCTOR"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "User created successfully"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 5 },
+                        "name": { "type": "string", "example": "Dr. Arjun" },
+                        "email": {
+                          "type": "string",
+                          "example": "arjun@annauniv.edu"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "DOCTOR"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "All fields are required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (missing or invalid token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Authorization header missing"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (insufficient permissions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Access denied: Insufficient permissions"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "User already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": {
+                      "type": "string",
+                      "example": "Internal Server Error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/receptionist/register/patient": {
+  "post": {
+    "summary": "Register patient",
+    "description": "Receptionist registers a new patient (creates PATIENT user + patient profile)",
+    "tags": ["Receptionist"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "username",
+              "password",
+              "roll_no",
+              "name",
+              "dob",
+              "gender",
+              "blood_group"
+            ],
+            "properties": {
+              "username": { "type": "string", "example": "patient01" },
+              "password": { "type": "string", "example": "patient@123" },
+              "roll_no": { "type": "string", "example": "P001" },
+              "name": { "type": "string", "example": "John Doe" },
+              "dob": { "type": "string", "format": "date", "example": "2001-05-12" },
+              "gender": { "type": "string", "enum": ["MALE", "FEMALE", "OTHER"] },
+              "blood_group": {
+                "type": "string",
+                "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+              },
+              "phone": { "type": "string", "example": "9999999999" },
+              "emergency_contact": { "type": "string", "example": "8888888888" }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Patient registered successfully"
+      },
+      "401": { "description": "Unauthorized" },
+      "403": { "description": "Forbidden" },
+      "500": { "description": "Internal server error" }
+    }
+  }
+},
+
+"/api/receptionist/visit": {
+  "post": {
+    "summary": "Create visit",
+    "description": "Receptionist creates a visit for a patient",
+    "tags": ["Receptionist"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": ["patient_id", "doctor_id", "visit_type"],
+            "properties": {
+              "patient_id": { "type": "string", "format": "uuid" },
+              "doctor_id": { "type": "string", "format": "uuid" },
+              "receptionist_id": { "type": "string", "format": "uuid" },
+              "visit_type": { "type": "string", "enum": ["OPD", "IPD", "EMERGENCY"] },
+              "reason": { "type": "string", "example": "Fever" }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": { "description": "Visit created" },
+      "401": { "description": "Unauthorized" },
+      "403": { "description": "Forbidden" },
+      "500": { "description": "Internal server error" }
+    }
+  }
+},
+
+"/api/receptionist/vitals": {
+  "post": {
+    "summary": "Add vitals",
+    "description": "Receptionist records vitals for a visit",
+    "tags": ["Receptionist"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": ["visit_id"],
+            "properties": {
+              "visit_id": { "type": "string", "format": "uuid" },
+              "temperature": { "type": "number", "example": 98.6 },
+              "bp_systolic": { "type": "integer", "example": 120 },
+              "bp_diastolic": { "type": "integer", "example": 80 },
+              "heart_rate": { "type": "integer", "example": 72 }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": { "description": "Vitals recorded" },
+      "401": { "description": "Unauthorized" },
+      "403": { "description": "Forbidden" },
+      "500": { "description": "Internal server error" }
+    }
+  }
+},
+"/api/doctor/diagnosis": {
+  "post": {
+    "summary": "Add diagnosis",
+    "tags": ["Doctor"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "required": ["visit_id","doctor_id","diagnosis_name"],
+            "properties": {
+              "visit_id": { "type": "string", "format": "uuid" },
+              "doctor_id": { "type": "string", "format": "uuid" },
+              "diagnosis_code": { "type": "string" },
+              "diagnosis_name": { "type": "string" },
+              "diagnosis_notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "responses": { "201": { "description": "Diagnosis added" } }
+  }
+},
+"/api/doctor/prescription": {
+  "post": {
+    "summary": "Create prescription",
+    "tags": ["Doctor"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "required": ["visit_id","doctor_id"],
+            "properties": {
+              "visit_id": { "type": "string", "format": "uuid" },
+              "doctor_id": { "type": "string", "format": "uuid" },
+              "status": { "type": "string", "example": "PENDING" }
+            }
+          }
+        }
+      }
+    },
+    "responses": { "201": { "description": "Prescription created" } }
+  }
+},
+"/api/receptionist/patients": {
+  "get": {
+    "summary": "Get all patients",
+    "tags": ["Receptionist"],
+    "security":[{"bearerAuth":[]}],
+    "responses":{
+      "200":{"description":"Patients returned"}
+    }
+  }
+},
+"/api/receptionist/doctors": {
+  "get": {
+    "summary": "Get all doctors",
+    "tags": ["Receptionist"],
+    "security":[{"bearerAuth":[]}],
+    "responses":{
+      "200":{"description":"Doctors returned"}
+    }
+  }
+},
+"/api/receptionist/visits": {
+  "get": {
+    "summary": "Get all visits",
+    "tags": ["Receptionist"],
+    "security":[{"bearerAuth":[]}],
+    "responses":{
+      "200":{"description":"Visits returned"}
+    }
+  }
+},
+"/api/receptionist/visit/{visit_id}/start": {
+  "patch": {
+    "summary": "Start a visit",
+    "tags": ["Receptionist"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "visit_id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    ],
+    "responses": {
+      "200": { "description": "Visit started (IN_PROGRESS)" },
+      "400": { "description": "Invalid visit state" }
+    }
+  }
+},
+"/api/receptionist/visit/{visit_id}/cancel": {
+  "patch": {
+    "summary": "Cancel visit",
+    "tags": ["Receptionist"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "visit_id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    ],
+    "responses": {
+      "200": { "description": "Visit cancelled" }
+    }
+  }
+},
+"/api/doctor/visit/{visit_id}/complete": {
+  "patch": {
+    "summary": "Mark visit completed",
+    "tags": ["Doctor"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "visit_id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    ],
+    "responses": {
+      "200": { "description": "Visit completed" }
+    }
+  }
+},
+    "/api/doctor/visits": {
+      "get": {
+        "summary": "Get doctor's assigned visits",
+        "description": "Returns all SCHEDULED and IN_PROGRESS visits assigned to the specified doctor",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "doctor_id",
+            "in": "query",
+            "required": true,
+            "description": "The ID of the doctor to fetch visits for",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "60b627dc-d824-42ec-beb4-a82ea823d75d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "visit_id": { "type": "string", "example": "8200932d-dc1f-11f0-a774-0a002700000d" },
+                          "patient_id": { "type": "string" },
+                          "doctor_id": { "type": "string" },
+                          "receptionist_id": { "type": "string" },
+                          "visit_date": { "type": "string", "example": "2025-12-18T20:10:33.000Z" },
+                          "visit_type": { "type": "string", "enum": ["OPD", "IPD", "EMERGENCY"] },
+                          "reason": { "type": "string", "example": "fever" },
+                          "status": { "type": "string", "enum": ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] },
+                          "patient_name": { "type": "string", "example": "John Doe" },
+                          "patient_roll_no": { "type": "string", "example": "P001" },
+                          "patient_phone": { "type": "string" },
+                          "patient_dob": { "type": "string", "format": "date" },
+                          "patient_gender": { "type": "string" },
+                          "patient_blood_group": { "type": "string" },
+                          "doctor_name": { "type": "string", "example": "Dr. A" },
+                          "doctor_specialization": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { 
+            "description": "Bad Request - doctor_id missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "doctor_id query parameter is required" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - Not a doctor" }
+        }
+      }
+    }
+
+  }
+}
+
