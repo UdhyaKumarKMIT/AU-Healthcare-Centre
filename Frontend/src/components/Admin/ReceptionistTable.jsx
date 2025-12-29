@@ -151,24 +151,6 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
                   >
                     <FontAwesomeIcon icon={faEye} />
                   </button>
-                  <button
-                    className={styles.editBtn}
-                    onClick={() => onEdit(receptionist.id)}
-                    title="Edit"
-                  >
-                    <FontAwesomeIcon icon={faEdit} />
-                  </button>
-                  <select
-                    className={styles.statusSelect}
-                    value={receptionist.status}
-                    onChange={(e) => onStatusChange(receptionist.id, e.target.value)}
-                    title="Change Status"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="onduty">On Duty</option>
-                    <option value="offduty">Off Duty</option>
-                  </select>
                 </div>
               </td>
             </tr>

@@ -200,32 +200,6 @@ const ReceptionistManagement = () => {
           </span>
         </div>
 
-        <div className={styles.filterGroup}>
-          <div className={styles.filter}>
-            <label className={styles.filterLabel}>Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">All Status</option>
-              <option value="onduty">On Duty</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="offduty">Off Duty</option>
-            </select>
-          </div>
-
-          <button
-            className={styles.resetFiltersBtn}
-            onClick={() => {
-              setSearchQuery('');
-              setStatusFilter('all');
-            }}
-          >
-            <FontAwesomeIcon icon={faRedo} /> Reset Filters
-          </button>
-        </div>
       </section>
 
       {/* Receptionists Table */}
