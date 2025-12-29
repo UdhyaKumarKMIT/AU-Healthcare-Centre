@@ -25,6 +25,7 @@ export const fetchPatients = createAsyncThunk(
         id: patient.patient_id,
         rollNo: patient.roll_no,
         name: patient.name,
+        email: patient.email,
         dob: patient.dob,
         gender: patient.gender,
         bloodGroup: patient.blood_group,
@@ -43,16 +44,16 @@ export const registerPatient = createAsyncThunk(
   async (patientData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('mitHealthUser') || '{}');
       
+      // Use provided email or generate default password
       const payload = {
-        email: `${patientData.rollNo.toLowerCase()}@student.annauniv.edu`, // Backend expects email
-        password: `patient@${patientData.rollNo}`,
+        email: patientData.email, // Use email from form
+        password: `Patient@${patientData.rollNo}`, // Default password pattern
         roll_no: patientData.rollNo,
         name: patientData.name,
         dob: patientData.dob,
-        gender: patientData.gender.toUpperCase(),
-        blood_group: patientData.bloodGroup || 'O+',
+        gender: patientData.gender.toUpperCase(), // MALE, FEMALE, OTHER
+        blood_group: patientData.bloodGroup,
         phone: patientData.phone,
         emergency_contact: patientData.emergencyContact
       };
@@ -84,6 +85,7 @@ export const registerPatient = createAsyncThunk(
         id: data.patient_id,
         rollNo: patientData.rollNo,
         name: patientData.name,
+        email: patientData.email,
         dob: patientData.dob,
         gender: patientData.gender,
         bloodGroup: patientData.bloodGroup,

@@ -9,7 +9,8 @@ import {
   faVenusMars, 
   faTint, 
   faPhone, 
-  faPhoneSquare 
+  faPhoneSquare,
+  faEnvelope 
 } from '@fortawesome/free-solid-svg-icons';
 import { registerPatient, clearRegisterSuccess } from '../../store/slices/patientsSlice';
 import styles from './RegisterPatientForm.module.css';
@@ -21,6 +22,7 @@ const RegisterPatientForm = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     rollNo: '',
     dob: '',
     gender: '',
@@ -36,6 +38,7 @@ const RegisterPatientForm = () => {
       alert('Patient registered successfully!');
       setFormData({
         name: '',
+        email: '',
         rollNo: '',
         dob: '',
         gender: '',
@@ -71,6 +74,7 @@ const RegisterPatientForm = () => {
     const newErrors = {};
     
     if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.rollNo.trim()) newErrors.rollNo = 'Roll number is required';
     if (!formData.dob) newErrors.dob = 'Date of birth is required';
     if (!formData.gender) newErrors.gender = 'Gender is required';
@@ -78,6 +82,13 @@ const RegisterPatientForm = () => {
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     if (!formData.emergencyContact.trim()) newErrors.emergencyContact = 'Emergency contact is required';
     
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = 'Enter a valid email address';
+    }
+    
+    // Phone validation
     const phoneRegex = /^\d{10}$/;
     if (formData.phone && !phoneRegex.test(formData.phone)) {
       newErrors.phone = 'Enter a valid 10-digit phone number';
@@ -98,7 +109,13 @@ const RegisterPatientForm = () => {
       return;
     }
     
-    dispatch(registerPatient(formData));
+    // Transform data to match database ENUM requirements
+    const transformedData = {
+      ...formData,
+      gender: formData.gender.toUpperCase(), // Convert to MALE, FEMALE, OTHER
+    };
+    
+    dispatch(registerPatient(transformedData));
   };
 
   const handleNavigateToRegisterPage = () => {
@@ -121,7 +138,7 @@ const RegisterPatientForm = () => {
         <div className={styles.formGrid}>
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faUser} /> Full Name
+              <FontAwesomeIcon icon={faUser} /> Full Name *
             </label>
             <input
               type="text"
@@ -137,7 +154,23 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faIdCard} /> Roll Number
+              <FontAwesomeIcon icon={faEnvelope} /> Email *
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={`${styles.input} ${errors.email ? styles.error : ''}`}
+              placeholder="student@annauniv.edu"
+              disabled={loading}
+            />
+            {errors.email && <span className={styles.errorText}>{errors.email}</span>}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              <FontAwesomeIcon icon={faIdCard} /> Roll Number *
             </label>
             <input
               type="text"
@@ -145,7 +178,7 @@ const RegisterPatientForm = () => {
               value={formData.rollNo}
               onChange={handleChange}
               className={`${styles.input} ${errors.rollNo ? styles.error : ''}`}
-              placeholder="AU12345"
+              placeholder="2024503011"
               disabled={loading}
             />
             {errors.rollNo && <span className={styles.errorText}>{errors.rollNo}</span>}
@@ -153,7 +186,7 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faCalendar} /> Date of Birth
+              <FontAwesomeIcon icon={faCalendar} /> Date of Birth *
             </label>
             <input
               type="date"
@@ -168,7 +201,7 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faVenusMars} /> Gender
+              <FontAwesomeIcon icon={faVenusMars} /> Gender *
             </label>
             <select
               name="gender"
@@ -187,7 +220,7 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faTint} /> Blood Group
+              <FontAwesomeIcon icon={faTint} /> Blood Group *
             </label>
             <select
               name="bloodGroup"
@@ -211,7 +244,7 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faPhone} /> Phone Number
+              <FontAwesomeIcon icon={faPhone} /> Phone Number *
             </label>
             <input
               type="tel"
@@ -227,7 +260,7 @@ const RegisterPatientForm = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              <FontAwesomeIcon icon={faPhoneSquare} /> Emergency Contact
+              <FontAwesomeIcon icon={faPhoneSquare} /> Emergency Contact *
             </label>
             <input
               type="tel"

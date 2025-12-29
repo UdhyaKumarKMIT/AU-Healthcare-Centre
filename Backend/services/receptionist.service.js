@@ -14,20 +14,42 @@ export const registerPatient = async ({
   phone,
   emergency_contact
 }) => {
+  // Check if email already exists
+  const [existingUser] = await pool.execute(
+    'SELECT user_id FROM users WHERE email = ?',
+    [email]
+  );
+
+  if (existingUser.length > 0) {
+    throw new ApiError(400, 'Email already registered');
+  }
+
+  // Check if roll_no already exists
+  const [existingRollNo] = await pool.execute(
+    'SELECT patient_id FROM patient_profile WHERE roll_no = ?',
+    [roll_no]
+  );
+
+  if (existingRollNo.length > 0) {
+    throw new ApiError(400, 'Roll number already registered');
+  }
+
   const userId = crypto.randomUUID()
   const patientId = crypto.randomUUID()
   const hash = await bcrypt.hash(password, 10)
 
+  // Insert into users table
   await pool.execute(
     `INSERT INTO users (user_id, email, password, role)
      VALUES (?,?,?,?)`,
     [userId, email, hash, 'PATIENT']
   )
 
+  // Insert into patient_profile table with email
   await pool.execute(
     `INSERT INTO patient_profile
-     (patient_id, user_id, roll_no, name, dob, gender, blood_group, phone, emergency_contact)
-     VALUES (?,?,?,?,?,?,?,?,?)`,
+     (patient_id, user_id, roll_no, name, dob, gender, blood_group, phone, emergency_contact, email)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
     [
       patientId,
       userId,
@@ -37,9 +59,13 @@ export const registerPatient = async ({
       gender,
       blood_group,
       phone,
-      emergency_contact
+      emergency_contact,
+      email
     ]
   )
+  
+  console.log('✅ Patient registered:', { patientId, email, roll_no });
+  
   return { patient_id: patientId }
 }
 
@@ -110,10 +136,21 @@ export const assignDoctorToVisit = async ({visit_id, doctor_id}) => {
   )
   return {visit_id, doctor_id}
 }
+
 export const getAllPatients = async () => {
   const [rows] = await pool.execute(
-    `SELECT patient_id, name, roll_no, phone 
-     FROM patient_profile`
+    `SELECT 
+       patient_id, 
+       name, 
+       roll_no, 
+       email,
+       phone, 
+       gender, 
+       blood_group,
+       dob,
+       emergency_contact
+     FROM patient_profile
+     ORDER BY name ASC`
   )
   return rows
 }
@@ -125,6 +162,7 @@ export const getAllDoctors = async () => {
   )
   return rows
 }
+
 export const getAllAvailableDoctors = async () => {
   const [rows] = await pool.execute(
     `SELECT doctor_id, name, specialization, availability_status
@@ -133,6 +171,7 @@ export const getAllAvailableDoctors = async () => {
   )
   return rows
 }
+
 export const getAllVisits = async () => {
   const [rows] = await pool.execute(
     `SELECT 
@@ -144,6 +183,7 @@ export const getAllVisits = async () => {
        v.status,
        v.visit_date,
        p.name as patient_name,
+       p.email as patient_email,
        d.name as doctor_name
      FROM visit v
      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
@@ -165,6 +205,7 @@ export const updateVisitStatus = async ({ visit_id, newStatus }) => {
     [newStatus, visit_id]
   )
 }
+
 export const updateDoctorAvailability = async (doctor_id, status) => {
   const allowed = ["AVAILABLE", "UNAVAILABLE"];
 
