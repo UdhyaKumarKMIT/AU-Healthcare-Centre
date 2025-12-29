@@ -51,12 +51,53 @@ export const fetchPatientQueue = createAsyncThunk(
   }
 );
 
+// Fetch patient history
+export const fetchPatientHistory = createAsyncThunk(
+  'queue/fetchPatientHistory',
+  async (patientId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      console.log('🔍 Fetching history for patient:', patientId);
+      
+      const response = await fetch(`${API_BASE}/api/doctor/patient/${patientId}/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📡 History response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ History error response:', errorText);
+        throw new Error(`Failed to fetch history: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Patient history received:', result);
+      
+      return {
+        patientId,
+        data: result.data
+      };
+    } catch (error) {
+      console.error('💥 Fetch history error:', error);
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   patients: [],
   loading: false,
   error: null,
   selectedPatient: null,
   lastFetched: null,
+  patientHistory: null,
+  historyLoading: false,
+  historyError: null,
 };
 
 const queueSlice = createSlice({
@@ -84,6 +125,11 @@ const queueSlice = createSlice({
       state.lastFetched = null;
       console.log('🧹 Queue cleared');
     },
+    clearPatientHistory: (state) => {
+      state.patientHistory = null;
+      state.historyError = null;
+      console.log('🧹 Patient history cleared');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -107,6 +153,23 @@ const queueSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         console.error('❌ Failed to load queue:', action.payload);
+      })
+      
+      // Fetch patient history
+      .addCase(fetchPatientHistory.pending, (state) => {
+        state.historyLoading = true;
+        state.historyError = null;
+        console.log('⏳ Loading patient history...');
+      })
+      .addCase(fetchPatientHistory.fulfilled, (state, action) => {
+        state.historyLoading = false;
+        state.patientHistory = action.payload.data;
+        console.log('✅ Patient history loaded successfully');
+      })
+      .addCase(fetchPatientHistory.rejected, (state, action) => {
+        state.historyLoading = false;
+        state.historyError = action.payload;
+        console.error('❌ Failed to load patient history:', action.payload);
       })
       
       // Listen to updateVisitStatus from doctorsSlice
@@ -141,7 +204,8 @@ const queueSlice = createSlice({
 export const { 
   setSelectedPatient, 
   updatePatientStatus, 
-  clearQueue 
+  clearQueue,
+  clearPatientHistory 
 } = queueSlice.actions;
 
 export default queueSlice.reducer;
