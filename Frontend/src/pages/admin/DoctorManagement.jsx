@@ -324,7 +324,6 @@ const DoctorManagement = () => {
                 <th>Contact</th>
                 <th>Status</th>
                 <th>Availability</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -345,16 +344,6 @@ const DoctorManagement = () => {
                   <td>{doctor.phone}</td>
                   <td>{getStatusBadge(doctor.status)}</td>
                   <td>{getAvailabilityBadge(doctor.availability)}</td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button className={styles.editButton}>
-                        Edit
-                      </button>
-                      <button className={styles.disableButton}>
-                        {doctor.status === 'active' ? 'Disable' : 'Enable'}
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
