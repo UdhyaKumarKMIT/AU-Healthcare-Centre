@@ -1,0 +1,406 @@
+/* src/components/doctor/PatientHistoryModal.module.css */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  border-radius: 12px 12px 0 0;
+  color: white;
+}
+
+.modalTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.patientName {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.modalBody {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.section {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a237e;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Patient Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.value {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Lists */
+.historyList,
+.visitsList,
+.prescriptionsList,
+.labTestsList,
+.vitalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Medical History Items */
+.historyItem {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #1a237e;
+}
+
+.conditionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.conditionHeader strong {
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.historyDetail {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0;
+}
+
+.historyNotes {
+  font-size: 14px;
+  color: #475569;
+  margin: 8px 0 0 0;
+  font-style: italic;
+}
+
+/* Visit Items */
+.visitItem {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.visitHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.visitType {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.visitDetail {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0;
+}
+
+.diagnosisBox {
+  background: #f0f9ff;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+  border-left: 3px solid #3b82f6;
+}
+
+.diagnosisBox strong {
+  color: #1e40af;
+  font-size: 14px;
+}
+
+.diagnosisNotes {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Prescriptions */
+.prescriptionItem {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.prescriptionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.medicinesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medicineItem {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.medicineItem strong {
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.medType {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.medDetails {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Lab Tests */
+.labTestItem {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #7c3aed;
+}
+
+.labTestItem strong {
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.testDetail {
+  font-size: 13px;
+  color: #64748b;
+  margin: 6px 0;
+}
+
+.testResult {
+  font-size: 14px;
+  color: #1e293b;
+  margin: 8px 0 0 0;
+  font-weight: 500;
+}
+
+/* Vitals */
+.vitalItem {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.vitalItem strong {
+  color: #1e293b;
+  font-size: 15px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.vitalDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Badge */
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.badge.active {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.badge.chronic {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge.resolved {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* Loading/Error States */
+.loadingContainer,
+.errorContainer {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  color: #1a237e;
+  margin-bottom: 16px;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+/* Modal Footer */
+.modalFooter {
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.closeBtn {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .modalBody {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .section {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    max-height: 95vh;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modalHeader {
+    padding: 20px;
+  }
+
+  .modalBody {
+    padding: 16px;
+  }
+
+  .vitalDetails {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

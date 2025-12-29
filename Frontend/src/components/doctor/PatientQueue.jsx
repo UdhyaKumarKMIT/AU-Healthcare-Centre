@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faSpinner, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import styles from './PatientQueue.module.css';
 
 const PatientQueue = ({ 
@@ -9,15 +9,19 @@ const PatientQueue = ({
   onPatientSelect, 
   onPatientClick, 
   selectedPatient,
-  onStatusUpdate 
+  onStatusUpdate,
+  onViewHistory 
 }) => {
   const getStatusBadge = (status) => {
     const statusMap = {
       'SCHEDULED': { label: 'Waiting', className: styles.statusWaiting },
-      'IN_PROGRESS': { label: 'In Consultation', className: styles.statusConsultation },
+      'IN_PROGRESS': { label: 'In Progress', className: styles.statusConsultation },
+      'ONGOING': { label: 'In Progress', className: styles.statusConsultation },
       'COMPLETED': { label: 'Completed', className: styles.statusCompleted },
       'CANCELLED': { label: 'Cancelled', className: styles.statusCancelled },
       'NO_SHOW': { label: 'No Show', className: styles.statusNoShow },
+      'DIAGNOSED': { label: 'Diagnosed', className: styles.statusDiagnosed },
+      'PRESCRIBED': { label: 'Prescribed', className: styles.statusPrescribed },
     };
     
     const statusInfo = statusMap[status] || { label: status, className: styles.statusDefault };
@@ -67,7 +71,7 @@ const PatientQueue = ({
             <th>Patient Name</th>
             <th>Visit Type</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +89,9 @@ const PatientQueue = ({
               <td>
                 <div className={styles.patientInfo}>
                   <strong className={styles.patientName}>{patient.patientName}</strong>
-                  <span className={styles.patientReason}>{patient.reason}</span>
+                  {patient.reason && patient.reason !== 'Not specified' && (
+                    <span className={styles.patientReason}>{patient.reason}</span>
+                  )}
                 </div>
               </td>
               <td>
@@ -97,15 +103,28 @@ const PatientQueue = ({
               </td>
               <td>{getStatusBadge(patient.status)}</td>
               <td>
-                <button
-                  className={styles.viewBtn}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPatientClick(patient.visitId);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEye} /> View
-                </button>
+                <div className={styles.actionButtons}>
+                  <button
+                    className={styles.viewBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPatientClick(patient.visitId);
+                    }}
+                    title="View Current Visit"
+                  >
+                    <FontAwesomeIcon icon={faEye} /> View
+                  </button>
+                  <button
+                    className={styles.historyBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewHistory(patient.patientId);
+                    }}
+                    title="View Patient History"
+                  >
+                    <FontAwesomeIcon icon={faClockRotateLeft} /> History
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

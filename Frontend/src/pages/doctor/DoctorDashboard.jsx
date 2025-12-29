@@ -1,13 +1,14 @@
-// src/pages/doctor/DoctorDashboard.jsx - Redux-Connected Version
+// src/pages/doctor/DoctorDashboard.jsx - WITH PATIENT HISTORY INTEGRATION
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchPatientQueue } from '../../store/slices/queueSlice';
+import { fetchPatientQueue, fetchPatientHistory, clearPatientHistory } from '../../store/slices/queueSlice';
 import { updateVisitStatus } from '../../store/slices/doctorsSlice';
 import PatientQueue from '../../components/doctor/PatientQueue';
 import DiagnosisSummary from '../../components/doctor/DiagnosisSummary';
 import MedicineRow from '../../components/doctor/MedicineRow';
+import PatientHistoryModal from '../../components/doctor/PatientHistoryModal';
 import Header from '../../components/Header/Header';
 import styles from './DoctorDashboard.module.css';
 
@@ -19,13 +20,14 @@ const DoctorDashboard = () => {
   const token = localStorage.getItem('token');
   const doctorId = user?.user_id || user?.doctor_id;
 
-  // 🔥 USE REDUX STATE INSTEAD OF LOCAL STATE
-  const { patients, loading, error, lastFetched } = useSelector(state => state.queue);
+  // Redux state
+  const { patients, loading, error, lastFetched, patientHistory, historyLoading, historyError } = useSelector(state => state.queue);
   const { updateLoading } = useSelector(state => state.doctors || {});
   
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [diagnosis, setDiagnosis] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [medicines, setMedicines] = useState([{
     name: '', type: '', whenToTake: 'After Food',
     timing: { morning: false, afternoon: false, night: false }, duration: 1
@@ -33,13 +35,13 @@ const DoctorDashboard = () => {
   const [medicineSearchResults, setMedicineSearchResults] = useState([]);
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
 
-  // 🔥 LOAD PATIENTS FROM REDUX ON MOUNT
+  // Load patients from Redux on mount
   useEffect(() => {
     if (doctorId) {
       console.log('📡 Loading queue for doctor:', doctorId);
       dispatch(fetchPatientQueue(doctorId));
       
-      // Optional: Auto-refresh every 30 seconds
+      // Auto-refresh every 30 seconds
       const interval = setInterval(() => {
         dispatch(fetchPatientQueue(doctorId));
       }, 30000);
@@ -50,7 +52,7 @@ const DoctorDashboard = () => {
     }
   }, [dispatch, doctorId]);
 
-  // 🔥 SYNC SELECTED PATIENT WITH REDUX STATE
+  // Sync selected patient with Redux state
   useEffect(() => {
     if (selectedPatient) {
       const updatedPatient = patients.find(p => p.visitId === selectedPatient.visitId);
@@ -79,6 +81,17 @@ const DoctorDashboard = () => {
     if (patient.status === 'SCHEDULED') {
       await handleStatusUpdate(patient.visitId, 'IN_PROGRESS');
     }
+  };
+
+  const handleViewHistory = async (patientId) => {
+    console.log('📜 Opening history for patient:', patientId);
+    setShowHistoryModal(true);
+    await dispatch(fetchPatientHistory(patientId));
+  };
+
+  const handleCloseHistory = () => {
+    setShowHistoryModal(false);
+    dispatch(clearPatientHistory());
   };
 
   const saveDiagnosis = async (diagnosisData) => {
@@ -304,6 +317,7 @@ const DoctorDashboard = () => {
                 }}
                 selectedPatient={selectedPatient}
                 onStatusUpdate={handleStatusUpdate}
+                onViewHistory={handleViewHistory}
               />
             </div>
 
@@ -430,6 +444,7 @@ const DoctorDashboard = () => {
         </div>
       </main>
 
+      {/* Prescription Modal */}
       {showPrescriptionModal && (
         <div style={{ 
           position: 'fixed', 
@@ -537,6 +552,16 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Patient History Modal */}
+      {showHistoryModal && (
+        <PatientHistoryModal
+          history={patientHistory}
+          loading={historyLoading}
+          error={historyError}
+          onClose={handleCloseHistory}
+        />
       )}
     </div>
   );

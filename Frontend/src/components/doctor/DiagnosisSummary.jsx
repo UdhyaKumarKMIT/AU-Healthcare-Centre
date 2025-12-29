@@ -5,7 +5,6 @@ const DiagnosisSummary = ({ patient, diagnosis, onProceedToPrescription }) => {
   if (!patient) {
     return (
       <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>👨‍⚕️</div>
         <h3 className={styles.emptyTitle}>No Patient Selected</h3>
         <p className={styles.emptyText}>
           Select a patient from the queue to view diagnosis details

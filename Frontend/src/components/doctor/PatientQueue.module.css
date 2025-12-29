@@ -23,6 +23,7 @@
 .queueTable td {
   padding: 16px;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
 }
 
 .patientRow {
@@ -43,13 +44,12 @@
 }
 
 .tokenBadge {
-  display: inline-block;
+  display: inline-flex;
   width: 40px;
   height: 40px;
   background: #1a237e;
   color: white;
   border-radius: 50%;
-  display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
@@ -59,7 +59,7 @@
 .patientInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .patientName {
@@ -78,6 +78,7 @@
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .visitType.emergency {
@@ -86,12 +87,14 @@
 }
 
 .statusBadge {
+  display: inline-block;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .statusWaiting {
@@ -109,14 +112,41 @@
   color: #059669;
 }
 
+.statusCancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.statusNoShow {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.statusDiagnosed {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.statusPrescribed {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
 .statusDefault {
   background: #f1f5f9;
   color: #64748b;
 }
 
-.viewBtn {
-  background: #1a237e;
-  color: white;
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.viewBtn,
+.historyBtn {
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -124,6 +154,15 @@
   font-weight: 500;
   font-size: 14px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.viewBtn {
+  background: #1a237e;
+  color: white;
 }
 
 .viewBtn:hover {
@@ -131,6 +170,17 @@
   transform: translateY(-1px);
 }
 
+.historyBtn {
+  background: #7c3aed;
+  color: white;
+}
+
+.historyBtn:hover {
+  background: #6d28d9;
+  transform: translateY(-1px);
+}
+
+/* Loading State */
 .loadingContainer {
   padding: 60px 20px;
   text-align: center;
@@ -152,6 +202,7 @@
   }
 }
 
+/* Empty State */
 .emptyState {
   padding: 60px 20px;
   text-align: center;
