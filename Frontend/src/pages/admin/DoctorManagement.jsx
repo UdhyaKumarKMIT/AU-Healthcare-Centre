@@ -1,7 +1,7 @@
 // src/pages/admin/DoctorManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDoctors } from '../../store/slices/adminSlice';
+import { fetchDoctors, createDoctor } from '../../store/slices/adminSlice';
 import styles from './DoctorManagement.module.css';
 
 const DoctorManagement = () => {
@@ -9,11 +9,15 @@ const DoctorManagement = () => {
   const { doctors, doctorsLoading, error } = useSelector((state) => state.admin);
   
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newDoctor, setNewDoctor] = useState({
     name: '',
     specialization: '',
     phone: '',
     email: '',
+    password: '',
+    confirmPassword: ''
   });
 
   useEffect(() => {
@@ -37,12 +41,117 @@ const DoctorManagement = () => {
       : <span className={styles.unavailable}>Unavailable</span>;
   };
 
-  const handleAddDoctor = (e) => {
+  const validateForm = () => {
+    if (!newDoctor.name.trim()) {
+      setFormError('Name is required');
+      return false;
+    }
+
+    if (!newDoctor.specialization.trim()) {
+      setFormError('Specialization is required');
+      return false;
+    }
+
+    if (!newDoctor.phone.trim()) {
+      setFormError('Phone number is required');
+      return false;
+    }
+
+    // Basic phone validation (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(newDoctor.phone.replace(/\D/g, ''))) {
+      setFormError('Phone number must be 10 digits');
+      return false;
+    }
+
+    if (!newDoctor.email.trim()) {
+      setFormError('Email is required');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newDoctor.email)) {
+      setFormError('Invalid email format');
+      return false;
+    }
+
+    if (!newDoctor.password) {
+      setFormError('Password is required');
+      return false;
+    }
+
+    if (newDoctor.password.length < 6) {
+      setFormError('Password must be at least 6 characters');
+      return false;
+    }
+
+    if (newDoctor.password !== newDoctor.confirmPassword) {
+      setFormError('Passwords do not match');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAddDoctor = async (e) => {
     e.preventDefault();
-    // TODO: Implement create doctor via admin API
-    alert('Create doctor functionality - to be implemented');
+    setFormError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      
+      const doctorData = {
+        name: newDoctor.name.trim(),
+        email: newDoctor.email.trim().toLowerCase(),
+        password: newDoctor.password,
+        phone: newDoctor.phone.trim(),
+        specialization: newDoctor.specialization.trim()
+      };
+
+      console.log('📤 Creating doctor:', doctorData);
+      
+      await dispatch(createDoctor(doctorData)).unwrap();
+      
+      console.log('✅ Doctor created successfully');
+      
+      // Reset form and close modal
+      setNewDoctor({ 
+        name: '', 
+        specialization: '',
+        phone: '', 
+        email: '', 
+        password: '', 
+        confirmPassword: '' 
+      });
+      setShowAddForm(false);
+      
+      // Refresh the doctors list
+      await dispatch(fetchDoctors());
+      
+      alert('Doctor created successfully!');
+    } catch (error) {
+      console.error('❌ Error creating doctor:', error);
+      setFormError(error || 'Failed to create doctor');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
     setShowAddForm(false);
-    setNewDoctor({ name: '', specialization: '', phone: '', email: '' });
+    setFormError('');
+    setNewDoctor({ 
+      name: '', 
+      specialization: '',
+      phone: '', 
+      email: '', 
+      password: '', 
+      confirmPassword: '' 
+    });
   };
 
   if (doctorsLoading) {
@@ -91,11 +200,19 @@ const DoctorManagement = () => {
               <h3>Add New Doctor</h3>
               <button 
                 className={styles.closeButton}
-                onClick={() => setShowAddForm(false)}
+                onClick={handleCloseModal}
+                type="button"
               >
                 ✕
               </button>
             </div>
+            
+            {formError && (
+              <div className={styles.errorAlert}>
+                {formError}
+              </div>
+            )}
+
             <form onSubmit={handleAddDoctor} className={styles.form}>
               <div className={styles.formGroup}>
                 <label>Full Name *</label>
@@ -105,8 +222,10 @@ const DoctorManagement = () => {
                   onChange={(e) => setNewDoctor({...newDoctor, name: e.target.value})}
                   placeholder="Dr. John Smith"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label>Specialization *</label>
                 <input
@@ -115,8 +234,10 @@ const DoctorManagement = () => {
                   onChange={(e) => setNewDoctor({...newDoctor, specialization: e.target.value})}
                   placeholder="Cardiology"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label>Phone Number *</label>
                 <input
@@ -125,8 +246,10 @@ const DoctorManagement = () => {
                   onChange={(e) => setNewDoctor({...newDoctor, phone: e.target.value})}
                   placeholder="9876543210"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label>Email Address *</label>
                 <input
@@ -135,14 +258,50 @@ const DoctorManagement = () => {
                   onChange={(e) => setNewDoctor({...newDoctor, email: e.target.value})}
                   placeholder="doctor@hospital.com"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
+              <div className={styles.formGroup}>
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={newDoctor.password}
+                  onChange={(e) => setNewDoctor({...newDoctor, password: e.target.value})}
+                  placeholder="Minimum 6 characters"
+                  required
+                  minLength={6}
+                  disabled={formLoading}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Confirm Password *</label>
+                <input
+                  type="password"
+                  value={newDoctor.confirmPassword}
+                  onChange={(e) => setNewDoctor({...newDoctor, confirmPassword: e.target.value})}
+                  placeholder="Re-enter password"
+                  required
+                  disabled={formLoading}
+                />
+              </div>
+
               <div className={styles.formActions}>
-                <button type="button" onClick={() => setShowAddForm(false)}>
+                <button 
+                  type="button" 
+                  onClick={handleCloseModal}
+                  disabled={formLoading}
+                  className={styles.cancelButton}
+                >
                   Cancel
                 </button>
-                <button type="submit" className={styles.submitButton}>
-                  Add Doctor
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                  disabled={formLoading}
+                >
+                  {formLoading ? 'Creating...' : 'Add Doctor'}
                 </button>
               </div>
             </form>

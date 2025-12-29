@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faPlus, faTimes, faRedo } from '@fortawesome/free-solid-svg-icons';
-import { fetchReceptionists } from '../../store/slices/adminSlice';
+import { fetchReceptionists, createReceptionist } from '../../store/slices/adminSlice';
 import ReceptionistStats from '../../components/Admin/ReceptionistStats';
 import ReceptionistTable from '../../components/Admin/ReceptionistTable';
 import styles from './ReceptionistManagement.module.css';
@@ -17,11 +17,13 @@ const ReceptionistManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newReceptionist, setNewReceptionist] = useState({
     name: '',
     email: '',
-    phone: '',
-    shift: 'morning',
+    password: '',
+    confirmPassword: ''
   });
 
   useEffect(() => {
@@ -63,12 +65,72 @@ const ReceptionistManagement = () => {
     navigate(`/admin/receptionists/${receptionistId}/edit`);
   };
 
-  const handleAddReceptionist = (e) => {
+  const handleAddReceptionist = async (e) => {
     e.preventDefault();
-    // TODO: Implement create receptionist via admin API
-    alert('Create receptionist functionality - to be implemented');
-    setShowAddForm(false);
-    setNewReceptionist({ name: '', email: '', phone: '', shift: 'morning' });
+    setFormError('');
+
+    // Validation
+    if (!newReceptionist.name.trim()) {
+      setFormError('Name is required');
+      return;
+    }
+
+    if (!newReceptionist.email.trim()) {
+      setFormError('Email is required');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newReceptionist.email)) {
+      setFormError('Invalid email format');
+      return;
+    }
+
+    if (!newReceptionist.password) {
+      setFormError('Password is required');
+      return;
+    }
+
+    if (newReceptionist.password.length < 6) {
+      setFormError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newReceptionist.password !== newReceptionist.confirmPassword) {
+      setFormError('Passwords do not match');
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      
+      const receptionistData = {
+        name: newReceptionist.name.trim(),
+        email: newReceptionist.email.trim().toLowerCase(),
+        password: newReceptionist.password,
+        role: 'RECEPTIONIST'
+      };
+
+      console.log('📤 Creating receptionist:', receptionistData);
+      
+      const result = await dispatch(createReceptionist(receptionistData)).unwrap();
+      
+      console.log('✅ Receptionist created:', result);
+      
+      // Reset form and close modal
+      setNewReceptionist({ name: '', email: '', password: '', confirmPassword: '' });
+      setShowAddForm(false);
+      
+      // Refresh the receptionists list
+      dispatch(fetchReceptionists());
+      
+      alert('Receptionist created successfully!');
+    } catch (error) {
+      console.error('❌ Error creating receptionist:', error);
+      setFormError(error.message || 'Failed to create receptionist');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const filteredReceptionists = receptionists.filter(rec => {
@@ -190,12 +252,23 @@ const ReceptionistManagement = () => {
               <h3>Add New Receptionist</h3>
               <button 
                 className={styles.closeButton}
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setFormError('');
+                  setNewReceptionist({ name: '', email: '', password: '', confirmPassword: '' });
+                }}
                 type="button"
               >
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
+            
+            {formError && (
+              <div className={styles.errorAlert}>
+                {formError}
+              </div>
+            )}
+
             <form onSubmit={handleAddReceptionist} className={styles.form}>
               <div className={styles.formGroup}>
                 <label>Full Name *</label>
@@ -205,8 +278,10 @@ const ReceptionistManagement = () => {
                   onChange={(e) => setNewReceptionist({...newReceptionist, name: e.target.value})}
                   placeholder="Enter full name"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label>Email Address *</label>
                 <input
@@ -215,41 +290,54 @@ const ReceptionistManagement = () => {
                   onChange={(e) => setNewReceptionist({...newReceptionist, email: e.target.value})}
                   placeholder="receptionist@mithealth.edu"
                   required
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
-                <label>Phone Number *</label>
+                <label>Password *</label>
                 <input
-                  type="tel"
-                  value={newReceptionist.phone}
-                  onChange={(e) => setNewReceptionist({...newReceptionist, phone: e.target.value})}
-                  placeholder="9876543210"
+                  type="password"
+                  value={newReceptionist.password}
+                  onChange={(e) => setNewReceptionist({...newReceptionist, password: e.target.value})}
+                  placeholder="Minimum 6 characters"
                   required
+                  minLength={6}
+                  disabled={formLoading}
                 />
               </div>
+              
               <div className={styles.formGroup}>
-                <label>Shift *</label>
-                <select
-                  value={newReceptionist.shift}
-                  onChange={(e) => setNewReceptionist({...newReceptionist, shift: e.target.value})}
+                <label>Confirm Password *</label>
+                <input
+                  type="password"
+                  value={newReceptionist.confirmPassword}
+                  onChange={(e) => setNewReceptionist({...newReceptionist, confirmPassword: e.target.value})}
+                  placeholder="Re-enter password"
                   required
-                >
-                  <option value="morning">Morning (8 AM - 4 PM)</option>
-                  <option value="evening">Evening (4 PM - 12 AM)</option>
-                  <option value="night">Night (12 AM - 8 AM)</option>
-                  <option value="flexible">Flexible</option>
-                </select>
+                  disabled={formLoading}
+                />
               </div>
+
               <div className={styles.formActions}>
                 <button 
                   type="button"
                   className={styles.cancelButton}
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setFormError('');
+                    setNewReceptionist({ name: '', email: '', password: '', confirmPassword: '' });
+                  }}
+                  disabled={formLoading}
                 >
                   Cancel
                 </button>
-                <button type="submit" className={styles.submitButton}>
-                  Add Receptionist
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                  disabled={formLoading}
+                >
+                  {formLoading ? 'Creating...' : 'Add Receptionist'}
                 </button>
               </div>
             </form>
