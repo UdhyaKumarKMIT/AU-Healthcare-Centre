@@ -79,7 +79,7 @@ const DoctorDashboard = () => {
     
     // Auto-update status to IN_PROGRESS if SCHEDULED
     if (patient.status === 'SCHEDULED') {
-      await handleStatusUpdate(patient.visitId, 'IN_PROGRESS');
+      await handleStatusUpdate(patient.visitId, 'ONGOING');
     }
   };
 
@@ -225,7 +225,7 @@ const DoctorDashboard = () => {
   };
 
   const waitingCount = patients.filter(p => p.status === 'SCHEDULED').length;
-  const inProgressCount = patients.filter(p => p.status === 'IN_PROGRESS').length;
+  const inProgressCount = patients.filter(p => p.status === 'ONGOING').length;
 
   if (loading && patients.length === 0) {
     return (

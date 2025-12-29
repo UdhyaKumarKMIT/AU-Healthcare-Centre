@@ -15,11 +15,9 @@ const PatientQueue = ({
   const getStatusBadge = (status) => {
     const statusMap = {
       'SCHEDULED': { label: 'Waiting', className: styles.statusWaiting },
-      'IN_PROGRESS': { label: 'In Progress', className: styles.statusConsultation },
       'ONGOING': { label: 'In Progress', className: styles.statusConsultation },
       'COMPLETED': { label: 'Completed', className: styles.statusCompleted },
       'CANCELLED': { label: 'Cancelled', className: styles.statusCancelled },
-      'NO_SHOW': { label: 'No Show', className: styles.statusNoShow },
       'DIAGNOSED': { label: 'Diagnosed', className: styles.statusDiagnosed },
       'PRESCRIBED': { label: 'Prescribed', className: styles.statusPrescribed },
     };
@@ -38,7 +36,7 @@ const PatientQueue = ({
     
     if (patient.status === 'SCHEDULED' && onStatusUpdate) {
       try {
-        await onStatusUpdate(patient.visitId, 'IN_PROGRESS');
+        await onStatusUpdate(patient.visitId, 'ONGOING');
       } catch (error) {
         console.error('Failed to update status:', error);
       }
