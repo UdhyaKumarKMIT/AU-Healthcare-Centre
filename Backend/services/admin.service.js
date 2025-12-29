@@ -205,14 +205,11 @@ export const getAllUsers = async ({ role, status, search }) => {
   }
 };
 
-/**
- * Create a new user
- */
-export const createUser = async ({ name, email, password, role }) => {
+export const createUser = async ({ name, email, password, role, phone, specialization }) => {
   const connection = await pool.getConnection();
   
   try {
-    console.log('➕ Creating user:', { name, email, role });
+    console.log('➕ Creating user:', { name, email, role, phone, specialization });
     await connection.beginTransaction();
     
     // Check if user already exists
@@ -241,15 +238,24 @@ export const createUser = async ({ name, email, password, role }) => {
     if (role.toUpperCase() === 'DOCTOR') {
       const doctorId = crypto.randomUUID();
       console.log('Creating doctor with ID:', doctorId);
+      
+      // Doctor table has: doctor_id, user_id, name, specialization, phone, availability_status
       await connection.execute(
-        `INSERT INTO doctor (doctor_id, user_id, name, specialization, availability_status)
-         VALUES (?, ?, ?, ?, 'AVAILABLE')`,
-        [doctorId, userId, name, 'General']
+        `INSERT INTO doctor (doctor_id, user_id, name, specialization, phone, availability_status)
+         VALUES (?, ?, ?, ?, ?, 'AVAILABLE')`,
+        [
+          doctorId, 
+          userId, 
+          name, 
+          specialization || 'General',
+          phone || null
+        ]
       );
     } else if (role.toUpperCase() === 'RECEPTIONIST') {
       const receptionistId = crypto.randomUUID();
       console.log('Creating receptionist with ID:', receptionistId);
-      // Note: receptionist table has NO phone or shift columns
+      
+      // Receptionist table only has: receptionist_id, user_id, receptionist_name
       await connection.execute(
         `INSERT INTO receptionist (receptionist_id, user_id, receptionist_name)
          VALUES (?, ?, ?)`,
@@ -264,7 +270,9 @@ export const createUser = async ({ name, email, password, role }) => {
       user_id: userId,
       name,
       email,
-      role: role.toUpperCase()
+      role: role.toUpperCase(),
+      phone: phone || null,
+      specialization: specialization || null
     };
   } catch (error) {
     await connection.rollback();

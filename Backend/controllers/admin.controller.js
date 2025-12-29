@@ -31,33 +31,77 @@ export const getAllUsers = async (req, res, next) => {
 
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone, specialization } = req.body;
     
+    // Required fields validation
     if (!name || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Name, email, password, and role are required' 
+      });
     }
-
+    
+    // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Invalid email format' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid email format' 
+      });
     }
-
+    
+    // Role validation
     const validRoles = ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST'];
     if (!validRoles.includes(role.toUpperCase())) {
-      return res.status(400).json({ success: false, message: 'Invalid role' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid role. Must be one of: ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST' 
+      });
     }
-
+    
+    // Password length validation
     if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password too short' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
     }
-
-    const user = await adminService.createUser(req.body);
-    res.status(201).json({ success: true, message: 'User created', data: user });
+    
+    // Role-specific validation
+    if (role.toUpperCase() === 'DOCTOR') {
+      if (!specialization) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Specialization is required for doctors' 
+        });
+      }
+      if (!phone) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Phone number is required for doctors' 
+        });
+      }
+    }
+    
+    // Create user with all provided fields
+    const user = await adminService.createUser({
+      name,
+      email,
+      password,
+      role,
+      phone,
+      specialization
+    });
+    
+    res.status(201).json({ 
+      success: true, 
+      message: `${role} created successfully`, 
+      data: user 
+    });
   } catch (err) {
     next(err);
   }
 };
-
 export const updateUserStatus = async (req, res, next) => {
   try {
     const { user_id } = req.params;
