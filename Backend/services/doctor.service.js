@@ -1,18 +1,20 @@
-import pool from '../config/db.js';
-import crypto from 'crypto';
+import pool from "../config/db.js";
+import crypto from "crypto";
 
 export const VISIT_STATUS = {
-  SCHEDULED: 'SCHEDULED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-  NO_SHOW: 'NO_SHOW'
+  SCHEDULED: "SCHEDULED",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  NO_SHOW: "NO_SHOW",
 };
 
 export const updateVisitStatus = async ({ visit_id, newStatus }) => {
   const validStatuses = Object.values(VISIT_STATUS);
   if (!validStatuses.includes(newStatus)) {
-    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    throw new Error(
+      `Invalid status. Must be one of: ${validStatuses.join(", ")}`
+    );
   }
 
   const [result] = await pool.execute(
@@ -21,18 +23,31 @@ export const updateVisitStatus = async ({ visit_id, newStatus }) => {
   );
 
   if (result.affectedRows === 0) {
-    throw new Error('Visit not found');
+    throw new Error("Visit not found");
   }
 
   return { success: true, visit_id, newStatus };
 };
 
-export const addDiagnosis = async ({ visit_id, doctor_id, diagnosis_code, diagnosis_name, diagnosis_notes }) => {
+export const addDiagnosis = async ({
+  visit_id,
+  doctor_id,
+  diagnosis_code,
+  diagnosis_name,
+  diagnosis_notes,
+}) => {
   await pool.execute(
     `INSERT INTO diagnosis
      (diagnosis_id, visit_id, doctor_id, diagnosis_code, diagnosis_name, diagnosis_notes)
      VALUES (?,?,?,?,?,?)`,
-    [crypto.randomUUID(), visit_id, doctor_id, diagnosis_code, diagnosis_name, diagnosis_notes]
+    [
+      crypto.randomUUID(),
+      visit_id,
+      doctor_id,
+      diagnosis_code,
+      diagnosis_name,
+      diagnosis_notes,
+    ]
   );
 };
 
@@ -45,6 +60,7 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
 
     const prescriptionId = crypto.randomUUID();
 
+    // Insert prescription
     await conn.execute(
       `INSERT INTO prescription 
         (prescription_id, visit_id, doctor_id, status)
@@ -52,27 +68,26 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
       [prescriptionId, visit_id, doctor_id]
     );
 
+    // Insert medicines
     for (const med of meds) {
       await conn.execute(
         `INSERT INTO prescription_items 
-          (item_id, prescription_id, med_name, med_type, total_days, food, morning, afternoon, night)
-         VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (item_id, prescription_id, medicine_id, duration_days, food, morning, afternoon, night)
+         VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)`,
         [
           prescriptionId,
-          med.name,
-          med.type || null,
-          med.days,
+          med.medicine_id, // ✅ correct
+          med.duration_days, // ✅ renamed
           med.food,
           med.morning,
           med.afternoon,
-          med.night
+          med.night,
         ]
       );
     }
 
     await conn.commit();
     return { prescription_id: prescriptionId };
-
   } catch (err) {
     console.error("❌ Prescription insert failed:", err);
     await conn.rollback();

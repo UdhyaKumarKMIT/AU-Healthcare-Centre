@@ -32,7 +32,7 @@ router.get('/queue/:doctorId', authenticate, async (req, res) => {
       FROM visit v
       JOIN patient_profile p ON v.patient_id = p.patient_id
       WHERE v.doctor_id = ?
-        AND v.status IN ('SCHEDULED', 'IN_PROGRESS', 'DIAGNOSED', 'PRESCRIBED')
+        AND v.status IN ('SCHEDULED', 'ONGOING', 'DIAGNOSED', 'PRESCRIBED')
       ORDER BY v.visit_date ASC
     `, [doctorId]);
     
@@ -126,9 +126,8 @@ router.get('/patient/:patientId/history', authenticate, async (req, res) => {
         p.status as prescription_status,
         v.visit_date,
         d.name as doctor_name,
-        pi.med_name,
-        pi.med_type,
-        pi.total_days,
+        pi.medicine_id,
+        pi.duration_days,
         pi.food,
         pi.morning,
         pi.afternoon,
