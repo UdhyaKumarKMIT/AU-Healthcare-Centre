@@ -141,6 +141,54 @@ export const createUser = createAsyncThunk(
   }
 );
 
+// Create a new doctor (uses createUser endpoint with role: 'DOCTOR')
+export const createDoctor = createAsyncThunk(
+  'admin/createDoctor',
+  async (doctorData, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ...doctorData, role: 'DOCTOR' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create doctor');
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Create a new receptionist (uses createUser endpoint with role: 'RECEPTIONIST')
+export const createReceptionist = createAsyncThunk(
+  'admin/createReceptionist',
+  async (receptionistData, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ...receptionistData, role: 'RECEPTIONIST' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create receptionist');
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 // Update user status
 export const updateUserStatus = createAsyncThunk(
   'admin/updateUserStatus',
@@ -361,6 +409,36 @@ const adminSlice = createSlice({
       })
       .addCase(createUser.rejected, (state, action) => {
         state.usersLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Create Doctor
+      .addCase(createDoctor.pending, (state) => {
+        state.doctorsLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(createDoctor.fulfilled, (state, action) => {
+        state.doctorsLoading = false;
+        state.successMessage = 'Doctor created successfully';
+      })
+      .addCase(createDoctor.rejected, (state, action) => {
+        state.doctorsLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Create Receptionist
+      .addCase(createReceptionist.pending, (state) => {
+        state.receptionistsLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(createReceptionist.fulfilled, (state, action) => {
+        state.receptionistsLoading = false;
+        state.successMessage = 'Receptionist created successfully';
+      })
+      .addCase(createReceptionist.rejected, (state, action) => {
+        state.receptionistsLoading = false;
         state.error = action.payload;
       })
       
