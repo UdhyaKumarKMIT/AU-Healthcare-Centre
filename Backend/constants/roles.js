@@ -3,7 +3,8 @@ const ROLES = {
   DOCTOR: 'DOCTOR',
   NURSE: 'NURSE',
   PHARMACIST: 'PHARMACIST',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  PATIENT: 'PATIENT'
 };
 
 export default ROLES;

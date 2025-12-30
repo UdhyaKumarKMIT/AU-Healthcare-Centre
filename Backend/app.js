@@ -11,7 +11,7 @@ import adminRoutes from './routes/admin.routes.js';
 import receptionistRoutes from './routes/receptionist.routes.js';
 import doctorRoutes from './routes/doctor.route.js';
 import pharmacyRoutes from './routes/pharmacyRoutes.js';
-
+import studentRoutes from './routes/student.routes.js';
 // Middleware
 import errorHandler from './middlewares/error.middleware.js';
 
@@ -52,7 +52,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/receptionist', receptionistRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/pharmacy', pharmacyRoutes); // pharmacist-specific routes
-
+app.use('/api/students', studentRoutes); // student-specific routes
 // -------------------
 // Health check
 // -------------------
