@@ -1,0 +1,439 @@
+/* src/components/student/DoctorSchedule.module.css - CLICKABLE WEEKLY VIEW */
+
+.scheduleContainer {
+  padding: 24px;
+}
+
+/* Info Card */
+.infoCard {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  border-left: 4px solid #1976d2;
+  margin-bottom: 24px;
+}
+
+.infoIcon {
+  font-size: 24px;
+  color: #1976d2;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 6px 0;
+}
+
+.infoText {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Section Styling */
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.sectionIcon {
+  font-size: 18px;
+  color: #1976d2;
+}
+
+.todayTag {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: #22c55e;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Day Selector */
+.daySelector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.dayButton {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dayButton:hover {
+  border-color: #1a237e;
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(26, 35, 126, 0.1);
+}
+
+.selectedDay {
+  background: #1a237e !important;
+  border-color: #1a237e !important;
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2) !important;
+}
+
+.selectedDay .dayButtonName,
+.selectedDay .doctorCount {
+  color: white !important;
+}
+
+.selectedDay .dayButtonIcon {
+  color: white !important;
+}
+
+.todayButton {
+  border-color: #1976d2;
+  background: #f0f9ff;
+}
+
+.dayButtonContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.dayButtonName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.todayIndicator {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: #22c55e;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.doctorCount {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dayButtonIcon {
+  font-size: 16px;
+  color: #cbd5e0;
+  flex-shrink: 0;
+}
+
+/* Schedule Cards */
+.scheduleCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.scheduleCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.scheduleCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.scheduleCardHeader {
+  padding: 16px;
+  color: white;
+}
+
+.specialistName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scheduleCardBody {
+  padding: 16px;
+}
+
+.specialistDescription {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.timingInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 3px solid #1976d2;
+}
+
+.clockIcon {
+  color: #1976d2;
+  font-size: 16px;
+}
+
+.timingText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* No Schedule */
+.noSchedule {
+  padding: 40px 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #e2e8f0;
+}
+
+.noSchedule p {
+  margin: 0;
+  font-size: 15px;
+  color: #94a3b8;
+}
+
+/* Filter Section */
+.filterSection {
+  margin-bottom: 20px;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.filterSelect {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterSelect:hover {
+  border-color: #1a237e;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+/* Doctors Grid */
+.doctorsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.doctorCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.doctorCard:hover {
+  border-color: #1a237e;
+  box-shadow: 0 2px 8px rgba(26, 35, 126, 0.1);
+  transform: translateY(-2px);
+}
+
+.doctorAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #1a237e;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.doctorInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.doctorName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctorSpec {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 6px 0;
+}
+
+.doctorPhone {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.availableBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #d1fae5;
+  color: #059669;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Doctor List Hint */
+.doctorListHint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 3px solid #1976d2;
+}
+
+/* Loading and Empty States */
+.loadingContainer {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.spinner {
+  font-size: 32px;
+  color: #1a237e;
+  margin-bottom: 12px;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .scheduleContainer {
+    padding: 16px;
+  }
+
+  .daySelector {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .dayButton {
+    padding: 12px;
+  }
+
+  .scheduleCards {
+    grid-template-columns: 1fr;
+  }
+
+  .doctorsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .daySelector {
+    grid-template-columns: 1fr;
+  }
+
+  .dayButton {
+    padding: 14px;
+  }
+
+  .doctorCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .doctorName {
+    white-space: normal;
+  }
+
+  .sectionTitle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .todayTag {
+    margin-left: 0;
+  }
+}

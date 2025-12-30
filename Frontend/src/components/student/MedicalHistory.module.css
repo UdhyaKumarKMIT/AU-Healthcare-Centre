@@ -1,0 +1,483 @@
+/* src/components/student/MedicalHistory.module.css */
+
+.historyContainer {
+  width: 100%;
+  padding: 24px;
+}
+
+/* Section Navigation */
+.sectionNav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.sectionButton {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.sectionButton:hover {
+  background: #e2e8f0;
+  color: #1a237e;
+}
+
+.sectionButton.active {
+  background: #1a237e;
+  color: white;
+  border-color: #1a237e;
+  box-shadow: 0 2px 4px rgba(26, 35, 126, 0.2);
+}
+
+.sectionButton svg {
+  font-size: 16px;
+}
+
+/* Section Content */
+.section {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionTitle svg {
+  color: #1976d2;
+}
+
+/* Card Grid */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cardHeader {
+  padding: 16px 20px;
+  background: #1a237e;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardDate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusBadge.completed {
+  background: #22c55e;
+  color: white;
+}
+
+.statusBadge.pending {
+  background: #f59e0b;
+  color: white;
+}
+
+.statusBadge.cancelled {
+  background: #ef4444;
+  color: white;
+}
+
+.statusBadge.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.statusBadge.resolved {
+  background: #22c55e;
+  color: white;
+}
+
+.statusBadge.scheduled {
+  background: #06b6d4;
+  color: white;
+}
+
+.statusBadge.in_progress {
+  background: #8b5cf6;
+  color: white;
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+/* Info Rows */
+.infoRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+}
+
+.icon {
+  color: #1976d2;
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.value {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.subtext {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 4px 0 0 0;
+}
+
+/* Diagnosis Box */
+.diagnosisBox {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-left: 4px solid #1976d2;
+  border-radius: 6px;
+}
+
+.diagnosisLabel {
+  font-size: 12px;
+  color: #1976d2;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+.diagnosisValue {
+  font-size: 16px;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.diagnosisNotes {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Medication Box */
+.medicationBox {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.medName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.medType {
+  font-size: 13px;
+  color: #1976d2;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.dosageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dosageItem {
+  text-align: center;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.dosageLabel {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.dosageValue {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.prescriptionMeta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Lab Test Results */
+.testName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.resultBox {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.resultRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.resultRow:last-child {
+  margin-bottom: 0;
+}
+
+.resultLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.resultValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.normalRange {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+
+/* Vitals Grid */
+.vitalsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.vitalItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.vitalIcon {
+  font-size: 24px;
+  color: #1976d2;
+}
+
+.vitalLabel {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+}
+
+.vitalValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* Medical Conditions */
+.conditionName {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.notesBox {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.notesLabel {
+  font-size: 12px;
+  color: #1976d2;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+.notesText {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.recordedDate {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 16px;
+  font-style: italic;
+}
+
+/* Empty States */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+}
+
+.emptyState p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Loading */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+  color: #1976d2;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .historyContainer {
+    padding: 16px;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionNav {
+    flex-direction: column;
+  }
+
+  .sectionButton {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .dosageGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .vitalsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,319 @@
+/* src/components/student/StudentProfile.module.css - UPDATED DESIGN */
+
+.profileContainer {
+  padding: 24px;
+}
+
+/* Profile Header */
+.profileHeader {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  padding: 32px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.avatarIcon {
+  font-size: 36px;
+  color: white;
+}
+
+.headerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: white;
+}
+
+.email {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Profile Body */
+.profileBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a237e;
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoIcon {
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.infoValue {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.bloodBadge {
+  display: inline-block;
+  padding: 5px 14px;
+  background: #dc2626;
+  color: white;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Emergency Card */
+.emergencyCard {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  background: #fef3c7;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.emergencyIcon {
+  font-size: 24px;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.emergencyLabel {
+  font-size: 12px;
+  color: #78350f;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+}
+
+.emergencyValue {
+  font-size: 18px;
+  color: #92400e;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Health Card */
+.healthCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.healthItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #1976d2;
+}
+
+.healthIcon {
+  font-size: 20px;
+  color: #1976d2;
+  flex-shrink: 0;
+}
+
+.healthContent {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.healthLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.healthValue {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Action Section */
+.actionSection {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.refreshButton {
+  padding: 12px 28px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refreshButton:hover {
+  background: #3949ab;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+}
+
+/* Loading Container */
+.loadingContainer {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.spinner {
+  font-size: 40px;
+  color: #1a237e;
+  margin-bottom: 16px;
+}
+
+.loadingContainer p {
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyState p {
+  color: #94a3b8;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profileContainer {
+    padding: 16px;
+  }
+
+  .profileHeader {
+    padding: 20px;
+  }
+
+  .avatarSection {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .avatarIcon {
+    font-size: 32px;
+  }
+
+  .name {
+    font-size: 20px;
+  }
+
+  .email {
+    justify-content: center;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+  .healthContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .emergencyCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .healthItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

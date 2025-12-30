@@ -45,8 +45,8 @@ import PrescriptionForm from './pages/doctor/PrescriptionForm.jsx';
 import ReceptionistDashboard from './pages/receptionist/ReceptionistDashboard.jsx';
 import RegisterPatientPage from './pages/receptionist/RegisterPatientPage.jsx';
 
-// Patient Pages
-import PatientDashboard from './components/PatientDashboard/PatientDashboard.jsx';
+// Student Pages
+import StudentDashboard from './pages/student/StudentDashboard.jsx';
 
 function App() {
   return (
@@ -106,9 +106,9 @@ function App() {
               <Route path="/reception/register-patient" element={<RegisterPatientPage />} />
             </Route>
 
-            {/* Patient Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['PATIENT']} />}>
-              <Route path="/patient/dashboard" element={<PatientDashboard />} />
+            {/* Student Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
             </Route>
 
             {/* Catch-all Redirect */}
