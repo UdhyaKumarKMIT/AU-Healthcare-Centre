@@ -1,9 +1,9 @@
 // src/components/student/MedicalHistory.jsx - NO EMOJIS, FONTAWESOME ONLY
 
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
   faSpinner,
   faFileMedical,
   faPrescription,
@@ -14,28 +14,22 @@ import {
   faClipboardList,
   faThermometerHalf,
   faTint,
-  faStethoscope
-} from '@fortawesome/free-solid-svg-icons';
-import styles from './MedicalHistory.module.css';
+  faStethoscope,
+} from "@fortawesome/free-solid-svg-icons";
+import styles from "./MedicalHistory.module.css";
 
 const MedicalHistory = () => {
-  const { 
-    visits, 
-    prescriptions, 
-    labTests, 
-    vitals,
-    medicalHistory,
-    loading 
-  } = useSelector(state => state.students);
+  const { visits, prescriptions, labTests, vitals, medicalHistory, loading } =
+    useSelector((state) => state.students);
 
-  const [activeSection, setActiveSection] = useState('visits');
+  const [activeSection, setActiveSection] = useState("visits");
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -53,36 +47,46 @@ const MedicalHistory = () => {
       {/* Section Navigation */}
       <div className={styles.sectionNav}>
         <button
-          className={`${styles.sectionButton} ${activeSection === 'visits' ? styles.active : ''}`}
-          onClick={() => setActiveSection('visits')}
+          className={`${styles.sectionButton} ${
+            activeSection === "visits" ? styles.active : ""
+          }`}
+          onClick={() => setActiveSection("visits")}
         >
           <FontAwesomeIcon icon={faFileMedical} />
           <span>Visits ({visits?.length || 0})</span>
         </button>
         <button
-          className={`${styles.sectionButton} ${activeSection === 'prescriptions' ? styles.active : ''}`}
-          onClick={() => setActiveSection('prescriptions')}
+          className={`${styles.sectionButton} ${
+            activeSection === "prescriptions" ? styles.active : ""
+          }`}
+          onClick={() => setActiveSection("prescriptions")}
         >
           <FontAwesomeIcon icon={faPrescription} />
           <span>Prescriptions ({prescriptions?.length || 0})</span>
         </button>
         <button
-          className={`${styles.sectionButton} ${activeSection === 'labs' ? styles.active : ''}`}
-          onClick={() => setActiveSection('labs')}
+          className={`${styles.sectionButton} ${
+            activeSection === "labs" ? styles.active : ""
+          }`}
+          onClick={() => setActiveSection("labs")}
         >
           <FontAwesomeIcon icon={faFlask} />
           <span>Lab Tests ({labTests?.length || 0})</span>
         </button>
         <button
-          className={`${styles.sectionButton} ${activeSection === 'vitals' ? styles.active : ''}`}
-          onClick={() => setActiveSection('vitals')}
+          className={`${styles.sectionButton} ${
+            activeSection === "vitals" ? styles.active : ""
+          }`}
+          onClick={() => setActiveSection("vitals")}
         >
           <FontAwesomeIcon icon={faHeartbeat} />
           <span>Vitals ({vitals?.length || 0})</span>
         </button>
         <button
-          className={`${styles.sectionButton} ${activeSection === 'conditions' ? styles.active : ''}`}
-          onClick={() => setActiveSection('conditions')}
+          className={`${styles.sectionButton} ${
+            activeSection === "conditions" ? styles.active : ""
+          }`}
+          onClick={() => setActiveSection("conditions")}
         >
           <FontAwesomeIcon icon={faClipboardList} />
           <span>Conditions ({medicalHistory?.length || 0})</span>
@@ -90,19 +94,19 @@ const MedicalHistory = () => {
       </div>
 
       {/* Visits Section */}
-      {activeSection === 'visits' && (
+      {activeSection === "visits" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faFileMedical} /> Visit History
           </h2>
-          
+
           {!visits || visits.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No visit records found</p>
             </div>
           ) : (
             <div className={styles.cardGrid}>
-              {visits.map(visit => (
+              {visits.map((visit) => (
                 <div key={visit.visit_id} className={styles.card}>
                   <div className={styles.cardHeader}>
                     <div>
@@ -111,39 +115,56 @@ const MedicalHistory = () => {
                         {formatDate(visit.visit_date)}
                       </span>
                     </div>
-                    <span className={`${styles.statusBadge} ${styles[visit.status?.toLowerCase()]}`}>
+                    <span
+                      className={`${styles.statusBadge} ${
+                        styles[visit.status?.toLowerCase()]
+                      }`}
+                    >
                       {visit.status}
                     </span>
                   </div>
-                  
+
                   <div className={styles.cardBody}>
                     <div className={styles.infoRow}>
-                      <FontAwesomeIcon icon={faUserMd} className={styles.icon} />
+                      <FontAwesomeIcon
+                        icon={faUserMd}
+                        className={styles.icon}
+                      />
                       <div>
                         <p className={styles.label}>Doctor</p>
-                        <p className={styles.value}>Dr. {visit.doctor_name || 'N/A'}</p>
+                        <p className={styles.value}>
+                          Dr. {visit.doctor_name || "N/A"}
+                        </p>
                         {visit.specialization && (
-                          <p className={styles.subtext}>{visit.specialization}</p>
+                          <p className={styles.subtext}>
+                            {visit.specialization}
+                          </p>
                         )}
                       </div>
                     </div>
 
                     <div className={styles.infoRow}>
                       <p className={styles.label}>Visit Type:</p>
-                      <p className={styles.value}>{visit.visit_type || 'General'}</p>
+                      <p className={styles.value}>
+                        {visit.visit_type || "General"}
+                      </p>
                     </div>
 
                     <div className={styles.infoRow}>
                       <p className={styles.label}>Reason:</p>
-                      <p className={styles.value}>{visit.reason || 'N/A'}</p>
+                      <p className={styles.value}>{visit.reason || "N/A"}</p>
                     </div>
 
                     {visit.diagnosis_name && (
                       <div className={styles.diagnosisBox}>
                         <p className={styles.diagnosisLabel}>Diagnosis</p>
-                        <p className={styles.diagnosisValue}>{visit.diagnosis_name}</p>
+                        <p className={styles.diagnosisValue}>
+                          {visit.diagnosis_name}
+                        </p>
                         {visit.diagnosis_notes && (
-                          <p className={styles.diagnosisNotes}>{visit.diagnosis_notes}</p>
+                          <p className={styles.diagnosisNotes}>
+                            {visit.diagnosis_notes}
+                          </p>
                         )}
                       </div>
                     )}
@@ -156,62 +177,90 @@ const MedicalHistory = () => {
       )}
 
       {/* Prescriptions Section */}
-      {activeSection === 'prescriptions' && (
+      {activeSection === "prescriptions" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faPrescription} /> Prescriptions
           </h2>
-          
+
           {!prescriptions || prescriptions.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No prescription records found</p>
             </div>
           ) : (
             <div className={styles.cardGrid}>
-              {prescriptions.map(prescription => (
-                <div key={prescription.prescription_id || prescription.item_id} className={styles.card}>
+              {prescriptions.map((prescription) => (
+                <div
+                  key={prescription.prescription_id || prescription.item_id}
+                  className={styles.card}
+                >
                   <div className={styles.cardHeader}>
                     <span className={styles.cardDate}>
                       <FontAwesomeIcon icon={faCalendarAlt} />
                       {formatDate(prescription.created_at)}
                     </span>
-                    <span className={`${styles.statusBadge} ${styles[prescription.prescription_status?.toLowerCase()]}`}>
+                    <span
+                      className={`${styles.statusBadge} ${
+                        styles[prescription.prescription_status?.toLowerCase()]
+                      }`}
+                    >
                       {prescription.prescription_status}
                     </span>
                   </div>
-                  
+
                   <div className={styles.cardBody}>
                     <div className={styles.infoRow}>
-                      <FontAwesomeIcon icon={faUserMd} className={styles.icon} />
+                      <FontAwesomeIcon
+                        icon={faUserMd}
+                        className={styles.icon}
+                      />
                       <div>
                         <p className={styles.label}>Prescribed by</p>
-                        <p className={styles.value}>Dr. {prescription.doctor_name}</p>
-                        <p className={styles.subtext}>{prescription.specialization}</p>
+                        <p className={styles.value}>
+                          Dr. {prescription.doctor_name}
+                        </p>
+                        <p className={styles.subtext}>
+                          {prescription.specialization}
+                        </p>
                       </div>
                     </div>
 
-                    {prescription.med_name && (
+                    {prescription.medicine_name && (
                       <div className={styles.medicationBox}>
-                        <p className={styles.medName}>{prescription.med_name}</p>
-                        <p className={styles.medType}>{prescription.med_type}</p>
-                        
+                        <p className={styles.medName}>
+                          {prescription.medicine_name}
+                        </p>
+                        <p className={styles.medType}>
+                          {prescription.medicine_type}
+                        </p>
+
                         <div className={styles.dosageGrid}>
                           <div className={styles.dosageItem}>
                             <span className={styles.dosageLabel}>Morning</span>
-                            <span className={styles.dosageValue}>{prescription.morning || '-'}</span>
+                            <span className={styles.dosageValue}>
+                              {prescription.morning ? "Yes" : "No"}
+                            </span>
                           </div>
                           <div className={styles.dosageItem}>
-                            <span className={styles.dosageLabel}>Afternoon</span>
-                            <span className={styles.dosageValue}>{prescription.afternoon || '-'}</span>
+                            <span className={styles.dosageLabel}>
+                              Afternoon
+                            </span>
+                            <span className={styles.dosageValue}>
+                              {prescription.afternoon ? "Yes" : "No"}
+                            </span>
                           </div>
                           <div className={styles.dosageItem}>
                             <span className={styles.dosageLabel}>Night</span>
-                            <span className={styles.dosageValue}>{prescription.night || '-'}</span>
+                            <span className={styles.dosageValue}>
+                              {prescription.night ? "Yes" : "No"}
+                            </span>
                           </div>
                         </div>
 
                         <div className={styles.prescriptionMeta}>
-                          <span>Duration: {prescription.total_days} days</span>
+                          <span>
+                            Duration: {prescription.duration_days} days
+                          </span>
                           <span>Take {prescription.food}</span>
                         </div>
                       </div>
@@ -225,19 +274,19 @@ const MedicalHistory = () => {
       )}
 
       {/* Lab Tests Section */}
-      {activeSection === 'labs' && (
+      {activeSection === "labs" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faFlask} /> Lab Test Results
           </h2>
-          
+
           {!labTests || labTests.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No lab test records found</p>
             </div>
           ) : (
             <div className={styles.cardGrid}>
-              {labTests.map(test => (
+              {labTests.map((test) => (
                 <div key={test.lab_test_id} className={styles.card}>
                   <div className={styles.cardHeader}>
                     <span className={styles.cardDate}>
@@ -245,26 +294,35 @@ const MedicalHistory = () => {
                       {formatDate(test.ordered_date)}
                     </span>
                   </div>
-                  
+
                   <div className={styles.cardBody}>
                     <h3 className={styles.testName}>{test.test_name}</h3>
-                    
+
                     <div className={styles.resultBox}>
                       <div className={styles.resultRow}>
                         <span className={styles.resultLabel}>Result:</span>
-                        <span className={styles.resultValue}>{test.result || 'Pending'}</span>
+                        <span className={styles.resultValue}>
+                          {test.result || "Pending"}
+                        </span>
                       </div>
                       {test.normal_range && (
                         <div className={styles.resultRow}>
-                          <span className={styles.resultLabel}>Normal Range:</span>
-                          <span className={styles.normalRange}>{test.normal_range}</span>
+                          <span className={styles.resultLabel}>
+                            Normal Range:
+                          </span>
+                          <span className={styles.normalRange}>
+                            {test.normal_range}
+                          </span>
                         </div>
                       )}
                     </div>
 
                     {test.doctor_name && (
                       <div className={styles.infoRow}>
-                        <FontAwesomeIcon icon={faUserMd} className={styles.icon} />
+                        <FontAwesomeIcon
+                          icon={faUserMd}
+                          className={styles.icon}
+                        />
                         <span>Ordered by Dr. {test.doctor_name}</span>
                       </div>
                     )}
@@ -277,19 +335,19 @@ const MedicalHistory = () => {
       )}
 
       {/* Vitals Section */}
-      {activeSection === 'vitals' && (
+      {activeSection === "vitals" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faHeartbeat} /> Vital Signs History
           </h2>
-          
+
           {!vitals || vitals.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No vital signs records found</p>
             </div>
           ) : (
             <div className={styles.cardGrid}>
-              {vitals.map(vital => (
+              {vitals.map((vital) => (
                 <div key={vital.vitals_id} className={styles.card}>
                   <div className={styles.cardHeader}>
                     <span className={styles.cardDate}>
@@ -297,27 +355,40 @@ const MedicalHistory = () => {
                       {formatDate(vital.visit_date)}
                     </span>
                   </div>
-                  
+
                   <div className={styles.cardBody}>
                     <div className={styles.vitalsGrid}>
                       <div className={styles.vitalItem}>
-                        <FontAwesomeIcon icon={faThermometerHalf} className={styles.vitalIcon} />
+                        <FontAwesomeIcon
+                          icon={faThermometerHalf}
+                          className={styles.vitalIcon}
+                        />
                         <div>
                           <p className={styles.vitalLabel}>Temperature</p>
-                          <p className={styles.vitalValue}>{vital.temperature}°F</p>
+                          <p className={styles.vitalValue}>
+                            {vital.temperature}°F
+                          </p>
                         </div>
                       </div>
 
                       <div className={styles.vitalItem}>
-                        <FontAwesomeIcon icon={faHeartbeat} className={styles.vitalIcon} />
+                        <FontAwesomeIcon
+                          icon={faHeartbeat}
+                          className={styles.vitalIcon}
+                        />
                         <div>
                           <p className={styles.vitalLabel}>Heart Rate</p>
-                          <p className={styles.vitalValue}>{vital.heart_rate} bpm</p>
+                          <p className={styles.vitalValue}>
+                            {vital.heart_rate} bpm
+                          </p>
                         </div>
                       </div>
 
                       <div className={styles.vitalItem}>
-                        <FontAwesomeIcon icon={faStethoscope} className={styles.vitalIcon} />
+                        <FontAwesomeIcon
+                          icon={faStethoscope}
+                          className={styles.vitalIcon}
+                        />
                         <div>
                           <p className={styles.vitalLabel}>Blood Pressure</p>
                           <p className={styles.vitalValue}>
@@ -335,31 +406,39 @@ const MedicalHistory = () => {
       )}
 
       {/* Medical Conditions Section */}
-      {activeSection === 'conditions' && (
+      {activeSection === "conditions" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faClipboardList} /> Medical Conditions
           </h2>
-          
+
           {!medicalHistory || medicalHistory.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No medical conditions recorded</p>
             </div>
           ) : (
             <div className={styles.cardGrid}>
-              {medicalHistory.map(condition => (
+              {medicalHistory.map((condition) => (
                 <div key={condition.history_id} className={styles.card}>
                   <div className={styles.cardHeader}>
-                    <h3 className={styles.conditionName}>{condition.condition_name}</h3>
-                    <span className={`${styles.statusBadge} ${styles[condition.status?.toLowerCase()]}`}>
+                    <h3 className={styles.conditionName}>
+                      {condition.condition_name}
+                    </h3>
+                    <span
+                      className={`${styles.statusBadge} ${
+                        styles[condition.status?.toLowerCase()]
+                      }`}
+                    >
                       {condition.status}
                     </span>
                   </div>
-                  
+
                   <div className={styles.cardBody}>
                     <div className={styles.infoRow}>
                       <p className={styles.label}>Since:</p>
-                      <p className={styles.value}>{formatDate(condition.since_date)}</p>
+                      <p className={styles.value}>
+                        {formatDate(condition.since_date)}
+                      </p>
                     </div>
 
                     {condition.notes && (
