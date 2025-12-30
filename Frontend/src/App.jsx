@@ -48,6 +48,8 @@ import RegisterPatientPage from './pages/receptionist/RegisterPatientPage.jsx';
 // Student/Patient Pages (New Mobile-Responsive Dashboard)
 import StudentDashboard from './pages/student/StudentDashboard.jsx';
 
+import NurseLogin from './pages/nurse/NurseLogin.jsx';
+import NurseDashboard from './pages/nurse/NurseDashboard.jsx';
 function App() {
   return (
     <Provider store={store}>
@@ -111,7 +113,9 @@ function App() {
               <Route path="/patient/dashboard" element={<StudentDashboard />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
             </Route>
-
+                        {/* Nurse Routes */}
+            <Route path="/nurse/login" element={<NurseLogin />} />
+            <Route path="/nurse/dashboard" element={<NurseDashboard />} />
             {/* Catch-all Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
