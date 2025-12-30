@@ -281,7 +281,7 @@ router.get(
         pi.medicine_id,
         m.name AS medicine_name,
         m.type AS medicine_type,
-        pi.duration_days,
+        pi.duration_days AS total_days,
         pi.food,
         pi.morning,
         pi.afternoon,

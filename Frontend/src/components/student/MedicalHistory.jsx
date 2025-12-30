@@ -24,14 +24,62 @@ const MedicalHistory = () => {
 
   const [activeSection, setActiveSection] = useState("visits");
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  // ---- GROUP VISITS ----
+  const groupedVisits =
+    visits?.reduce((acc, visit) => {
+      if (!acc[visit.visit_id]) {
+        acc[visit.visit_id] = { ...visit, diagnoses: [] };
+      }
+
+      if (visit.diagnosis_name) {
+        acc[visit.visit_id].diagnoses.push({
+          diagnosis_name: visit.diagnosis_name,
+          diagnosis_notes: visit.diagnosis_notes,
+        });
+      }
+
+      return acc;
+    }, {}) || {};
+
+  const visitList = Object.values(groupedVisits);
+
+  // ---- GROUP PRESCRIPTIONS ----
+  const groupedPrescriptions =
+    prescriptions?.reduce((acc, item) => {
+      if (!acc[item.prescription_id]) {
+        acc[item.prescription_id] = {
+          prescription_id: item.prescription_id,
+          created_at: item.created_at,
+          prescription_status: item.prescription_status,
+          doctor_name: item.doctor_name,
+          specialization: item.specialization,
+          medicines: [],
+        };
+      }
+
+      acc[item.prescription_id].medicines.push({
+        med_name: item.med_name,
+        med_type: item.med_type,
+        morning: item.morning,
+        afternoon: item.afternoon,
+        night: item.night,
+        total_days: item.total_days,
+        food: item.food,
+      });
+
+      return acc;
+    }, {}) || {};
+
+  const prescriptionList = Object.values(groupedPrescriptions);
+
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "N/A";
 
   if (loading) {
     return (
@@ -44,77 +92,48 @@ const MedicalHistory = () => {
 
   return (
     <div className={styles.historyContainer}>
-      {/* Section Navigation */}
+      {/* SECTION NAV */}
       <div className={styles.sectionNav}>
-        <button
-          className={`${styles.sectionButton} ${
-            activeSection === "visits" ? styles.active : ""
-          }`}
-          onClick={() => setActiveSection("visits")}
-        >
-          <FontAwesomeIcon icon={faFileMedical} />
-          <span>Visits ({visits?.length || 0})</span>
-        </button>
-        <button
-          className={`${styles.sectionButton} ${
-            activeSection === "prescriptions" ? styles.active : ""
-          }`}
-          onClick={() => setActiveSection("prescriptions")}
-        >
-          <FontAwesomeIcon icon={faPrescription} />
-          <span>Prescriptions ({prescriptions?.length || 0})</span>
-        </button>
-        <button
-          className={`${styles.sectionButton} ${
-            activeSection === "labs" ? styles.active : ""
-          }`}
-          onClick={() => setActiveSection("labs")}
-        >
-          <FontAwesomeIcon icon={faFlask} />
-          <span>Lab Tests ({labTests?.length || 0})</span>
-        </button>
-        <button
-          className={`${styles.sectionButton} ${
-            activeSection === "vitals" ? styles.active : ""
-          }`}
-          onClick={() => setActiveSection("vitals")}
-        >
-          <FontAwesomeIcon icon={faHeartbeat} />
-          <span>Vitals ({vitals?.length || 0})</span>
-        </button>
-        <button
-          className={`${styles.sectionButton} ${
-            activeSection === "conditions" ? styles.active : ""
-          }`}
-          onClick={() => setActiveSection("conditions")}
-        >
-          <FontAwesomeIcon icon={faClipboardList} />
-          <span>Conditions ({medicalHistory?.length || 0})</span>
-        </button>
+        {[
+          ["visits", "Visits", faFileMedical, visits],
+          ["prescriptions", "Prescriptions", faPrescription, prescriptions],
+          ["labs", "Lab Tests", faFlask, labTests],
+          ["vitals", "Vitals", faHeartbeat, vitals],
+          ["conditions", "Conditions", faClipboardList, medicalHistory],
+        ].map(([key, label, icon, data]) => (
+          <button
+            key={key}
+            className={`${styles.sectionButton} ${
+              activeSection === key ? styles.active : ""
+            }`}
+            onClick={() => setActiveSection(key)}
+          >
+            <FontAwesomeIcon icon={icon} />
+            <span>
+              {label} ({data?.length || 0})
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* Visits Section */}
+      {/* ================= VISITS ================= */}
       {activeSection === "visits" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faFileMedical} /> Visit History
           </h2>
 
-          {!visits || visits.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p>No visit records found</p>
-            </div>
+          {visitList.length === 0 ? (
+            <div className={styles.emptyState}>No visit records found</div>
           ) : (
             <div className={styles.cardGrid}>
-              {visits.map((visit) => (
+              {visitList.map((visit) => (
                 <div key={visit.visit_id} className={styles.card}>
                   <div className={styles.cardHeader}>
-                    <div>
-                      <span className={styles.cardDate}>
-                        <FontAwesomeIcon icon={faCalendarAlt} />
-                        {formatDate(visit.visit_date)}
-                      </span>
-                    </div>
+                    <span className={styles.cardDate}>
+                      <FontAwesomeIcon icon={faCalendarAlt} />
+                      {formatDate(visit.visit_date)}
+                    </span>
                     <span
                       className={`${styles.statusBadge} ${
                         styles[visit.status?.toLowerCase()]
@@ -125,47 +144,29 @@ const MedicalHistory = () => {
                   </div>
 
                   <div className={styles.cardBody}>
-                    <div className={styles.infoRow}>
-                      <FontAwesomeIcon
-                        icon={faUserMd}
-                        className={styles.icon}
-                      />
-                      <div>
-                        <p className={styles.label}>Doctor</p>
-                        <p className={styles.value}>
-                          Dr. {visit.doctor_name || "N/A"}
-                        </p>
-                        {visit.specialization && (
-                          <p className={styles.subtext}>
-                            {visit.specialization}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    <p>
+                      <b>Doctor:</b> {visit.doctor_name}
+                    </p>
+                    <p>
+                      <b>Visit Type:</b> {visit.visit_type}
+                    </p>
+                    <p>
+                      <b>Reason:</b> {visit.reason}
+                    </p>
 
-                    <div className={styles.infoRow}>
-                      <p className={styles.label}>Visit Type:</p>
-                      <p className={styles.value}>
-                        {visit.visit_type || "General"}
-                      </p>
-                    </div>
-
-                    <div className={styles.infoRow}>
-                      <p className={styles.label}>Reason:</p>
-                      <p className={styles.value}>{visit.reason || "N/A"}</p>
-                    </div>
-
-                    {visit.diagnosis_name && (
+                    {visit.diagnoses.length > 0 && (
                       <div className={styles.diagnosisBox}>
                         <p className={styles.diagnosisLabel}>Diagnosis</p>
-                        <p className={styles.diagnosisValue}>
-                          {visit.diagnosis_name}
-                        </p>
-                        {visit.diagnosis_notes && (
-                          <p className={styles.diagnosisNotes}>
-                            {visit.diagnosis_notes}
-                          </p>
-                        )}
+                        {visit.diagnoses.map((d, i) => (
+                          <div key={i}>
+                            <p>{d.diagnosis_name}</p>
+                            {d.diagnosis_notes && (
+                              <p className={styles.diagnosisNotes}>
+                                {d.diagnosis_notes}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -176,95 +177,38 @@ const MedicalHistory = () => {
         </div>
       )}
 
-      {/* Prescriptions Section */}
+      {/* ================= PRESCRIPTIONS ================= */}
       {activeSection === "prescriptions" && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <FontAwesomeIcon icon={faPrescription} /> Prescriptions
           </h2>
 
-          {!prescriptions || prescriptions.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p>No prescription records found</p>
-            </div>
+          {prescriptionList.length === 0 ? (
+            <div className={styles.emptyState}>No prescription records</div>
           ) : (
             <div className={styles.cardGrid}>
-              {prescriptions.map((prescription) => (
-                <div
-                  key={prescription.prescription_id || prescription.item_id}
-                  className={styles.card}
-                >
+              {prescriptionList.map((p) => (
+                <div key={p.prescription_id} className={styles.card}>
                   <div className={styles.cardHeader}>
-                    <span className={styles.cardDate}>
-                      <FontAwesomeIcon icon={faCalendarAlt} />
-                      {formatDate(prescription.created_at)}
-                    </span>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        styles[prescription.prescription_status?.toLowerCase()]
-                      }`}
-                    >
-                      {prescription.prescription_status}
-                    </span>
+                    <span>{formatDate(p.created_at)}</span>
                   </div>
 
                   <div className={styles.cardBody}>
-                    <div className={styles.infoRow}>
-                      <FontAwesomeIcon
-                        icon={faUserMd}
-                        className={styles.icon}
-                      />
-                      <div>
-                        <p className={styles.label}>Prescribed by</p>
-                        <p className={styles.value}>
-                          Dr. {prescription.doctor_name}
-                        </p>
-                        <p className={styles.subtext}>
-                          {prescription.specialization}
-                        </p>
+                    <p>
+                      <b>Doctor:</b> {p.doctor_name}
+                    </p>
+
+                    {p.medicines.map((m, i) => (
+                      <div key={i} className={styles.medicationBox}>
+                        <p>{m.med_name}</p>
+                        <p>{m.med_type}</p>
+                        <p>Morning: {m.morning ? "Yes" : "No"}</p>
+                        <p>Afternoon: {m.afternoon ? "Yes" : "No"}</p>
+                        <p>Night: {m.night ? "Yes" : "No"}</p>
+                        <p>Days: {m.total_days}</p>
                       </div>
-                    </div>
-
-                    {prescription.medicine_name && (
-                      <div className={styles.medicationBox}>
-                        <p className={styles.medName}>
-                          {prescription.medicine_name}
-                        </p>
-                        <p className={styles.medType}>
-                          {prescription.medicine_type}
-                        </p>
-
-                        <div className={styles.dosageGrid}>
-                          <div className={styles.dosageItem}>
-                            <span className={styles.dosageLabel}>Morning</span>
-                            <span className={styles.dosageValue}>
-                              {prescription.morning ? "Yes" : "No"}
-                            </span>
-                          </div>
-                          <div className={styles.dosageItem}>
-                            <span className={styles.dosageLabel}>
-                              Afternoon
-                            </span>
-                            <span className={styles.dosageValue}>
-                              {prescription.afternoon ? "Yes" : "No"}
-                            </span>
-                          </div>
-                          <div className={styles.dosageItem}>
-                            <span className={styles.dosageLabel}>Night</span>
-                            <span className={styles.dosageValue}>
-                              {prescription.night ? "Yes" : "No"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={styles.prescriptionMeta}>
-                          <span>
-                            Duration: {prescription.duration_days} days
-                          </span>
-                          <span>Take {prescription.food}</span>
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               ))}
@@ -272,7 +216,6 @@ const MedicalHistory = () => {
           )}
         </div>
       )}
-
       {/* Lab Tests Section */}
       {activeSection === "labs" && (
         <div className={styles.section}>
