@@ -45,11 +45,11 @@ export const registerPatient = async ({
     [userId, email, hash, 'PATIENT']
   )
 
-  // Insert into patient_profile table with email
+  // Insert into patient_profile table WITHOUT email (email is only in users table)
   await pool.execute(
     `INSERT INTO patient_profile
-     (patient_id, user_id, roll_no, name, dob, gender, blood_group, phone, emergency_contact, email)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+     (patient_id, user_id, roll_no, name, dob, gender, blood_group, phone, emergency_contact)
+     VALUES (?,?,?,?,?,?,?,?,?)`,
     [
       patientId,
       userId,
@@ -59,8 +59,7 @@ export const registerPatient = async ({
       gender,
       blood_group,
       phone,
-      emergency_contact,
-      email
+      emergency_contact
     ]
   )
   
@@ -143,7 +142,6 @@ export const getAllPatients = async () => {
        patient_id, 
        name, 
        roll_no, 
-       email,
        phone, 
        gender, 
        blood_group,
@@ -183,7 +181,6 @@ export const getAllVisits = async () => {
        v.status,
        v.visit_date,
        p.name as patient_name,
-       p.email as patient_email,
        d.name as doctor_name
      FROM visit v
      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
