@@ -24,7 +24,7 @@ const Login = () => {
   if (role === 'pharmacist') {
     return <PharmacistLogin />;
   }
-
+  
   // State for other roles
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -2,13 +2,21 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import styles from './SelectRole.module.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faUserMd, 
+  faPills, 
+  faUserNurse, 
+  faClipboard, 
+  faUser 
+} from '@fortawesome/free-solid-svg-icons';
 
 const roles = [
-  { label: 'Doctor', path: '/login/doctor', icon: '🩺' },
-  { label: 'Pharmacist', path: '/login/pharmacist', icon: '💊' },
-  { label: 'Nurse', path: '/login/nurse', icon: '👩‍⚕️' },
-  { label: 'Receptionist', path: '/login/receptionist', icon: '🗂️' },
-  { label: 'Patient', path: '/login/patient', icon: '🧑‍🦽' },
+  { label: 'Doctor', path: '/login/doctor', icon: faUserMd },
+  { label: 'Pharmacist', path: '/login/pharmacist', icon: faPills },
+  { label: 'Nurse', path: '/login/nurse', icon: faUserNurse },
+  { label: 'Receptionist', path: '/login/receptionist', icon: faClipboard },
+  { label: 'Patient', path: '/login/patient', icon: faUser },
 ];
 
 const SelectRole = () => {
@@ -17,56 +25,36 @@ const SelectRole = () => {
   return (
     <div className={styles.dashboard}>
       <Header />
-
+      
       <main className={styles.mainContent}>
-        <section
-          className={styles.container}
-          aria-labelledby="role-selection-title"
-        >
-          {/* Page Header */}
-          <header className={styles.headerSection}>
-            <h1 id="role-selection-title" className={styles.title}>
-              Login System
-            </h1>
-            <p className={styles.subtitle}>
-              Select your designated role to proceed to secure login
-            </p>
+        <div className={styles.loginCard}>
+          <header className={styles.loginHeader}>
+            <h1 className={styles.logo}>MIT Health Centre</h1>
+            <h2 className={styles.title}>Login System</h2>
+            <p className={styles.subtitle}>Select your role to continue</p>
           </header>
 
-          {/* Role Navigation */}
-          <nav
-            className={styles.roleGrid}
-            aria-label="User role selection"
-          >
+          <div className={styles.roleList}>
             {roles.map((role) => (
               <button
                 key={role.label}
                 type="button"
-                className={styles.roleCard}
+                className={styles.roleButton}
                 onClick={() => navigate(role.path)}
-                aria-label={`Proceed to ${role.label} login`}
               >
-                <span
-                  className={styles.roleIcon}
-                  aria-hidden="true"
-                >
-                  {role.icon}
-                </span>
-                <span className={styles.roleLabel}>
-                  {role.label}
-                </span>
+                <FontAwesomeIcon icon={role.icon} className={styles.roleIcon} />
+                <span className={styles.roleLabel}>{role.label}</span>
               </button>
             ))}
-          </nav>
+          </div>
 
-          {/* Footer Note */}
-          <footer className={styles.footerNote}>
-            <p>
-              This system is restricted to authorized users of
-              the Anna University Health Centre.
+          <footer className={styles.footer}>
+            <p>Anna University • HealthCare Portal</p>
+            <p className={styles.footerNote}>
+              Unauthorized access is prohibited
             </p>
           </footer>
-        </section>
+        </div>
       </main>
     </div>
   );
