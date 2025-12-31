@@ -38,12 +38,21 @@ export const fetchStudentProfile = createAsyncThunk(
 // Fetch student's visit history
 export const fetchStudentVisits = createAsyncThunk(
   'students/fetchVisits',
-  async (_, { rejectWithValue }) => {
+  async ({ filters = {} } = {}, { rejectWithValue }) => {
     try {
       console.log('🔍 Fetching visits...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/visits`, {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.doctorName) queryParams.append('doctorName', filters.doctorName);
+      
+      const url = `${API_URL}/students/visits${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -68,12 +77,20 @@ export const fetchStudentVisits = createAsyncThunk(
 // Fetch student's prescriptions
 export const fetchStudentPrescriptions = createAsyncThunk(
   'students/fetchPrescriptions',
-  async (_, { rejectWithValue }) => {
+  async ({ filters = {} } = {}, { rejectWithValue }) => {
     try {
       console.log('🔍 Fetching prescriptions...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/prescriptions`, {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters.status) queryParams.append('status', filters.status);
+      
+      const url = `${API_URL}/students/prescriptions${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -98,12 +115,20 @@ export const fetchStudentPrescriptions = createAsyncThunk(
 // Fetch student's lab tests
 export const fetchStudentLabTests = createAsyncThunk(
   'students/fetchLabTests',
-  async (_, { rejectWithValue }) => {
+  async ({ filters = {} } = {}, { rejectWithValue }) => {
     try {
       console.log('🔍 Fetching lab tests...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/lab-tests`, {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters.testName) queryParams.append('testName', filters.testName);
+      
+      const url = `${API_URL}/students/lab-tests${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,12 +153,19 @@ export const fetchStudentLabTests = createAsyncThunk(
 // Fetch student's vitals
 export const fetchStudentVitals = createAsyncThunk(
   'students/fetchVitals',
-  async (_, { rejectWithValue }) => {
+  async ({ filters = {} } = {}, { rejectWithValue }) => {
     try {
       console.log('🔍 Fetching vitals...');
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/vitals`, {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      
+      const url = `${API_URL}/students/vitals${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -156,7 +188,7 @@ export const fetchStudentVitals = createAsyncThunk(
 );
 
 // Fetch student's medical history/conditions
-export const fetchMedicalHistory = createAsyncThunk(
+export const fetchStudentMedicalHistory = createAsyncThunk(
   'students/fetchMedicalHistory',
   async (_, { rejectWithValue }) => {
     try {
@@ -350,14 +382,14 @@ const studentsSlice = createSlice({
       })
 
       // Fetch Medical History
-      .addCase(fetchMedicalHistory.pending, (state) => {
+      .addCase(fetchStudentMedicalHistory.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchMedicalHistory.fulfilled, (state, action) => {
+      .addCase(fetchStudentMedicalHistory.fulfilled, (state, action) => {
         state.loading = false;
         state.medicalHistory = action.payload;
       })
-      .addCase(fetchMedicalHistory.rejected, (state, action) => {
+      .addCase(fetchStudentMedicalHistory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

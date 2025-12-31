@@ -182,9 +182,11 @@ router.get(
   authorize(ROLES.PATIENT),
   async (req, res) => {
     try {
-      const userId = req.user.userId; // ✅ Fixed
+      const userId = req.user.userId;
+      const { startDate, endDate, status, doctorName } = req.query;
 
       console.log("🔍 Fetching visits for user:", userId);
+      console.log("📋 Filters:", { startDate, endDate, status, doctorName });
 
       // Get patient_id
       const [patient] = await db.execute(
@@ -201,28 +203,52 @@ router.get(
 
       const patientId = patient[0].patient_id;
 
-      const [visits] = await db.execute(
-        `
-      SELECT 
-        v.visit_id,
-        v.visit_date,
-        v.visit_type,
-        v.reason,
-        v.status,
-        d.name as doctor_name,
-        d.specialization,
-        diag.diagnosis_name,
-        diag.diagnosis_notes,
-        diag.diagnosis_code
-      FROM visit v
-      LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
-      LEFT JOIN diagnosis diag ON v.visit_id = diag.visit_id
-      WHERE v.patient_id = ?
-      ORDER BY v.visit_date DESC
-      LIMIT 20
-    `,
-        [patientId]
-      );
+      // Build dynamic query with filters
+      let query = `
+        SELECT 
+          v.visit_id,
+          v.visit_date,
+          v.visit_type,
+          v.reason,
+          v.status,
+          d.name as doctor_name,
+          d.specialization,
+          diag.diagnosis_name,
+          diag.diagnosis_notes,
+          diag.diagnosis_code
+        FROM visit v
+        LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
+        LEFT JOIN diagnosis diag ON v.visit_id = diag.visit_id
+        WHERE v.patient_id = ?
+      `;
+
+      const params = [patientId];
+
+      // Add date filters
+      if (startDate) {
+        query += " AND DATE(v.visit_date) >= ?";
+        params.push(startDate);
+      }
+      if (endDate) {
+        query += " AND DATE(v.visit_date) <= ?";
+        params.push(endDate);
+      }
+
+      // Add status filter
+      if (status) {
+        query += " AND v.status = ?";
+        params.push(status);
+      }
+
+      // Add doctor name filter
+      if (doctorName) {
+        query += " AND d.name LIKE ?";
+        params.push(`%${doctorName}%`);
+      }
+
+      query += " ORDER BY v.visit_date DESC";
+
+      const [visits] = await db.execute(query, params);
 
       console.log("✅ Found", visits.length, "visits");
 
@@ -248,9 +274,11 @@ router.get(
   authorize(ROLES.PATIENT),
   async (req, res) => {
     try {
-      const userId = req.user.userId; // ✅ Fixed
+      const userId = req.user.userId;
+      const { startDate, endDate, status } = req.query;
 
       console.log("🔍 Fetching prescriptions for user:", userId);
+      console.log("📋 Filters:", { startDate, endDate, status });
 
       // Get patient_id
       const [patient] = await db.execute(
@@ -267,8 +295,8 @@ router.get(
 
       const patientId = patient[0].patient_id;
 
-      const [prescriptions] = await db.execute(
-        `
+      // Build dynamic query with filters
+      let query = `
       SELECT 
         p.prescription_id,
         p.created_at,
@@ -287,23 +315,35 @@ router.get(
         pi.afternoon,
         pi.night
 
-      FROM (
-        SELECT *
-        FROM prescription
-        WHERE visit_id IN (
-          SELECT visit_id FROM visit WHERE patient_id = ?
-        )
-        ORDER BY created_at DESC
-        LIMIT 20
-      ) p
+      FROM prescription p
       JOIN visit v ON p.visit_id = v.visit_id
       JOIN doctor d ON p.doctor_id = d.doctor_id
       LEFT JOIN prescription_items pi ON p.prescription_id = pi.prescription_id
       LEFT JOIN medicine m ON pi.medicine_id = m.medicine_id
-      ORDER BY p.created_at DESC
-    `,
-        [patientId]
-      );
+      WHERE v.patient_id = ?
+      `;
+
+      const params = [patientId];
+
+      // Add date filters
+      if (startDate) {
+        query += " AND DATE(p.created_at) >= ?";
+        params.push(startDate);
+      }
+      if (endDate) {
+        query += " AND DATE(p.created_at) <= ?";
+        params.push(endDate);
+      }
+
+      // Add status filter
+      if (status) {
+        query += " AND p.status = ?";
+        params.push(status);
+      }
+
+      query += " ORDER BY p.created_at DESC";
+
+      const [prescriptions] = await db.execute(query, params);
 
       console.log("✅ Found", prescriptions.length, "prescription items");
 
@@ -329,9 +369,11 @@ router.get(
   authorize(ROLES.PATIENT),
   async (req, res) => {
     try {
-      const userId = req.user.userId; // ✅ Fixed
+      const userId = req.user.userId;
+      const { startDate, endDate, testName } = req.query;
 
       console.log("🔍 Fetching lab tests for user:", userId);
+      console.log("📋 Filters:", { startDate, endDate, testName });
 
       // Get patient_id
       const [patient] = await db.execute(
@@ -348,8 +390,8 @@ router.get(
 
       const patientId = patient[0].patient_id;
 
-      const [labTests] = await db.execute(
-        `
+      // Build dynamic query with filters
+      let query = `
       SELECT 
         lt.lab_test_id,
         lt.test_name,
@@ -362,11 +404,29 @@ router.get(
       JOIN visit v ON lt.visit_id = v.visit_id
       LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
       WHERE v.patient_id = ?
-      ORDER BY lt.ordered_date DESC
-      LIMIT 20
-    `,
-        [patientId]
-      );
+      `;
+
+      const params = [patientId];
+
+      // Add date filters
+      if (startDate) {
+        query += " AND DATE(lt.ordered_date) >= ?";
+        params.push(startDate);
+      }
+      if (endDate) {
+        query += " AND DATE(lt.ordered_date) <= ?";
+        params.push(endDate);
+      }
+
+      // Add test name filter
+      if (testName) {
+        query += " AND lt.test_name LIKE ?";
+        params.push(`%${testName}%`);
+      }
+
+      query += " ORDER BY lt.ordered_date DESC";
+
+      const [labTests] = await db.execute(query, params);
 
       console.log("✅ Found", labTests.length, "lab tests");
 
@@ -442,9 +502,11 @@ router.get(
   authorize(ROLES.PATIENT),
   async (req, res) => {
     try {
-      const userId = req.user.userId; // ✅ Fixed
+      const userId = req.user.userId;
+      const { startDate, endDate } = req.query;
 
       console.log("🔍 Fetching vitals for user:", userId);
+      console.log("📋 Filters:", { startDate, endDate });
 
       // Get patient_id
       const [patient] = await db.execute(
@@ -461,8 +523,8 @@ router.get(
 
       const patientId = patient[0].patient_id;
 
-      const [vitals] = await db.execute(
-        `
+      // Build dynamic query with filters
+      let query = `
       SELECT 
         vit.vitals_id,
         vit.temperature,
@@ -473,11 +535,23 @@ router.get(
       FROM vitals vit
       JOIN visit v ON vit.visit_id = v.visit_id
       WHERE v.patient_id = ?
-      ORDER BY v.visit_date DESC
-      LIMIT 20
-    `,
-        [patientId]
-      );
+      `;
+
+      const params = [patientId];
+
+      // Add date filters
+      if (startDate) {
+        query += " AND DATE(v.visit_date) >= ?";
+        params.push(startDate);
+      }
+      if (endDate) {
+        query += " AND DATE(v.visit_date) <= ?";
+        params.push(endDate);
+      }
+
+      query += " ORDER BY v.visit_date DESC";
+
+      const [vitals] = await db.execute(query, params);
 
       console.log("✅ Found", vitals.length, "vitals records");
 
