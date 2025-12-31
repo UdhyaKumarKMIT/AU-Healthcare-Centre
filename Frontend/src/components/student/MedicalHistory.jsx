@@ -95,7 +95,7 @@ const MedicalHistory = () => {
       {/* SECTION NAV */}
       <div className={styles.sectionNav}>
         {[
-          ["visits", "Visits", faFileMedical, visits],
+          ["visits", "Visits", faFileMedical, visitList],
           ["prescriptions", "Prescriptions", faPrescription, prescriptions],
           ["labs", "Lab Tests", faFlask, labTests],
           ["vitals", "Vitals", faHeartbeat, vitals],
