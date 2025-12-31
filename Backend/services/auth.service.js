@@ -64,5 +64,40 @@ export const login = async (email, password) => {
     }
   }
 
+  // If nurse, fetch nurse_id and name from nurse table
+  if (user.role === ROLES.NURSE) {
+    const [nurseRows] = await pool.execute(
+      'SELECT nurse_id, name, register_number, qualification, phone FROM nurse WHERE user_id = ?',
+      [user.user_id]
+    )
+    
+    if (nurseRows.length > 0) {
+      response.user.nurse_id = nurseRows[0].nurse_id
+      response.user.name = nurseRows[0].name
+      response.user.register_number = nurseRows[0].register_number
+      response.user.qualification = nurseRows[0].qualification
+      response.user.phone = nurseRows[0].phone
+    } else {
+      console.warn('⚠️ Nurse user found but no nurse profile exists for user_id:', user.user_id)
+    }
+  }
+
+  // If pharmacist, fetch pharmacist_id from pharmacist table (optional - add if you have this)
+  if (user.role === ROLES.PHARMACIST) {
+    const [pharmacistRows] = await pool.execute(
+      'SELECT pharmacist_id FROM pharmacist WHERE user_id = ?',
+      [user.user_id]
+    )
+    
+    if (pharmacistRows.length > 0) {
+      response.user.pharmacist_id = pharmacistRows[0].pharmacist_id
+    }
+  }
+
+  console.log('✅ Login successful for:', email, '- Role:', user.role);
+  if (user.role === ROLES.NURSE) {
+    console.log('✅ Nurse profile loaded:', response.user.nurse_id, response.user.name);
+  }
+
   return response
 };
