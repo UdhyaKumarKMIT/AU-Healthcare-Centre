@@ -41,23 +41,11 @@ const PendingPrescriptions = () => {
 
   useEffect(() => {
     const fetchPrescriptions = async () => {
-      console.log('🔧 DEBUG: Fetching prescriptions from /pharmacy/prescriptions');
-      
       try {
         const res = await api.get("/pharmacy/prescriptions");
-        
-        console.log('✅ DEBUG: Response status:', res.status);
-        console.log('✅ DEBUG: Response data:', res.data);
-        console.log('✅ DEBUG: Number of prescriptions:', res.data?.length || 0);
-        
         setPrescriptions(res.data || []);
-      } catch (err: any) {
-        console.error('❌ DEBUG: Failed to fetch prescriptions');
-        console.error('❌ DEBUG: Error object:', err);
-        console.error('❌ DEBUG: Error response:', err.response?.data);
-        console.error('❌ DEBUG: Error status:', err.response?.status);
-        console.error('❌ DEBUG: Error message:', err.message);
-        
+      } catch (err) {
+        console.error("Failed to fetch prescriptions:", err);
         alert("Could not load prescriptions.");
       } finally {
         setLoading(false);
@@ -84,34 +72,6 @@ const PendingPrescriptions = () => {
     }
 
     return true;
-  });
-
-  const handlePrescriptionClick = (prescription: Prescription) => {
-    console.log('🔧 DEBUG: Prescription clicked:', prescription);
-    console.log('🔧 DEBUG: Prescription ID:', prescription.prescription_id);
-    
-    if (!prescription.prescription_id) {
-      console.error('❌ DEBUG: No prescription_id found!');
-      alert('Error: Prescription ID is missing');
-      return;
-    }
-    
-    sessionStorage.setItem(
-      "prescriptionId",
-      prescription.prescription_id.toString()
-    );
-    
-    console.log('✅ DEBUG: Stored in sessionStorage:', sessionStorage.getItem("prescriptionId"));
-    
-    navigate("/pharmacist/prescriptionsDetails");
-  };
-
-  console.log('🔧 DEBUG: Current state:', {
-    loading,
-    totalPrescriptions: prescriptions.length,
-    filteredCount: filteredPrescriptions.length,
-    filterType,
-    searchTerm
   });
 
   return (
@@ -213,14 +173,7 @@ const PendingPrescriptions = () => {
           {loading ? (
             <p>Loading prescriptions...</p>
           ) : filteredPrescriptions.length === 0 ? (
-            <div>
-              <p>No matching prescriptions found.</p>
-              {prescriptions.length > 0 && (
-                <p style={{ fontSize: '14px', color: '#64748b' }}>
-                  Try adjusting your filter or search term.
-                </p>
-              )}
-            </div>
+            <p>No matching prescriptions found.</p>
           ) : (
             filteredPrescriptions.map((p) => (
               <article
@@ -229,11 +182,12 @@ const PendingPrescriptions = () => {
                 role="button"
                 tabIndex={0}
                 aria-label={`Open prescription for ${p.patient_name}`}
-                onClick={() => handlePrescriptionClick(p)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handlePrescriptionClick(p);
-                  }
+                onClick={() => {
+                  sessionStorage.setItem(
+                    "prescriptionId",
+                    p.prescription_id ? p.prescription_id.toString() : ""
+                  );
+                  navigate("/pharmacist/prescriptionsDetails");
                 }}
               >
                 <div style={{ display: "flex", gap: "1.5rem" }}>
@@ -312,7 +266,6 @@ const prescriptionRowStyle: React.CSSProperties = {
   padding: "1.25rem",
   marginBottom: "1rem",
   cursor: "pointer",
-  transition: "all 0.2s",
 };
 
 const iconBoxStyle: React.CSSProperties = {
