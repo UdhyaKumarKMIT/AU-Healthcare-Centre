@@ -70,6 +70,14 @@
   transition: all 0.2s;
   font-family: inherit;
   background: white;
+  color: #1e293b;
+}
+
+.select::placeholder,
+.input::placeholder,
+.textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }
 
 .select:focus,
@@ -114,6 +122,85 @@
   font-size: 13px;
   color: #f56565;
   font-weight: 500;
+}
+
+/* Patient Search Dropdown Styles */
+.searchContainer {
+  position: relative;
+  width: 100%;
+}
+
+.searchContainer .input {
+  width: 100%;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: -2px;
+}
+
+.dropdownItem {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: #f8fafc;
+}
+
+.dropdownItem.highlighted {
+  background-color: #e0f2fe;
+  border-left: 3px solid #0284c7;
+}
+
+.patientInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patientName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.patientRoll {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.dropdownInfo {
+  padding: 10px 16px;
+  background-color: #fff7ed;
+  color: #c2410c;
+  font-size: 13px;
+  text-align: center;
+  border-top: 1px solid #fed7aa;
+}
+
+.dropdownEmpty {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
 }
 
 .submitSection {

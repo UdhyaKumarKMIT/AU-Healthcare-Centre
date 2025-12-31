@@ -1,21 +1,7 @@
-// src/store/slices/diagnosisSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  diagnoses: {
-    'visit-001': {
-      diagnosisName: 'Upper Respiratory Tract Infection',
-      diagnosisNotes: 'Patient presented with fever and dry cough. Symptoms for 3 days.',
-      doctorId: 'doc-001',
-      createdAt: new Date().toISOString(),
-    },
-    'visit-003': {
-      diagnosisName: 'Acute Chest Pain - Investigation',
-      diagnosisNotes: 'Requires ECG and chest X-ray for further evaluation.',
-      doctorId: 'doc-001',
-      createdAt: new Date().toISOString(),
-    }
-  },
+  diagnoses: {}
 };
 
 const diagnosisSlice = createSlice({
@@ -26,7 +12,7 @@ const diagnosisSlice = createSlice({
       const { visitId, diagnosis } = action.payload;
       state.diagnoses[visitId] = {
         ...diagnosis,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       };
     },
     updateDiagnosis: (state, action) => {
@@ -35,11 +21,11 @@ const diagnosisSlice = createSlice({
         state.diagnoses[visitId] = {
           ...state.diagnoses[visitId],
           ...updates,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
       }
-    },
-  },
+    }
+  }
 });
 
 export const { saveDiagnosis, updateDiagnosis } = diagnosisSlice.actions;

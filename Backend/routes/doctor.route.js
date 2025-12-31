@@ -9,6 +9,60 @@ import ROLES from '../constants/roles.js';
 
 const router = express.Router();
 
+// ==================== TODAY'S VISITS ROUTES ====================
+
+// GET today's visits count for a doctor
+router.get('/visits/today', authenticate, async (req, res) => {
+  try {
+    const { doctor_id, date } = req.query;
+    
+    if (!doctor_id || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'doctor_id and date parameters are required'
+      });
+    }
+
+    console.log(`📅 Fetching visits for doctor ${doctor_id} on ${date}`);
+
+    // First, let's see all visits for this doctor to debug
+    const [allVisits] = await db.execute(`
+      SELECT visit_id, patient_id, doctor_id, status, DATE(visit_date) as visit_date_only, visit_date
+      FROM visit
+      WHERE doctor_id = ?
+      ORDER BY visit_date DESC
+      LIMIT 10
+    `, [doctor_id]);
+    
+    console.log(`📋 All recent visits for doctor ${doctor_id}:`, allVisits);
+
+    const [visits] = await db.execute(`
+      SELECT COUNT(*) as count
+      FROM visit
+      WHERE doctor_id = ?
+      AND DATE(visit_date) = ?
+    `, [doctor_id, date]);
+
+    const count = visits[0]?.count || 0;
+    console.log(`✅ Found ${count} visits for ${date}`);
+
+    res.json({
+      success: true,
+      count: count,
+      date: date,
+      doctor_id: doctor_id
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching today\'s visits:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch today\'s visits count',
+      error: error.message
+    });
+  }
+});
+
 // ==================== NURSE ROUTES ====================
 
 // GET nurses - Get all available nurses

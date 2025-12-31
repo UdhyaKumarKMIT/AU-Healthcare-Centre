@@ -50,6 +50,127 @@
   font-size: 16px;
 }
 
+/* Filter Bar */
+.filterBar {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filterButton {
+  padding: 10px 20px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  background: #0d47a1;
+  transform: translateY(-1px);
+}
+
+/* Filter Panel */
+.filterPanel {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filterPanel h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #1a237e;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterField label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filterField input,
+.filterField select {
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.filterField input:focus,
+.filterField select:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.filterActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.applyBtn,
+.resetBtn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.applyBtn {
+  background: #10b981;
+  color: white;
+}
+
+.applyBtn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.resetBtn {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.resetBtn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.sectionButton svg {
+  font-size: 16px;
+}
+
 /* Section Content */
 .section {
   animation: fadeIn 0.3s ease;
@@ -454,6 +575,152 @@
   color: #64748b;
 }
 
+/* Diagnosis List */
+.diagnosisList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.diagnosisTag {
+  padding: 8px 12px;
+  background: #ede9fe;
+  border: 2px solid #a78bfa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6d28d9;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.diagnosisTag:hover {
+  background: #ddd6fe;
+  border-color: #8b5cf6;
+  transform: translateX(4px);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1a237e;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.closeBtn:hover {
+  color: #1a237e;
+}
+
+.modalBody {
+  padding: 24px;
+}
+
+.diagnosisDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diagnosisName {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0;
+  padding: 12px;
+  background: #f1f5f9;
+  border-left: 4px solid #6d28d9;
+  border-radius: 4px;
+}
+
+.notesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notesLabel {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notesText {
+  font-size: 15px;
+  color: #334155;
+  margin: 0;
+  line-height: 1.6;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .historyContainer {
@@ -479,5 +746,9 @@
 
   .vitalsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .modalContent {
+    max-width: 95vw;
   }
 }

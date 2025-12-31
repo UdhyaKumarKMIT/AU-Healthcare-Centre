@@ -29,6 +29,13 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
   });
   
   const [errors, setErrors] = useState({});
+  
+  // Patient search states
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [filteredPatients, setFilteredPatients] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   useEffect(() => {
     if (createSuccess) {
@@ -43,6 +50,9 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
         bpDiastolic: '',
         heartRate: '',
       });
+      setPatientSearchQuery('');
+      setSelectedPatient(null);
+      setShowPatientDropdown(false);
       dispatch(clearCreateSuccess());
     }
   }, [createSuccess, dispatch]);
@@ -52,6 +62,101 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
       alert('Error: ' + error);
     }
   }, [error]);
+
+  // Filter patients based on search query
+  useEffect(() => {
+    // Don't show dropdown if patient is already selected
+    if (selectedPatient) {
+      setShowPatientDropdown(false);
+      return;
+    }
+
+    if (patientSearchQuery.trim() === '') {
+      setFilteredPatients([]);
+      setShowPatientDropdown(false);
+      setHighlightedIndex(-1);
+      return;
+    }
+
+    const query = patientSearchQuery.toLowerCase();
+    const filtered = patients.filter(patient => 
+      patient.name.toLowerCase().includes(query) || 
+      patient.rollNo.toLowerCase().includes(query)
+    );
+    
+    setFilteredPatients(filtered);
+    setShowPatientDropdown(true);
+    setHighlightedIndex(-1);
+  }, [patientSearchQuery, patients, selectedPatient]);
+
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+    setFormData(prev => ({
+      ...prev,
+      patientId: patient.id,
+    }));
+    setPatientSearchQuery(`${patient.name} (Roll: ${patient.rollNo})`);
+    setShowPatientDropdown(false);
+    
+    if (errors.patientId) {
+      setErrors(prev => ({
+        ...prev,
+        patientId: '',
+      }));
+    }
+  };
+
+  const handlePatientSearchChange = (e) => {
+    const value = e.target.value;
+    setPatientSearchQuery(value);
+    
+    // Clear selected patient if user is typing
+    if (selectedPatient) {
+      setSelectedPatient(null);
+      setFormData(prev => ({
+        ...prev,
+        patientId: '',
+      }));
+    }
+  };
+
+  const handlePatientKeyDown = (e) => {
+    if (!showPatientDropdown || filteredPatients.length === 0) return;
+
+    const maxIndex = Math.min(filteredPatients.length - 1, 9); // Limit to 10 items
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < maxIndex ? prev + 1 : prev
+        );
+        break;
+      
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev > 0 ? prev - 1 : 0
+        );
+        break;
+      
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex <= maxIndex) {
+          handlePatientSelect(filteredPatients[highlightedIndex]);
+        }
+        break;
+      
+      case 'Escape':
+        e.preventDefault();
+        setShowPatientDropdown(false);
+        setHighlightedIndex(-1);
+        break;
+      
+      default:
+        break;
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -144,20 +249,49 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
               <label className={styles.label}>
                 <FontAwesomeIcon icon={faUser} /> Select Patient 
               </label>
-              <select
-                name="patientId"
-                value={formData.patientId}
-                onChange={handleChange}
-                className={`${styles.select} ${errors.patientId ? styles.error : ''}`}
-                disabled={loading}
-              >
-                <option value="">Select a patient</option>
-                {patients.map(patient => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.name} (Roll: {patient.rollNo})
-                  </option>
-                ))}
-              </select>
+              <div className={styles.searchContainer}>
+                <input
+                  type="text"
+                  name="patientSearch"
+                  value={patientSearchQuery}
+                  onChange={handlePatientSearchChange}
+                  onKeyDown={handlePatientKeyDown}
+                  onFocus={() => patientSearchQuery && setShowPatientDropdown(true)}
+                  className={`${styles.input} ${errors.patientId ? styles.error : ''}`}
+                  placeholder="Search by name or roll number"
+                  disabled={loading}
+                  autoComplete="off"
+                />
+                {showPatientDropdown && filteredPatients.length > 0 && (
+                  <div className={styles.dropdown}>
+                    {filteredPatients.slice(0, 10).map((patient, index) => (
+                      <div
+                        key={patient.id}
+                        className={`${styles.dropdownItem} ${index === highlightedIndex ? styles.highlighted : ''}`}
+                        onClick={() => handlePatientSelect(patient)}
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                      >
+                        <div className={styles.patientInfo}>
+                          <span className={styles.patientName}>{patient.name}</span>
+                          <span className={styles.patientRoll}>Roll: {patient.rollNo}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredPatients.length > 10 && (
+                      <div className={styles.dropdownInfo}>
+                        Showing 10 of {filteredPatients.length} results. Refine your search.
+                      </div>
+                    )}
+                  </div>
+                )}
+                {showPatientDropdown && filteredPatients.length === 0 && patientSearchQuery && (
+                  <div className={styles.dropdown}>
+                    <div className={styles.dropdownEmpty}>
+                      No patients found matching "{patientSearchQuery}"
+                    </div>
+                  </div>
+                )}
+              </div>
               {errors.patientId && <span className={styles.errorText}>{errors.patientId}</span>}
             </div>
 

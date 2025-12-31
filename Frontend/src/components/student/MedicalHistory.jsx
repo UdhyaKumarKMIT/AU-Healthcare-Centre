@@ -1,7 +1,7 @@
 // src/components/student/MedicalHistory.jsx - NO EMOJIS, FONTAWESOME ONLY
 
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -15,14 +15,83 @@ import {
   faThermometerHalf,
   faTint,
   faStethoscope,
+  faFilter,
 } from "@fortawesome/free-solid-svg-icons";
 import styles from "./MedicalHistory.module.css";
+import {
+  fetchStudentVisits,
+  fetchStudentPrescriptions,
+  fetchStudentLabTests,
+  fetchStudentVitals,
+  fetchStudentMedicalHistory,
+} from "../../store/slices/studentsSlice";
 
 const MedicalHistory = () => {
+  const dispatch = useDispatch();
   const { visits, prescriptions, labTests, vitals, medicalHistory, loading } =
     useSelector((state) => state.students);
 
   const [activeSection, setActiveSection] = useState("visits");
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [visitFilters, setVisitFilters] = useState({
+    startDate: "",
+    endDate: "",
+    status: "",
+    doctorName: "",
+  });
+  
+  const [prescriptionFilters, setPrescriptionFilters] = useState({
+    startDate: "",
+    endDate: "",
+    status: "",
+  });
+  
+  const [labTestFilters, setLabTestFilters] = useState({
+    startDate: "",
+    endDate: "",
+    testName: "",
+  });
+  
+  const [vitalFilters, setVitalFilters] = useState({
+    startDate: "",
+    endDate: "",
+  });
+
+  const handleApplyFilters = () => {
+    const token = localStorage.getItem("token");
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    
+    switch (activeSection) {
+      case "visits":
+        dispatch(fetchStudentVisits({ filters: visitFilters }));
+        break;
+      case "prescriptions":
+        dispatch(fetchStudentPrescriptions({ filters: prescriptionFilters }));
+        break;
+      case "labs":
+        dispatch(fetchStudentLabTests({ filters: labTestFilters }));
+        break;
+      case "vitals":
+        dispatch(fetchStudentVitals({ filters: vitalFilters }));
+        break;
+      case "conditions":
+        dispatch(fetchStudentMedicalHistory());
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleResetFilters = () => {
+    setVisitFilters({ startDate: "", endDate: "", status: "", doctorName: "" });
+    setPrescriptionFilters({ startDate: "", endDate: "", status: "" });
+    setLabTestFilters({ startDate: "", endDate: "", testName: "" });
+    setVitalFilters({ startDate: "", endDate: "" });
+    handleApplyFilters();
+  };
 
   // ---- GROUP VISITS ----
   const groupedVisits =
@@ -95,7 +164,7 @@ const MedicalHistory = () => {
       {/* SECTION NAV */}
       <div className={styles.sectionNav}>
         {[
-          ["visits", "Visits", faFileMedical, visits],
+          ["visits", "Visits", faFileMedical, visitList],
           ["prescriptions", "Prescriptions", faPrescription, prescriptions],
           ["labs", "Lab Tests", faFlask, labTests],
           ["vitals", "Vitals", faHeartbeat, vitals],
@@ -115,6 +184,233 @@ const MedicalHistory = () => {
           </button>
         ))}
       </div>
+
+      {/* FILTER BUTTON */}
+      {activeSection !== "conditions" && (
+        <div className={styles.filterBar}>
+          <button
+            className={styles.filterButton}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FontAwesomeIcon icon={faFilter} />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+          </button>
+        </div>
+      )}
+
+      {/* FILTER PANEL */}
+      {showFilters && activeSection === "visits" && (
+        <div className={styles.filterPanel}>
+          <h3>Filter Visits</h3>
+          <div className={styles.filterGrid}>
+            <div className={styles.filterField}>
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={visitFilters.startDate}
+                onChange={(e) =>
+                  setVisitFilters({ ...visitFilters, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>End Date</label>
+              <input
+                type="date"
+                value={visitFilters.endDate}
+                onChange={(e) =>
+                  setVisitFilters({ ...visitFilters, endDate: e.target.value })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>Status</label>
+              <select
+                value={visitFilters.status}
+                onChange={(e) =>
+                  setVisitFilters({ ...visitFilters, status: e.target.value })
+                }
+              >
+                <option value="">All</option>
+                <option value="SCHEDULED">Scheduled</option>
+                <option value="ONGOING">Ongoing</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div className={styles.filterField}>
+              <label>Doctor Name</label>
+              <input
+                type="text"
+                placeholder="Search by doctor name..."
+                value={visitFilters.doctorName}
+                onChange={(e) =>
+                  setVisitFilters({ ...visitFilters, doctorName: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className={styles.filterActions}>
+            <button className={styles.applyBtn} onClick={handleApplyFilters}>
+              Apply Filters
+            </button>
+            <button className={styles.resetBtn} onClick={handleResetFilters}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showFilters && activeSection === "prescriptions" && (
+        <div className={styles.filterPanel}>
+          <h3>Filter Prescriptions</h3>
+          <div className={styles.filterGrid}>
+            <div className={styles.filterField}>
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={prescriptionFilters.startDate}
+                onChange={(e) =>
+                  setPrescriptionFilters({
+                    ...prescriptionFilters,
+                    startDate: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>End Date</label>
+              <input
+                type="date"
+                value={prescriptionFilters.endDate}
+                onChange={(e) =>
+                  setPrescriptionFilters({
+                    ...prescriptionFilters,
+                    endDate: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>Status</label>
+              <select
+                value={prescriptionFilters.status}
+                onChange={(e) =>
+                  setPrescriptionFilters({
+                    ...prescriptionFilters,
+                    status: e.target.value,
+                  })
+                }
+              >
+                <option value="">All</option>
+                <option value="PENDING">Pending</option>
+                <option value="ISSUED">Issued</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div className={styles.filterActions}>
+            <button className={styles.applyBtn} onClick={handleApplyFilters}>
+              Apply Filters
+            </button>
+            <button className={styles.resetBtn} onClick={handleResetFilters}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showFilters && activeSection === "labs" && (
+        <div className={styles.filterPanel}>
+          <h3>Filter Lab Tests</h3>
+          <div className={styles.filterGrid}>
+            <div className={styles.filterField}>
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={labTestFilters.startDate}
+                onChange={(e) =>
+                  setLabTestFilters({
+                    ...labTestFilters,
+                    startDate: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>End Date</label>
+              <input
+                type="date"
+                value={labTestFilters.endDate}
+                onChange={(e) =>
+                  setLabTestFilters({
+                    ...labTestFilters,
+                    endDate: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>Test Name</label>
+              <input
+                type="text"
+                placeholder="Search by test name..."
+                value={labTestFilters.testName}
+                onChange={(e) =>
+                  setLabTestFilters({
+                    ...labTestFilters,
+                    testName: e.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className={styles.filterActions}>
+            <button className={styles.applyBtn} onClick={handleApplyFilters}>
+              Apply Filters
+            </button>
+            <button className={styles.resetBtn} onClick={handleResetFilters}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showFilters && activeSection === "vitals" && (
+        <div className={styles.filterPanel}>
+          <h3>Filter Vitals</h3>
+          <div className={styles.filterGrid}>
+            <div className={styles.filterField}>
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={vitalFilters.startDate}
+                onChange={(e) =>
+                  setVitalFilters({ ...vitalFilters, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className={styles.filterField}>
+              <label>End Date</label>
+              <input
+                type="date"
+                value={vitalFilters.endDate}
+                onChange={(e) =>
+                  setVitalFilters({ ...vitalFilters, endDate: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className={styles.filterActions}>
+            <button className={styles.applyBtn} onClick={handleApplyFilters}>
+              Apply Filters
+            </button>
+            <button className={styles.resetBtn} onClick={handleResetFilters}>
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ================= VISITS ================= */}
       {activeSection === "visits" && (
@@ -156,17 +452,19 @@ const MedicalHistory = () => {
 
                     {visit.diagnoses.length > 0 && (
                       <div className={styles.diagnosisBox}>
-                        <p className={styles.diagnosisLabel}>Diagnosis</p>
-                        {visit.diagnoses.map((d, i) => (
-                          <div key={i}>
-                            <p>{d.diagnosis_name}</p>
-                            {d.diagnosis_notes && (
-                              <p className={styles.diagnosisNotes}>
-                                {d.diagnosis_notes}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                        <p className={styles.diagnosisLabel}>Diagnoses</p>
+                        <div className={styles.diagnosisList}>
+                          {visit.diagnoses.map((d, i) => (
+                            <button
+                              key={i}
+                              className={styles.diagnosisTag}
+                              onClick={() => setSelectedDiagnosis(d)}
+                              title="Click to view details"
+                            >
+                              {i + 1}. {d.diagnosis_name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -399,6 +697,40 @@ const MedicalHistory = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* DIAGNOSIS DETAIL MODAL */}
+      {selectedDiagnosis && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedDiagnosis(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Diagnosis Details</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setSelectedDiagnosis(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.diagnosisDetail}>
+                <p className={styles.diagnosisName}>
+                  <b>Diagnosis:</b> {selectedDiagnosis.diagnosis_name}
+                </p>
+                {selectedDiagnosis.diagnosis_notes && (
+                  <div className={styles.notesSection}>
+                    <p className={styles.notesLabel}>
+                      <b>Clinical Notes:</b>
+                    </p>
+                    <p className={styles.notesText}>
+                      {selectedDiagnosis.diagnosis_notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
