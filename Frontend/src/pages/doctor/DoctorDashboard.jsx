@@ -1,4 +1,4 @@
-// src/pages/doctor/DoctorDashboard.jsx - WITH PATIENT HISTORY INTEGRATION
+// src/pages/doctor/DoctorDashboard.jsx - WITH REAL MEDICINE API
 
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -40,11 +40,15 @@ const DoctorDashboard = () => {
   const [diagnosis, setDiagnosis] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [nurses, setNurses] = useState([]); // For nurse assignments
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
       name: "",
       type: "",
+      nurse_id: "",
+      route: "",
+      infusionDuration: null,
       whenToTake: "After Food",
       timing: { morning: false, afternoon: false, night: false },
       duration: 1,
@@ -52,6 +56,12 @@ const DoctorDashboard = () => {
   ]);
   const [medicineSearchResults, setMedicineSearchResults] = useState([]);
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
+
+  // Debug nurses state changes
+  useEffect(() => {
+    console.log('🔧 DEBUG: nurses state changed:', nurses);
+    console.log('🔧 DEBUG: nurses length:', nurses.length);
+  }, [nurses]);
 
   // Load patients from Redux on mount
   useEffect(() => {
@@ -69,6 +79,58 @@ const DoctorDashboard = () => {
       console.error("No doctor_id found. Please login again.");
     }
   }, [dispatch, doctorId]);
+
+  // Fetch nurses on mount
+  useEffect(() => {
+    console.log('🔧 DEBUG: useEffect triggered for fetchNurses');
+    fetchNurses();
+  }, []);
+
+  const fetchNurses = async () => {
+    console.log('🔧 DEBUG: fetchNurses called');
+    console.log('🔧 DEBUG: API_BASE:', API_BASE);
+    console.log('🔧 DEBUG: token:', token ? 'Token exists' : 'No token');
+    
+    try {
+      const url = `${API_BASE}/api/doctor/nurses`;
+      console.log('🔧 DEBUG: Fetching from URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log('🔧 DEBUG: Response status:', response.status);
+      console.log('🔧 DEBUG: Response ok:', response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ DEBUG: Fetched nurses data:', data);
+        console.log('✅ DEBUG: Nurses array:', data.nurses);
+        console.log('✅ DEBUG: Number of nurses:', data.nurses?.length || 0);
+        
+        // Debug each nurse object structure
+        if (data.nurses && data.nurses.length > 0) {
+          console.log('✅ DEBUG: First nurse structure:', data.nurses[0]);
+          console.log('✅ DEBUG: First nurse has nurse_id?', !!data.nurses[0].nurse_id);
+          console.log('✅ DEBUG: First nurse has name?', !!data.nurses[0].name);
+        }
+        
+        setNurses(data.nurses || []);
+        console.log('✅ DEBUG: setNurses called with:', data.nurses || []);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ DEBUG: Failed to fetch nurses');
+        console.error('❌ DEBUG: Error response:', errorText);
+        setNurses([]);
+      }
+    } catch (error) {
+      console.error("❌ DEBUG: Error fetching nurses:", error);
+      console.error("❌ DEBUG: Error stack:", error.stack);
+      setNurses([]);
+    }
+  };
 
   // Sync selected patient with Redux state
   useEffect(() => {
@@ -165,35 +227,99 @@ const DoctorDashboard = () => {
 
   const savePrescription = async () => {
     try {
-      const hasEmptyMedicine = medicines.some(
-        (m) => !m.medicineId || !m.duration
-      );
+      // Validation
+      const hasEmptyMedicine = medicines.some((m) => !m.medicineId || !m.duration);
 
-      const hasNoTiming = medicines.some(
-        (m) => !m.timing.morning && !m.timing.afternoon && !m.timing.night
-      );
+      // Check injectable-specific requirements
+      const hasInvalidInjectable = medicines.some((m) => {
+        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
+        if (isInjectable) {
+          return !m.nurse_id || !m.route;
+        }
+        return false;
+      });
 
-      if (hasEmptyMedicine || hasNoTiming) {
-        alert("Please fill all medicine fields and select at least one timing");
+      // Check DRIP-specific requirements
+      const hasInvalidDrip = medicines.some((m) => {
+        if (m.type === 'DRIP') {
+          return !m.infusionDuration || m.infusionDuration < 5;
+        }
+        return false;
+      });
+
+      // Check non-injectable timing requirements
+      const hasNoTiming = medicines.some((m) => {
+        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
+        if (!isInjectable) {
+          return !m.timing.morning && !m.timing.afternoon && !m.timing.night;
+        }
+        return false;
+      });
+
+      if (hasEmptyMedicine) {
+        alert("Please fill all required medicine fields");
         return;
       }
 
-      const transformed = medicines.map((m) => ({
-        medicine_id: m.medicineId,
-        duration_days: Number(m.duration),
-        food:
-          m.whenToTake === "Before Food"
-            ? "BEFORE"
-            : m.whenToTake === "With Food"
-            ? "WITH"
-            : "AFTER",
-        morning: m.timing.morning,
-        afternoon: m.timing.afternoon,
-        night: m.timing.night,
-      }));
+      if (hasInvalidInjectable) {
+        alert("Please assign nurse and route for all injections/drips");
+        return;
+      }
 
+      if (hasInvalidDrip) {
+        alert("Please set infusion duration (minimum 5 mins) for all drips");
+        return;
+      }
+
+      if (hasNoTiming) {
+        alert("Please select at least one timing for non-injectable medicines");
+        return;
+      }
+
+      // Transform medicines for the new API
+      const transformed = medicines.map((m) => {
+        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
+        
+        const baseData = {
+          medicine_id: m.medicineId,
+          duration_days: Number(m.duration),
+        };
+
+        if (isInjectable) {
+          // For injections and drips (will create nurse tasks)
+          return {
+            ...baseData,
+            nurse_id: m.nurse_id,
+            route: m.route,
+            infusion_duration: m.type === 'DRIP' ? Number(m.infusionDuration) : null,
+          };
+        } else {
+          // For other medicines (regular prescription)
+          return {
+            ...baseData,
+            food:
+              m.whenToTake === "Before Food"
+                ? "BEFORE"
+                : m.whenToTake === "With Food"
+                ? "WITH"
+                : "AFTER",
+            morning: m.timing.morning,
+            afternoon: m.timing.afternoon,
+            night: m.timing.night,
+          };
+        }
+      });
+
+      console.log('🔧 DEBUG: Transformed medicines:', transformed);
+      console.log('🔧 DEBUG: Request payload:', {
+        visit_id: selectedPatient.visitId,
+        doctor_id: doctorId,
+        medicines: transformed,
+      });
+
+      // Use the new endpoint that handles both prescriptions and nurse tasks
       const prescriptionResponse = await fetch(
-        `${API_BASE}/api/doctor/prescription`,
+        `${API_BASE}/api/doctor/prescription-with-tasks`,
         {
           method: "POST",
           headers: {
@@ -208,16 +334,31 @@ const DoctorDashboard = () => {
         }
       );
 
-      if (!prescriptionResponse.ok)
-        throw new Error("Failed to save prescription");
+      console.log('🔧 DEBUG: Prescription response status:', prescriptionResponse.status);
+
+      if (!prescriptionResponse.ok) {
+        const errorData = await prescriptionResponse.json().catch(() => null);
+        console.error('❌ DEBUG: Error response:', errorData);
+        console.error('❌ DEBUG: Request body was:', {
+          visit_id: selectedPatient.visitId,
+          doctor_id: doctorId,
+          medicines: transformed,
+        });
+        throw new Error(errorData?.message || errorData?.error || "Failed to save prescription");
+      }
 
       const result = await prescriptionResponse.json();
       console.log("✅ Prescription saved:", result);
 
+      // Show success message with nurse task info
+      const nurseTaskMsg = result.data.nurse_tasks_created > 0 
+        ? `\n${result.data.nurse_tasks_created} nurse task(s) created for injectable medicines.`
+        : '';
+      
+      alert(`Visit completed successfully!${nurseTaskMsg}`);
+
       // Update status to COMPLETED
       await handleStatusUpdate(selectedPatient.visitId, "COMPLETED");
-
-      alert("Visit completed successfully!");
 
       // Reset state
       setShowPrescriptionModal(false);
@@ -225,8 +366,12 @@ const DoctorDashboard = () => {
       setDiagnosis(null);
       setMedicines([
         {
+          medicineId: null,
           name: "",
           type: "",
+          nurse_id: "",
+          route: "",
+          infusionDuration: null,
           whenToTake: "After Food",
           timing: { morning: false, afternoon: false, night: false },
           duration: 1,
@@ -241,27 +386,33 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleMedicineSearch = (query) => {
+  const handleMedicineSearch = async (query) => {
     if (!query || query.length < 2) {
       setMedicineSearchResults([]);
       return;
     }
 
-    const mockMedicines = [
-      { id: 1, name: "Paracetamol 500mg", type: "Tablet" },
-      { id: 2, name: "Ibuprofen 400mg", type: "Tablet" },
-      { id: 3, name: "Amoxicillin 500mg", type: "Capsule" },
-      { id: 4, name: "Cetirizine 10mg", type: "Tablet" },
-      { id: 5, name: "Azithromycin 500mg", type: "Tablet" },
-      { id: 6, name: "Paracetamol 650mg", type: "Tablet" },
-      { id: 7, name: "Pantoprazole 40mg", type: "Tablet" },
-      { id: 8, name: "Omeprazole 20mg", type: "Capsule" },
-    ];
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/doctor/medicines?search=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    const filtered = mockMedicines.filter((m) =>
-      m.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setMedicineSearchResults(filtered);
+      if (response.ok) {
+        const data = await response.json();
+        setMedicineSearchResults(data.data || []);
+      } else {
+        console.error("Failed to fetch medicines");
+        setMedicineSearchResults([]);
+      }
+    } catch (error) {
+      console.error("Error searching medicines:", error);
+      setMedicineSearchResults([]);
+    }
   };
 
   const handleSelectMedicine = (index, medicine) => {
@@ -573,45 +724,103 @@ const DoctorDashboard = () => {
               Create Prescription for {selectedPatient.patientName}
             </h2>
 
-            {medicines.map((med, i) => (
-              <MedicineRow
-                key={i}
-                index={i + 1}
-                medicine={med}
-                suggestions={
-                  activeMedicineIndex === i ? medicineSearchResults : []
-                }
-                showSuggestions={activeMedicineIndex === i}
-                onChange={(updates) => {
-                  const newMeds = [...medicines];
-                  newMeds[i] = { ...newMeds[i], ...updates };
-                  setMedicines(newMeds);
-                }}
-                onSearch={handleMedicineSearch}
-                onSelectMedicine={(medicine) =>
-                  handleSelectMedicine(i, medicine)
-                }
-                onRemove={() => {
-                  if (medicines.length > 1) {
-                    setMedicines(medicines.filter((_, idx) => idx !== i));
-                  } else {
-                    alert("At least one medicine is required");
+            {/* MANUAL DEBUG BUTTON */}
+            <button
+              onClick={() => {
+                console.log('🔧 Manual fetch nurses triggered');
+                fetchNurses();
+              }}
+              style={{
+                padding: "8px 16px",
+                background: "#f59e0b",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                marginBottom: "16px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              🔄 Manually Fetch Nurses (Debug)
+            </button>
+
+            {/* DEBUG PANEL */}
+            <div
+              style={{
+                background: "#fff3cd",
+                border: "1px solid #ffc107",
+                padding: "12px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                fontSize: "12px",
+                fontFamily: "monospace",
+              }}
+            >
+              <strong>🔧 DEBUG INFO:</strong>
+              <div>Nurses loaded: {nurses.length}</div>
+              <div>
+                Nurse names:{" "}
+                {nurses.map((n) => n.name).join(", ") || "No nurses found"}
+              </div>
+              <div>
+                Nurse IDs:{" "}
+                {nurses.map((n) => n.nurse_id).join(", ") || "No IDs"}
+              </div>
+              <div style={{ marginTop: '8px', color: '#856404' }}>
+                <strong>Nurses state variable:</strong> {JSON.stringify(nurses)}
+              </div>
+            </div>
+
+            {medicines.map((med, i) => {
+              console.log(`🔧 DoctorDashboard: Rendering MedicineRow ${i + 1}`);
+              console.log(`🔧 DoctorDashboard: Passing nurses prop:`, nurses);
+              console.log(`🔧 DoctorDashboard: nurses.length:`, nurses.length);
+              
+              return (
+                <MedicineRow
+                  key={i}
+                  index={i + 1}
+                  medicine={med}
+                  suggestions={
+                    activeMedicineIndex === i ? medicineSearchResults : []
                   }
-                }}
-                onFocus={() => setActiveMedicineIndex(i)}
-                onBlur={() =>
-                  setTimeout(() => setActiveMedicineIndex(null), 200)
-                }
-              />
-            ))}
+                  showSuggestions={activeMedicineIndex === i}
+                  nurses={nurses}
+                  onChange={(updates) => {
+                    const newMeds = [...medicines];
+                    newMeds[i] = { ...newMeds[i], ...updates };
+                    setMedicines(newMeds);
+                  }}
+                  onSearch={handleMedicineSearch}
+                  onSelectMedicine={(medicine) =>
+                    handleSelectMedicine(i, medicine)
+                  }
+                  onRemove={() => {
+                    if (medicines.length > 1) {
+                      setMedicines(medicines.filter((_, idx) => idx !== i));
+                    } else {
+                      alert("At least one medicine is required");
+                    }
+                  }}
+                  onFocus={() => setActiveMedicineIndex(i)}
+                  onBlur={() =>
+                    setTimeout(() => setActiveMedicineIndex(null), 200)
+                  }
+                />
+              );
+            })}
 
             <button
               onClick={() =>
                 setMedicines([
                   ...medicines,
                   {
+                    medicineId: null,
                     name: "",
                     type: "",
+                    nurse_id: "",
+                    route: "",
+                    infusionDuration: null,
                     whenToTake: "After Food",
                     timing: { morning: false, afternoon: false, night: false },
                     duration: 1,
