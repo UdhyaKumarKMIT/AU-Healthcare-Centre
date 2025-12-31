@@ -7,6 +7,7 @@ import { loginUserApi } from '../../services/auth.service';
 import PharmacistLogin from '../Pharmacist/Login'; // ensure default export
 
 const ROLE_MAP = {
+  admin: 'ADMIN',
   doctor: 'DOCTOR',
   pharmacist: 'PHARMACIST',
   nurse: 'NURSE',
@@ -19,11 +20,11 @@ const Login = () => {
   const userRole = ROLE_MAP[role];
   const navigate = useNavigate();
   const { login } = useAuth();
-
+  console.log('Login role param:', role, 'mapped to', userRole);
   // If pharmacist, render the imported PharmacistLogin component
-  if (role === 'pharmacist') {
-    return <PharmacistLogin />;
-  }
+  // if (role === 'pharmacist') {
+  //   return <PharmacistLogin />;
+  // }
   
   // State for other roles
   const [email, setEmail] = useState('');
@@ -37,9 +38,10 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const result = await loginUserApi(email, password, userRole);
+      const result = await loginUserApi(email, password);
+      console.log('Login API result:', result);
       login(result.user, result.token);
-
+      console.log('Logged in user:', result.user);
       switch (result.user.role) {
         case 'ADMIN':
           navigate('/admin/dashboard');
@@ -56,8 +58,11 @@ const Login = () => {
         case 'PATIENT':
           navigate('/patient/dashboard');
           break;
-        default:
-          navigate('/');
+        case 'PHARMACIST':
+          navigate('/pharmacist/dashboard');
+          break;
+        // default:
+        //   navigate('/');
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please try again.');
