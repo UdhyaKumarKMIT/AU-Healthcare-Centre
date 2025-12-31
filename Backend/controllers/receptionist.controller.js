@@ -81,11 +81,20 @@ export const updateDoctorAvailability = async (req, res, next) => {
   }
 };
 
-export const getPatients = async (req,res,next) => {
-  try{
-    const data = await receptionistService.getAllPatients()
-    res.json({success:true,data})
-  }catch(err) { next(err) }
+export const getPatients = async (req, res, next) => {
+  try {
+    console.log('🔧 DEBUG: getPatients called');
+    console.log('🔧 DEBUG: User:', req.user);
+    
+    const data = await receptionistService.getAllPatients();
+    
+    console.log('✅ DEBUG: Patients fetched:', data.length);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('❌ DEBUG: getPatients error:', err);
+    console.error('❌ DEBUG: Error stack:', err.stack);
+    next(err);
+  }
 }
 
 export const getDoctors = async (req,res,next) => {
@@ -95,11 +104,20 @@ export const getDoctors = async (req,res,next) => {
   }catch(err) { next(err) }
 }
 
-export const getVisits = async (req,res,next) => {
-  try{
-    const data = await receptionistService.getAllVisits()
-    res.json({success:true,data})
-  }catch(err) { next(err) }
+export const getVisits = async (req, res, next) => {
+  try {
+    console.log('🔧 DEBUG: getVisits called');
+    console.log('🔧 DEBUG: User:', req.user);
+    
+    const data = await receptionistService.getAllVisits();
+    
+    console.log('✅ DEBUG: Visits fetched:', data.length);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('❌ DEBUG: getVisits error:', err);
+    console.error('❌ DEBUG: Error stack:', err.stack);
+    next(err);
+  }
 }
 export const startVisit = async (req,res,next)=>{
  try{
