@@ -23,6 +23,7 @@ const MedicalHistory = () => {
     useSelector((state) => state.students);
 
   const [activeSection, setActiveSection] = useState("visits");
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
 
   // ---- GROUP VISITS ----
   const groupedVisits =
@@ -156,17 +157,19 @@ const MedicalHistory = () => {
 
                     {visit.diagnoses.length > 0 && (
                       <div className={styles.diagnosisBox}>
-                        <p className={styles.diagnosisLabel}>Diagnosis</p>
-                        {visit.diagnoses.map((d, i) => (
-                          <div key={i}>
-                            <p>{d.diagnosis_name}</p>
-                            {d.diagnosis_notes && (
-                              <p className={styles.diagnosisNotes}>
-                                {d.diagnosis_notes}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                        <p className={styles.diagnosisLabel}>Diagnoses</p>
+                        <div className={styles.diagnosisList}>
+                          {visit.diagnoses.map((d, i) => (
+                            <button
+                              key={i}
+                              className={styles.diagnosisTag}
+                              onClick={() => setSelectedDiagnosis(d)}
+                              title="Click to view details"
+                            >
+                              {i + 1}. {d.diagnosis_name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -399,6 +402,40 @@ const MedicalHistory = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* DIAGNOSIS DETAIL MODAL */}
+      {selectedDiagnosis && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedDiagnosis(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Diagnosis Details</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setSelectedDiagnosis(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.diagnosisDetail}>
+                <p className={styles.diagnosisName}>
+                  <b>Diagnosis:</b> {selectedDiagnosis.diagnosis_name}
+                </p>
+                {selectedDiagnosis.diagnosis_notes && (
+                  <div className={styles.notesSection}>
+                    <p className={styles.notesLabel}>
+                      <b>Clinical Notes:</b>
+                    </p>
+                    <p className={styles.notesText}>
+                      {selectedDiagnosis.diagnosis_notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
