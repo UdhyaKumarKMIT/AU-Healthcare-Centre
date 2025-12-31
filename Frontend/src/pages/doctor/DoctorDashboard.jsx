@@ -41,6 +41,7 @@ const DoctorDashboard = () => {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [nurses, setNurses] = useState([]); // For nurse assignments
+  const [todayVisitsCount, setTodayVisitsCount] = useState(0); // Today's visits count
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
@@ -59,8 +60,8 @@ const DoctorDashboard = () => {
 
   // Debug nurses state changes
   useEffect(() => {
-    console.log('🔧 DEBUG: nurses state changed:', nurses);
-    console.log('🔧 DEBUG: nurses length:', nurses.length);
+    console.log("🔧 DEBUG: nurses state changed:", nurses);
+    console.log("🔧 DEBUG: nurses length:", nurses.length);
   }, [nurses]);
 
   // Load patients from Redux on mount
@@ -69,9 +70,13 @@ const DoctorDashboard = () => {
       console.log("📡 Loading queue for doctor:", doctorId);
       dispatch(fetchPatientQueue(doctorId));
 
+      // Fetch today's visits count
+      fetchTodayVisitsCount();
+
       // Auto-refresh every 30 seconds
       const interval = setInterval(() => {
         dispatch(fetchPatientQueue(doctorId));
+        fetchTodayVisitsCount();
       }, 30000);
 
       return () => clearInterval(interval);
@@ -80,49 +85,82 @@ const DoctorDashboard = () => {
     }
   }, [dispatch, doctorId]);
 
+  // Fetc
+
+  const fetchTodayVisitsCount = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      console.log("📡 Fetching today's visits count for:", today);
+
+      const response = await fetch(
+        `${API_BASE}/api/doctor/visits/today?doctor_id=${doctorId}&date=${today}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Today's visits count:", data.count);
+        setTodayVisitsCount(data.count || 0);
+      } else {
+        console.error("Failed to fetch today's visits count");
+        setTodayVisitsCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching today's visits count:", error);
+      setTodayVisitsCount(0);
+    }
+  };
+
   // Fetch nurses on mount
   useEffect(() => {
-    console.log('🔧 DEBUG: useEffect triggered for fetchNurses');
+    console.log("🔧 DEBUG: useEffect triggered for fetchNurses");
     fetchNurses();
   }, []);
 
   const fetchNurses = async () => {
-    console.log('🔧 DEBUG: fetchNurses called');
-    console.log('🔧 DEBUG: API_BASE:', API_BASE);
-    console.log('🔧 DEBUG: token:', token ? 'Token exists' : 'No token');
-    
+    console.log("🔧 DEBUG: fetchNurses called");
+    console.log("🔧 DEBUG: API_BASE:", API_BASE);
+    console.log("🔧 DEBUG: token:", token ? "Token exists" : "No token");
+
     try {
       const url = `${API_BASE}/api/doctor/nurses`;
-      console.log('🔧 DEBUG: Fetching from URL:', url);
-      
+      console.log("🔧 DEBUG: Fetching from URL:", url);
+
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log('🔧 DEBUG: Response status:', response.status);
-      console.log('🔧 DEBUG: Response ok:', response.ok);
+      console.log("🔧 DEBUG: Response status:", response.status);
+      console.log("🔧 DEBUG: Response ok:", response.ok);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ DEBUG: Fetched nurses data:', data);
-        console.log('✅ DEBUG: Nurses array:', data.nurses);
-        console.log('✅ DEBUG: Number of nurses:', data.nurses?.length || 0);
-        
+        console.log("✅ DEBUG: Fetched nurses data:", data);
+        console.log("✅ DEBUG: Nurses array:", data.nurses);
+        console.log("✅ DEBUG: Number of nurses:", data.nurses?.length || 0);
+
         // Debug each nurse object structure
         if (data.nurses && data.nurses.length > 0) {
-          console.log('✅ DEBUG: First nurse structure:', data.nurses[0]);
-          console.log('✅ DEBUG: First nurse has nurse_id?', !!data.nurses[0].nurse_id);
-          console.log('✅ DEBUG: First nurse has name?', !!data.nurses[0].name);
+          console.log("✅ DEBUG: First nurse structure:", data.nurses[0]);
+          console.log(
+            "✅ DEBUG: First nurse has nurse_id?",
+            !!data.nurses[0].nurse_id
+          );
+          console.log("✅ DEBUG: First nurse has name?", !!data.nurses[0].name);
         }
-        
+
         setNurses(data.nurses || []);
-        console.log('✅ DEBUG: setNurses called with:', data.nurses || []);
+        console.log("✅ DEBUG: setNurses called with:", data.nurses || []);
       } else {
         const errorText = await response.text();
-        console.error('❌ DEBUG: Failed to fetch nurses');
-        console.error('❌ DEBUG: Error response:', errorText);
+        console.error("❌ DEBUG: Failed to fetch nurses");
+        console.error("❌ DEBUG: Error response:", errorText);
         setNurses([]);
       }
     } catch (error) {
@@ -142,7 +180,7 @@ const DoctorDashboard = () => {
         console.log(
           "🔄 Syncing selected patient with updated status:",
           updatedPatient.status
-        );
+        );  
         setSelectedPatient(updatedPatient);
       }
     }
@@ -228,11 +266,13 @@ const DoctorDashboard = () => {
   const savePrescription = async () => {
     try {
       // Validation
-      const hasEmptyMedicine = medicines.some((m) => !m.medicineId || !m.duration);
+      const hasEmptyMedicine = medicines.some(
+        (m) => !m.medicineId || !m.duration
+      );
 
       // Check injectable-specific requirements
       const hasInvalidInjectable = medicines.some((m) => {
-        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
+        const isInjectable = m.type === "Injection" || m.type === "DRIP";
         if (isInjectable) {
           return !m.nurse_id || !m.route;
         }
@@ -241,7 +281,7 @@ const DoctorDashboard = () => {
 
       // Check DRIP-specific requirements
       const hasInvalidDrip = medicines.some((m) => {
-        if (m.type === 'DRIP') {
+        if (m.type === "DRIP") {
           return !m.infusionDuration || m.infusionDuration < 5;
         }
         return false;
@@ -249,7 +289,7 @@ const DoctorDashboard = () => {
 
       // Check non-injectable timing requirements
       const hasNoTiming = medicines.some((m) => {
-        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
+        const isInjectable = m.type === "Injection" || m.type === "DRIP";
         if (!isInjectable) {
           return !m.timing.morning && !m.timing.afternoon && !m.timing.night;
         }
@@ -278,8 +318,8 @@ const DoctorDashboard = () => {
 
       // Transform medicines for the new API
       const transformed = medicines.map((m) => {
-        const isInjectable = m.type === 'Injection' || m.type === 'DRIP';
-        
+        const isInjectable = m.type === "Injection" || m.type === "DRIP";
+
         const baseData = {
           medicine_id: m.medicineId,
           duration_days: Number(m.duration),
@@ -291,7 +331,8 @@ const DoctorDashboard = () => {
             ...baseData,
             nurse_id: m.nurse_id,
             route: m.route,
-            infusion_duration: m.type === 'DRIP' ? Number(m.infusionDuration) : null,
+            infusion_duration:
+              m.type === "DRIP" ? Number(m.infusionDuration) : null,
           };
         } else {
           // For other medicines (regular prescription)
@@ -310,8 +351,8 @@ const DoctorDashboard = () => {
         }
       });
 
-      console.log('🔧 DEBUG: Transformed medicines:', transformed);
-      console.log('🔧 DEBUG: Request payload:', {
+      console.log("🔧 DEBUG: Transformed medicines:", transformed);
+      console.log("🔧 DEBUG: Request payload:", {
         visit_id: selectedPatient.visitId,
         doctor_id: doctorId,
         medicines: transformed,
@@ -334,27 +375,35 @@ const DoctorDashboard = () => {
         }
       );
 
-      console.log('🔧 DEBUG: Prescription response status:', prescriptionResponse.status);
+      console.log(
+        "🔧 DEBUG: Prescription response status:",
+        prescriptionResponse.status
+      );
 
       if (!prescriptionResponse.ok) {
         const errorData = await prescriptionResponse.json().catch(() => null);
-        console.error('❌ DEBUG: Error response:', errorData);
-        console.error('❌ DEBUG: Request body was:', {
+        console.error("❌ DEBUG: Error response:", errorData);
+        console.error("❌ DEBUG: Request body was:", {
           visit_id: selectedPatient.visitId,
           doctor_id: doctorId,
           medicines: transformed,
         });
-        throw new Error(errorData?.message || errorData?.error || "Failed to save prescription");
+        throw new Error(
+          errorData?.message ||
+            errorData?.error ||
+            "Failed to save prescription"
+        );
       }
 
       const result = await prescriptionResponse.json();
       console.log("✅ Prescription saved:", result);
 
       // Show success message with nurse task info
-      const nurseTaskMsg = result.data.nurse_tasks_created > 0 
-        ? `\n${result.data.nurse_tasks_created} nurse task(s) created for injectable medicines.`
-        : '';
-      
+      const nurseTaskMsg =
+        result.data.nurse_tasks_created > 0
+          ? `\n${result.data.nurse_tasks_created} nurse task(s) created for injectable medicines.`
+          : "";
+
       alert(`Visit completed successfully!${nurseTaskMsg}`);
 
       // Update status to COMPLETED
@@ -378,12 +427,25 @@ const DoctorDashboard = () => {
         },
       ]);
 
-      // Reload queue
+      // Reload queue and update visit counts
       dispatch(fetchPatientQueue(doctorId));
+      await fetchTodayVisitsCount();
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to save prescription: " + error.message);
     }
+  };
+
+  const handleSelectMedicine = (index, medicine) => {
+    const newMeds = [...medicines];
+    newMeds[index] = {
+      ...newMeds[index],
+      medicineId: medicine.id,
+      name: medicine.name,
+      type: medicine.type,
+    };
+    setMedicines(newMeds);
+    setMedicineSearchResults([]);
   };
 
   const handleMedicineSearch = async (query) => {
@@ -404,499 +466,503 @@ const DoctorDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
+        // Backend returns { success: true, data: [...] }
         setMedicineSearchResults(data.data || []);
       } else {
-        console.error("Failed to fetch medicines");
         setMedicineSearchResults([]);
       }
     } catch (error) {
-      console.error("Error searching medicines:", error);
+      console.error('Error searching medicines:', error);
       setMedicineSearchResults([]);
     }
   };
 
-  const handleSelectMedicine = (index, medicine) => {
-    const newMeds = [...medicines];
-    newMeds[index] = {
-      ...newMeds[index],
-      medicineId: medicine.id,
-      name: medicine.name,
-      type: medicine.type,
-    };
-    setMedicines(newMeds);
-  };
+  const waitingCount = patients.filter(
+    (p) => p.status === "SCHEDULED"
+  ).length;
 
-  const waitingCount = patients.filter((p) => p.status === "SCHEDULED").length;
-  const inProgressCount = patients.filter((p) => p.status === "ONGOING").length;
+    if (loading && patients.length === 0) {
+      return (
+        <div className={styles.dashboard}>
+          <Header />
+          <main className={styles.mainContent}>
+            <div style={{ textAlign: "center", padding: "50px" }}>
+              <p>Loading patient queue...</p>
+            </div>
+          </main>
+        </div>
+      );
+    }
 
-  if (loading && patients.length === 0) {
+    if (error) {
+      return (
+        <div className={styles.dashboard}>
+          <Header />
+          <main className={styles.mainContent}>
+            <div style={{ textAlign: "center", padding: "50px", color: "red" }}>
+              <p>Error loading patients: {error}</p>
+              <button onClick={() => dispatch(fetchPatientQueue(doctorId))}>
+                Retry
+              </button>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
     return (
       <div className={styles.dashboard}>
         <Header />
+
         <main className={styles.mainContent}>
-          <div style={{ textAlign: "center", padding: "50px" }}>
-            <p>Loading patient queue...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.dashboard}>
-        <Header />
-        <main className={styles.mainContent}>
-          <div style={{ textAlign: "center", padding: "50px", color: "red" }}>
-            <p>Error loading patients: {error}</p>
-            <button onClick={() => dispatch(fetchPatientQueue(doctorId))}>
-              Retry
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.dashboard}>
-      <Header />
-
-      <main className={styles.mainContent}>
-        <div className={styles.container}>
-          <div className={styles.header}>
-            <div className={styles.doctorInfo}>
-              <h1 className={styles.doctorName}>
-                Dr. {user.name || user.email}
-              </h1>
-              <p className={styles.specialization}>Doctor Dashboard</p>
-              {lastFetched && (
-                <p style={{ fontSize: "12px", color: "#64748b" }}>
-                  Last updated: {new Date(lastFetched).toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-            <div className={styles.stats}>
-              <div className={styles.statItem}>
-                <strong>{patients.length}</strong> Total Visits
+          <div className={styles.container}>
+            <div className={styles.header}>
+              <div className={styles.doctorInfo}>
+                <h1 className={styles.doctorName}>
+                  Dr. {user.name || user.email}
+                </h1>
+                <p className={styles.specialization}>Doctor Dashboard</p>
+                {lastFetched && (
+                  <p style={{ fontSize: "12px", color: "#64748b" }}>
+                    Last updated: {new Date(lastFetched).toLocaleTimeString()}
+                  </p>
+                )}
               </div>
-              <div className={styles.statItem}>
-                <strong>{waitingCount}</strong> Waiting
-              </div>
-              <div className={styles.statItem}>
-                <strong>{inProgressCount}</strong> In Progress
+              <div className={styles.stats}>
+                <div className={styles.statItem}>
+                  <strong>{todayVisitsCount}</strong> Today's Visits
+                </div>
+                <div className={styles.statItem}>
+                  <strong>{waitingCount}</strong> Waiting
+                </div>
               </div>
             </div>
-          </div>
 
-          {updateLoading && (
-            <div
-              style={{
-                position: "fixed",
-                bottom: "20px",
-                right: "20px",
-                background: "#3b82f6",
-                color: "white",
-                padding: "12px 24px",
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                zIndex: 1000,
-              }}
-            >
-              Updating visit status...
-            </div>
-          )}
-
-          <div className={styles.content}>
-            <div className={styles.queueSection}>
-              <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Patient Queue</h2>
-                <span className={styles.queueCount}>
-                  {patients.length} patients
-                </span>
-              </div>
-              <PatientQueue
-                patients={patients}
-                loading={loading}
-                onPatientSelect={handlePatientSelect}
-                onPatientClick={(id) => {
-                  const patient = patients.find((p) => p.visitId === id);
-                  if (patient) handlePatientSelect(patient);
+            {updateLoading && (
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: "20px",
+                  right: "20px",
+                  background: "#3b82f6",
+                  color: "white",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  zIndex: 1000,
                 }}
-                selectedPatient={selectedPatient}
-                onStatusUpdate={handleStatusUpdate}
-                onViewHistory={handleViewHistory}
-              />
-            </div>
+              >
+                Updating visit status...
+              </div>
+            )}
 
-            <div className={styles.diagnosisSection}>
-              <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Diagnosis & Treatment</h2>
+            <div className={styles.content}>
+              <div className={styles.queueSection}>
+                <div className={styles.sectionHeader}>
+                  <h2 className={styles.sectionTitle}>Patient Queue</h2>
+                  <span className={styles.queueCount}>
+                    {patients.length} patients
+                  </span>
+                </div>
+                <PatientQueue
+                  patients={patients}
+                  loading={loading}
+                  onPatientSelect={handlePatientSelect}
+                  onPatientClick={(id) => {
+                    const patient = patients.find((p) => p.visitId === id);
+                    if (patient) handlePatientSelect(patient);
+                  }}
+                  selectedPatient={selectedPatient}
+                  onStatusUpdate={handleStatusUpdate}
+                  onViewHistory={handleViewHistory}
+                />
               </div>
 
-              {selectedPatient && !diagnosis && (
-                <div
-                  style={{ padding: "24px", borderBottom: "1px solid #e2e8f0" }}
-                >
+              <div className={styles.diagnosisSection}>
+                <div className={styles.sectionHeader}>
+                  <h2 className={styles.sectionTitle}>Diagnosis & Treatment</h2>
+                </div>
+
+                {selectedPatient && !diagnosis && (
                   <div
                     style={{
-                      background: "#f0f9ff",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      marginBottom: "16px",
-                      border: "1px solid #bae6fd",
+                      padding: "24px",
+                      borderBottom: "1px solid #e2e8f0",
                     }}
                   >
-                    <p
-                      style={{ fontSize: "14px", color: "#0c4a6e", margin: 0 }}
+                    <div
+                      style={{
+                        background: "#f0f9ff",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        marginBottom: "16px",
+                        border: "1px solid #bae6fd",
+                      }}
                     >
-                      <strong>Patient:</strong> {selectedPatient.patientName} |
-                      <strong> Status:</strong>{" "}
-                      <span
+                      <p
                         style={{
-                          background: "#3b82f6",
-                          color: "white",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          fontSize: "12px",
-                          marginLeft: "4px",
+                          fontSize: "14px",
+                          color: "#0c4a6e",
+                          margin: 0,
                         }}
                       >
-                        {selectedPatient.status}
-                      </span>
-                    </p>
-                  </div>
+                        <strong>Patient:</strong> {selectedPatient.patientName}{" "}
+                        |<strong> Status:</strong>{" "}
+                        <span
+                          style={{
+                            background: "#3b82f6",
+                            color: "white",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            marginLeft: "4px",
+                          }}
+                        >
+                          {selectedPatient.status}
+                        </span>
+                      </p>
+                    </div>
 
-                  <h3
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#1a237e",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    Add Diagnosis
-                  </h3>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label
+                    <h3
                       style={{
-                        display: "block",
-                        fontSize: "14px",
+                        fontSize: "18px",
                         fontWeight: 600,
-                        marginBottom: "6px",
+                        color: "#1a237e",
+                        marginBottom: "16px",
                       }}
                     >
-                      Diagnosis Name *
-                    </label>
-                    <input
-                      id="diagnosis_name"
-                      type="text"
-                      placeholder="e.g., Common Cold, Fever"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "2px solid #e2e8f0",
-                        borderRadius: "6px",
-                        fontSize: "14px",
+                      Add Diagnosis
+                    </h3>
+                    <div style={{ marginBottom: "16px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Diagnosis Name *
+                      </label>
+                      <input
+                        id="diagnosis_name"
+                        type="text"
+                        placeholder="e.g., Common Cold, Fever"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                        }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: "16px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Diagnosis Code
+                      </label>
+                      <input
+                        id="diagnosis_code"
+                        type="text"
+                        placeholder="e.g., J00, R50.9"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                        }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: "16px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Diagnosis Notes
+                      </label>
+                      <textarea
+                        id="diagnosis_notes"
+                        placeholder="Additional notes..."
+                        rows="4"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          resize: "vertical",
+                          fontFamily: "inherit",
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const diagnosisData = {
+                          diagnosis_name:
+                            document.getElementById("diagnosis_name").value,
+                          diagnosis_code:
+                            document.getElementById("diagnosis_code").value,
+                          diagnosis_notes:
+                            document.getElementById("diagnosis_notes").value,
+                        };
+                        if (diagnosisData.diagnosis_name) {
+                          saveDiagnosis(diagnosisData);
+                        } else {
+                          alert("Please enter diagnosis name");
+                        }
                       }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label
+                      disabled={updateLoading}
                       style={{
-                        display: "block",
+                        padding: "12px 24px",
+                        background: updateLoading
+                          ? "#cbd5e1"
+                          : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
                         fontSize: "14px",
                         fontWeight: 600,
-                        marginBottom: "6px",
+                        cursor: updateLoading ? "not-allowed" : "pointer",
                       }}
                     >
-                      Diagnosis Code
-                    </label>
-                    <input
-                      id="diagnosis_code"
-                      type="text"
-                      placeholder="e.g., J00, R50.9"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "2px solid #e2e8f0",
-                        borderRadius: "6px",
-                        fontSize: "14px",
-                      }}
-                    />
+                      {updateLoading ? "Saving..." : "Save Diagnosis"}
+                    </button>
                   </div>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Diagnosis Notes
-                    </label>
-                    <textarea
-                      id="diagnosis_notes"
-                      placeholder="Additional notes..."
-                      rows="4"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "2px solid #e2e8f0",
-                        borderRadius: "6px",
-                        fontSize: "14px",
-                        resize: "vertical",
-                        fontFamily: "inherit",
-                      }}
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      const diagnosisData = {
-                        diagnosis_name:
-                          document.getElementById("diagnosis_name").value,
-                        diagnosis_code:
-                          document.getElementById("diagnosis_code").value,
-                        diagnosis_notes:
-                          document.getElementById("diagnosis_notes").value,
-                      };
-                      if (diagnosisData.diagnosis_name) {
-                        saveDiagnosis(diagnosisData);
-                      } else {
-                        alert("Please enter diagnosis name");
-                      }
-                    }}
-                    disabled={updateLoading}
-                    style={{
-                      padding: "12px 24px",
-                      background: updateLoading
-                        ? "#cbd5e1"
-                        : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: updateLoading ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {updateLoading ? "Saving..." : "Save Diagnosis"}
-                  </button>
-                </div>
-              )}
+                )}
 
-              <DiagnosisSummary
-                patient={selectedPatient}
-                diagnosis={diagnosis}
-                onProceedToPrescription={() => setShowPrescriptionModal(true)}
-              />
+                <DiagnosisSummary
+                  patient={selectedPatient}
+                  diagnosis={diagnosis}
+                  onProceedToPrescription={() => setShowPrescriptionModal(true)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      {/* Prescription Modal */}
-      {showPrescriptionModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
+        {/* Prescription Modal */}
+        {showPrescriptionModal && (
           <div
             style={{
-              background: "white",
-              padding: "32px",
-              borderRadius: "12px",
-              width: "90%",
-              maxWidth: "1200px",
-              maxHeight: "90vh",
-              overflow: "auto",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
             }}
           >
-            <h2 style={{ marginBottom: "24px", color: "#1a237e" }}>
-              Create Prescription for {selectedPatient.patientName}
-            </h2>
-
-            {/* MANUAL DEBUG BUTTON */}
-            <button
-              onClick={() => {
-                console.log('🔧 Manual fetch nurses triggered');
-                fetchNurses();
-              }}
-              style={{
-                padding: "8px 16px",
-                background: "#f59e0b",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                marginBottom: "16px",
-                cursor: "pointer",
-                fontSize: "12px",
-              }}
-            >
-              🔄 Manually Fetch Nurses (Debug)
-            </button>
-
-            {/* DEBUG PANEL */}
             <div
               style={{
-                background: "#fff3cd",
-                border: "1px solid #ffc107",
-                padding: "12px",
-                borderRadius: "6px",
-                marginBottom: "16px",
-                fontSize: "12px",
-                fontFamily: "monospace",
+                background: "white",
+                padding: "32px",
+                borderRadius: "12px",
+                width: "90%",
+                maxWidth: "1200px",
+                maxHeight: "90vh",
+                overflow: "auto",
               }}
             >
-              <strong>🔧 DEBUG INFO:</strong>
-              <div>Nurses loaded: {nurses.length}</div>
-              <div>
-                Nurse names:{" "}
-                {nurses.map((n) => n.name).join(", ") || "No nurses found"}
-              </div>
-              <div>
-                Nurse IDs:{" "}
-                {nurses.map((n) => n.nurse_id).join(", ") || "No IDs"}
-              </div>
-              <div style={{ marginTop: '8px', color: '#856404' }}>
-                <strong>Nurses state variable:</strong> {JSON.stringify(nurses)}
-              </div>
-            </div>
+              <h2 style={{ marginBottom: "24px", color: "#1a237e" }}>
+                Create Prescription for {selectedPatient.patientName}
+              </h2>
 
-            {medicines.map((med, i) => {
-              console.log(`🔧 DoctorDashboard: Rendering MedicineRow ${i + 1}`);
-              console.log(`🔧 DoctorDashboard: Passing nurses prop:`, nurses);
-              console.log(`🔧 DoctorDashboard: nurses.length:`, nurses.length);
-              
-              return (
-                <MedicineRow
-                  key={i}
-                  index={i + 1}
-                  medicine={med}
-                  suggestions={
-                    activeMedicineIndex === i ? medicineSearchResults : []
-                  }
-                  showSuggestions={activeMedicineIndex === i}
-                  nurses={nurses}
-                  onChange={(updates) => {
-                    const newMeds = [...medicines];
-                    newMeds[i] = { ...newMeds[i], ...updates };
-                    setMedicines(newMeds);
-                  }}
-                  onSearch={handleMedicineSearch}
-                  onSelectMedicine={(medicine) =>
-                    handleSelectMedicine(i, medicine)
-                  }
-                  onRemove={() => {
-                    if (medicines.length > 1) {
-                      setMedicines(medicines.filter((_, idx) => idx !== i));
-                    } else {
-                      alert("At least one medicine is required");
-                    }
-                  }}
-                  onFocus={() => setActiveMedicineIndex(i)}
-                  onBlur={() =>
-                    setTimeout(() => setActiveMedicineIndex(null), 200)
-                  }
-                />
-              );
-            })}
-
-            <button
-              onClick={() =>
-                setMedicines([
-                  ...medicines,
-                  {
-                    medicineId: null,
-                    name: "",
-                    type: "",
-                    nurse_id: "",
-                    route: "",
-                    infusionDuration: null,
-                    whenToTake: "After Food",
-                    timing: { morning: false, afternoon: false, night: false },
-                    duration: 1,
-                  },
-                ])
-              }
-              style={{
-                width: "100%",
-                padding: "12px",
-                background: "#f8fafc",
-                border: "2px dashed #cbd5e1",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-                marginBottom: "16px",
-                color: "#1a237e",
-              }}
-            >
-              + Add Medicine
-            </button>
-
-            <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+              {/* MANUAL DEBUG BUTTON */}
               <button
-                onClick={savePrescription}
-                disabled={updateLoading}
+                onClick={() => {
+                  console.log("🔧 Manual fetch nurses triggered");
+                  fetchNurses();
+                }}
                 style={{
-                  flex: 1,
-                  padding: "14px",
-                  background: updateLoading
-                    ? "#cbd5e1"
-                    : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
+                  padding: "8px 16px",
+                  background: "#f59e0b",
                   color: "white",
                   border: "none",
-                  borderRadius: "8px",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  cursor: updateLoading ? "not-allowed" : "pointer",
+                  borderRadius: "4px",
+                  marginBottom: "16px",
+                  cursor: "pointer",
+                  fontSize: "12px",
                 }}
               >
-                {updateLoading
-                  ? "Saving..."
-                  : "Save Prescription & Complete Visit"}
+                🔄 Manually Fetch Nurses (Debug)
               </button>
-              <button
-                onClick={() => setShowPrescriptionModal(false)}
+
+              {/* DEBUG PANEL */}
+              <div
                 style={{
-                  flex: 1,
-                  padding: "14px",
-                  background: "#f1f5f9",
-                  color: "#64748b",
-                  border: "none",
+                  background: "#fff3cd",
+                  border: "1px solid #ffc107",
+                  padding: "12px",
+                  borderRadius: "6px",
+                  marginBottom: "16px",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                }}
+              >
+                <strong>🔧 DEBUG INFO:</strong>
+                <div>Nurses loaded: {nurses.length}</div>
+                <div>
+                  Nurse names:{" "}
+                  {nurses.map((n) => n.name).join(", ") || "No nurses found"}
+                </div>
+                <div>
+                  Nurse IDs:{" "}
+                  {nurses.map((n) => n.nurse_id).join(", ") || "No IDs"}
+                </div>
+                <div style={{ marginTop: "8px", color: "#856404" }}>
+                  <strong>Nurses state variable:</strong>{" "}
+                  {JSON.stringify(nurses)}
+                </div>
+              </div>
+
+              {medicines.map((med, i) => {
+                console.log(
+                  `🔧 DoctorDashboard: Rendering MedicineRow ${i + 1}`
+                );
+                console.log(`🔧 DoctorDashboard: Passing nurses prop:`, nurses);
+                console.log(
+                  `🔧 DoctorDashboard: nurses.length:`,
+                  nurses.length
+                );
+
+                return (
+                  <MedicineRow
+                    key={i}
+                    index={i + 1}
+                    medicine={med}
+                    suggestions={
+                      activeMedicineIndex === i ? medicineSearchResults : []
+                    }
+                    showSuggestions={activeMedicineIndex === i}
+                    nurses={nurses}
+                    onChange={(updates) => {
+                      const newMeds = [...medicines];
+                      newMeds[i] = { ...newMeds[i], ...updates };
+                      setMedicines(newMeds);
+                    }}
+                    onSearch={handleMedicineSearch}
+                    onSelectMedicine={(medicine) =>
+                      handleSelectMedicine(i, medicine)
+                    }
+                    onRemove={() => {
+                      if (medicines.length > 1) {
+                        setMedicines(medicines.filter((_, idx) => idx !== i));
+                      } else {
+                        alert("At least one medicine is required");
+                      }
+                    }}
+                    onFocus={() => setActiveMedicineIndex(i)}
+                    onBlur={() =>
+                      setTimeout(() => setActiveMedicineIndex(null), 200)
+                    }
+                  />
+                );
+              })}
+
+              <button
+                onClick={() =>
+                  setMedicines([
+                    ...medicines,
+                    {
+                      medicineId: null,
+                      name: "",
+                      type: "",
+                      nurse_id: "",
+                      route: "",
+                      infusionDuration: null,
+                      whenToTake: "After Food",
+                      timing: {
+                        morning: false,
+                        afternoon: false,
+                        night: false,
+                      },
+                      duration: 1,
+                    },
+                  ])
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "#f8fafc",
+                  border: "2px dashed #cbd5e1",
                   borderRadius: "8px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: 600,
                   cursor: "pointer",
+                  marginBottom: "16px",
+                  color: "#1a237e",
                 }}
               >
-                Cancel
+                + Add Medicine
               </button>
+
+              <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                <button
+                  onClick={savePrescription}
+                  disabled={updateLoading}
+                  style={{
+                    flex: 1,
+                    padding: "14px",
+                    background: updateLoading
+                      ? "#cbd5e1"
+                      : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    cursor: updateLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {updateLoading
+                    ? "Saving..."
+                    : "Save Prescription & Complete Visit"}
+                </button>
+                <button
+                  onClick={() => setShowPrescriptionModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "14px",
+                    background: "#f1f5f9",
+                    color: "#64748b",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Patient History Modal */}
-      {showHistoryModal && (
-        <PatientHistoryModal
-          history={patientHistory}
-          loading={historyLoading}
-          error={historyError}
-          onClose={handleCloseHistory}
-        />
-      )}
-    </div>
-  );
-};
+        {/* Patient History Modal */}
+        {showHistoryModal && (
+          <PatientHistoryModal
+            history={patientHistory}
+            loading={historyLoading}
+            error={historyError}
+            onClose={handleCloseHistory}
+          />
+        )}
+      </div>
+    );
+  };
 
 export default DoctorDashboard;
