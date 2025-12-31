@@ -133,7 +133,7 @@ export const getPrescriptionDetails = async (req, res) => {
       SELECT DISTINCT 
     pat.name AS patient_name,
     d.name AS doctor_name, 
-    pi.duration_days,
+    pi.total_days AS duration_days,
     pi.food,
     pi.morning,
     pi.afternoon,
@@ -209,6 +209,7 @@ export const issueMedicine = async (req, res) => {
   const pharmacistId = req.user.pharmacist_id; // from auth middleware
   const { prescription_id, issued_days, batches } = req.body; 
   // batches = [{ batch_id: string, quantity: number }, ...]
+  console.log(req.body);
 
   const conn = await pool.getConnection();
 
@@ -396,7 +397,7 @@ export const getTransactionDetails = async (req, res) => {
      SELECT
     m.name AS medicine_name, 
     m.type AS medicine_type,
-    ppi.duration_days,
+    ppi.total_days AS duration_days,
     ppi.food,
     ppi.morning,
     ppi.afternoon,
@@ -756,16 +757,23 @@ const prescriptionPDF = async (conn, prescriptionId) => {
   const [[header]] = await conn.query(
     `
     SELECT 
-      p.name AS patient_name,
-      p.email,
-      d.name AS doctor_name,
-      pt.issued_days
-    FROM pharmacy_transaction pt
-    JOIN prescription pr ON pt.prescription_id = pr.prescription_id
-    JOIN visit v ON pr.visit_id = v.visit_id
-    JOIN patient_profile p ON v.patient_id = p.patient_id
-    JOIN doctor d ON pr.doctor_id = d.doctor_id
-    WHERE pt.prescription_id = ?
+  p.name AS patient_name,
+  u.email AS email,
+  d.name AS doctor_name,
+  pt.issued_days
+FROM pharmacy_transaction pt
+JOIN prescription pr
+  ON pt.prescription_id = pr.prescription_id
+JOIN visit v
+  ON pr.visit_id = v.visit_id
+JOIN patient_profile p
+  ON v.patient_id = p.patient_id
+JOIN users u
+  ON p.user_id = u.user_id
+JOIN doctor d
+  ON pr.doctor_id = d.doctor_id
+WHERE pt.prescription_id = ?;
+
     `,
     [prescriptionId]
   );
@@ -777,7 +785,7 @@ const prescriptionPDF = async (conn, prescriptionId) => {
       pi.morning,
       pi.afternoon,
       pi.night,
-      pi.duration_days,
+      pi.total_days AS duration_days,
       pi.food
     FROM prescription_items pi
     JOIN medicine m ON pi.medicine_id = m.medicine_id
@@ -790,7 +798,8 @@ const prescriptionPDF = async (conn, prescriptionId) => {
 };
 
 const generatePrescriptionPDF = (data) => {
-  const timestamp = new Date().toISOString().split("T")[0];
+  const timestamp = Date.now();
+
 
   // Ensure folder exists
   const folderPath = path.join(process.cwd(), "prescriptionPDF");
@@ -905,7 +914,7 @@ const generatePrescriptionPDF = (data) => {
 
 const sendEmailWithPDF = async (email, pdfPath) => {
   const timestamp = new Date().toISOString().split("T")[0];
-
+  
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
