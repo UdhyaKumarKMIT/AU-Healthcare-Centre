@@ -24,7 +24,6 @@ import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.jsx';
 // Admin Layout & Pages
 import AdminLayout from './components/Admin/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import UserManagement from './pages/admin/UserManagement.jsx';
 import UserForm from './pages/admin/UserForm.jsx';
 import DoctorManagement from './pages/admin/DoctorManagement.jsx';
 import NursesManagement from './pages/admin/NursesManagement.jsx';
@@ -76,7 +75,6 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
               <Route element={<AdminLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/users/add" element={<UserForm mode="add" />} />
                 <Route path="/admin/users/:userId" element={<UserForm mode="view" />} />
                 <Route path="/admin/users/:userId/edit" element={<UserForm mode="edit" />} />
