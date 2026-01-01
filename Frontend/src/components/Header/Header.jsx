@@ -71,27 +71,6 @@ const Header = () => {
         </div>
 
         {/* Center Section - Navigation Links */}
-        <nav className={styles.centerSection}>
-          <button 
-            className={styles.navLink}
-            onClick={() => handleNavigation('home')}
-          >
-            Home
-          </button>
-          <button 
-            className={styles.navLink}
-            onClick={() => handleNavigation('doctors')}
-          >
-            Doctors
-          </button>
-
-          <button 
-            className={styles.navLink}
-            onClick={() => handleNavigation('services')}
-          >
-            Patient Services
-          </button>
-        </nav>
 
         {/* Right Section - User Info & Logout */}
         <div className={styles.rightSection}>
