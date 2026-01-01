@@ -180,9 +180,14 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     if (!formData.doctorId) newErrors.doctorId = 'Select a doctor';
     if (!formData.reason.trim()) newErrors.reason = 'Reason is required';
     
-    if (formData.temperature && (formData.temperature < 90 || formData.temperature > 110)) {
+    if (!formData.temperature) newErrors.temperature = 'Temperature is required';
+    else if (formData.temperature < 90 || formData.temperature > 110)
       newErrors.temperature = 'Temperature must be between 90°F and 110°F';
-    }
+
+    if (!formData.bpSystolic) newErrors.bpSystolic = 'Systolic BP is required';
+    if (!formData.bpDiastolic) newErrors.bpDiastolic = 'Diastolic BP is required';
+    if (!formData.heartRate) newErrors.heartRate = 'Heart rate is required';
+
     
     if (formData.bpSystolic && (formData.bpSystolic < 70 || formData.bpSystolic > 200)) {
       newErrors.bpSystolic = 'Systolic BP must be between 70-200 mmHg';
@@ -353,7 +358,7 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
         </div>
 
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Vitals (Optional)</h3>
+          <h3 className={styles.sectionTitle}>Vitals *</h3>
           
           <div className={styles.vitalsGrid}>
             <div className={styles.formGroup}>
