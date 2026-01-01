@@ -8,6 +8,7 @@ import Header from '../../components/Header/Header';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faUserMd, faCalendarCheck, faClock, faUserTie, faPills } from '@fortawesome/free-solid-svg-icons';
 import styles from './AdminDashboard.module.css';
+import statStyles from '../../components/Admin/ReceptionistStats.module.css'
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -163,25 +164,24 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards Grid */}
-        <div className={styles.statsGrid}>
-          {dashboardCards.map((card, index) => (
-            <div 
-              key={index}
-              className={styles.dashboardCard}
-              onClick={() => handleCardClick(card.route)}
-            >
-              <div className={styles.cardIcon} >
-                <FontAwesomeIcon icon={card.icon} />
-              </div>
-              <div className={styles.cardContent}>
-                <h3 className={styles.cardTitle}>{card.title}</h3>
-                <div className={styles.cardValue}>
-                  {card.value}{card.unit || ''}
+        <div className={statStyles.statsContainer}>
+          <h3 className={statStyles.sectionTitle}>System Overview</h3>
+
+          <div className={statStyles.statsGrid}>
+            {dashboardCards.map((card, index) => (
+              <div key={index} className={statStyles.statCard}>
+                <div className={statStyles.statHeader}>
+                  <div className={statStyles.statIcon}>
+                    <FontAwesomeIcon icon={card.icon} />
+                  </div>
+                  <h4 className={statStyles.statTitle}>{card.title}</h4>
                 </div>
+                <div className={statStyles.statValue}>{card.value}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
 
         {/* Charts and Additional Stats */}
         <div className={styles.chartsContainer}>
