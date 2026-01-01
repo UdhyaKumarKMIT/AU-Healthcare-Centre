@@ -4,6 +4,21 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.statIcon {
+  background: #1a365d;
+  color: white;
+}
+
+/* rest of your CSS exactly as-is */
+
+.statsContainer {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
   margin-bottom: 24px;
 }
