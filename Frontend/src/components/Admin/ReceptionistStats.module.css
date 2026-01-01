@@ -1,11 +1,4 @@
 /* src/components/Admin/ReceptionistStats.module.css */
-.statsContainer {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  margin-bottom: 24px;
-}
 
 .statIcon {
   background: #1a365d;
