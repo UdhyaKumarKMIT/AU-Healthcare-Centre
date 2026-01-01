@@ -654,6 +654,1015 @@
           "403": { "description": "Forbidden - Not a doctor" }
         }
       }
+    },
+    "/api/receptionist/visit/{visit_id}/assign-doctor": {
+      "patch": {
+        "summary": "Assign doctor to visit",
+        "description": "Receptionist assigns or reassigns a doctor to an existing visit",
+        "tags": ["Receptionist"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "visit_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["doctor_id"],
+                "properties": {
+                  "doctor_id": { "type": "string", "format": "uuid", "example": "60b627dc-d824-42ec-beb4-a82ea823d75d" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Doctor assigned successfully" },
+          "400": { "description": "Bad request - doctor_id missing" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Visit or doctor not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/receptionist/doctor/{doctor_id}/availability": {
+      "patch": {
+        "summary": "Update doctor availability status",
+        "description": "Receptionist updates a doctor's availability status (AVAILABLE/BUSY/OFF_DUTY)",
+        "tags": ["Receptionist"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "doctor_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["availability_status"],
+                "properties": {
+                  "availability_status": { "type": "string", "enum": ["AVAILABLE", "BUSY", "OFF_DUTY"], "example": "AVAILABLE" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Availability updated successfully" },
+          "400": { "description": "Bad request" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Doctor not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/receptionist/doctors/available": {
+      "get": {
+        "summary": "Get all available doctors",
+        "description": "Returns list of doctors with availability_status = 'AVAILABLE'",
+        "tags": ["Receptionist"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Available doctors retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "doctor_id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string", "example": "Dr. Arjun Kumar" },
+                          "specialization": { "type": "string", "example": "Cardiology" },
+                          "phone": { "type": "string", "example": "9876543210" },
+                          "availability_status": { "type": "string", "example": "AVAILABLE" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/visits/today": {
+      "get": {
+        "summary": "Get today's visit count for doctor",
+        "description": "Returns the count of visits assigned to a specific doctor for a given date",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "doctor_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "Date in YYYY-MM-DD format",
+            "schema": { "type": "string", "format": "date", "example": "2026-01-15" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visit count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "count": { "type": "integer", "example": 12 },
+                    "date": { "type": "string", "example": "2026-01-15" },
+                    "doctor_id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - Missing doctor_id or date" },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/nurses": {
+      "get": {
+        "summary": "Get all nurses",
+        "description": "Returns list of all available nurses in the system",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Nurses list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "nurses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nurse_id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string", "example": "Nurse Priya" },
+                          "register_number": { "type": "string", "example": "NUR001" },
+                          "qualification": { "type": "string", "example": "BSc Nursing" },
+                          "phone": { "type": "string", "example": "9876543210" },
+                          "email": { "type": "string" }
+                        }
+                      }
+                    },
+                    "count": { "type": "integer", "example": 15 }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/nurses/{nurseId}": {
+      "get": {
+        "summary": "Get single nurse details",
+        "description": "Returns detailed information about a specific nurse",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "nurseId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nurse details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "nurse": {
+                      "type": "object",
+                      "properties": {
+                        "nurse_id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "register_number": { "type": "string" },
+                        "qualification": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "email": { "type": "string" },
+                        "created_at": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Nurse not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/medicines": {
+      "get": {
+        "summary": "Search medicines",
+        "description": "Search for medicines by name. Returns up to 50 results.",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Medicine name search query (partial match)",
+            "schema": { "type": "string", "example": "Para" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medicines list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string", "example": "Paracetamol 500mg" },
+                          "type": { "type": "string", "example": "Tablet" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "post": {
+        "summary": "Add new medicine",
+        "description": "Create a new medicine entry in the system",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string", "example": "Paracetamol 500mg" },
+                  "type": { "type": "string", "enum": ["Tablet", "Syrup", "Injection", "DRIP", "Capsule"], "example": "Tablet" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Medicine added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Medicine added successfully" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "type": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - Missing name or type" },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/medicines/{id}": {
+      "get": {
+        "summary": "Get single medicine details",
+        "description": "Returns detailed information about a specific medicine",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medicine details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "type": { "type": "string" },
+                        "createdAt": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Medicine not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/queue/{doctorId}": {
+      "get": {
+        "summary": "Get doctor's patient queue",
+        "description": "Returns all visits for a doctor that are SCHEDULED, ONGOING, DIAGNOSED, or PRESCRIBED",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "doctorId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queue retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "visit_id": { "type": "string", "format": "uuid" },
+                          "visit_type": { "type": "string", "enum": ["OPD", "IPD", "EMERGENCY"] },
+                          "status": { "type": "string" },
+                          "reason": { "type": "string" },
+                          "visit_date": { "type": "string", "format": "date-time" },
+                          "patient_id": { "type": "string" },
+                          "patient_name": { "type": "string" },
+                          "dob": { "type": "string", "format": "date" },
+                          "gender": { "type": "string" },
+                          "blood_group": { "type": "string" },
+                          "phone": { "type": "string" }
+                        }
+                      }
+                    },
+                    "count": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/patient/{patientId}/history": {
+      "get": {
+        "summary": "Get complete patient medical history",
+        "description": "Returns comprehensive medical history including past visits, diagnoses, prescriptions, lab tests, and vitals",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "patientId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "patient": {
+                          "type": "object",
+                          "properties": {
+                            "patient_id": { "type": "string" },
+                            "name": { "type": "string" },
+                            "dob": { "type": "string", "format": "date" },
+                            "gender": { "type": "string" },
+                            "blood_group": { "type": "string" },
+                            "phone": { "type": "string" },
+                            "emergency_contact": { "type": "string" },
+                            "roll_no": { "type": "string" }
+                          }
+                        },
+                        "medicalHistory": { "type": "array", "description": "Chronic conditions and medical history" },
+                        "pastVisits": { "type": "array", "description": "Last 10 completed visits" },
+                        "prescriptions": { "type": "array", "description": "Last 20 prescriptions" },
+                        "labTests": { "type": "array", "description": "Last 10 lab tests" },
+                        "vitalsHistory": { "type": "array", "description": "Last 10 vitals records" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Patient not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/visit/{visitId}/status": {
+      "patch": {
+        "summary": "Update visit status",
+        "description": "Updates the status of a visit (SCHEDULED, ONGOING, COMPLETED, CANCELLED, DIAGNOSED, PRESCRIBED, NURSING, PHARMACY)",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "visitId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED", "DIAGNOSED", "PRESCRIBED", "NURSING", "PHARMACY"], "example": "ONGOING" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Visit status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "visitId": { "type": "string" },
+                    "status": { "type": "string" },
+                    "message": { "type": "string", "example": "Status updated successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - Invalid status" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Visit not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/doctor/prescription-with-tasks": {
+      "post": {
+        "summary": "Create prescription with automatic nurse task assignment",
+        "description": "Creates a prescription with multiple medicines. Automatically creates nurse tasks for injectable medicines (Injection/DRIP)",
+        "tags": ["Doctor"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["visit_id", "doctor_id", "medicines"],
+                "properties": {
+                  "visit_id": { "type": "string", "format": "uuid" },
+                  "doctor_id": { "type": "string", "format": "uuid" },
+                  "medicines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["medicine_id", "duration_days"],
+                      "properties": {
+                        "medicine_id": { "type": "string", "format": "uuid" },
+                        "duration_days": { "type": "integer", "example": 7 },
+                        "nurse_id": { "type": "string", "format": "uuid", "description": "Required for injectable medicines" },
+                        "route": { "type": "string", "enum": ["IV", "IM", "SC"], "description": "Required for injectable medicines" },
+                        "infusion_duration": { "type": "integer", "description": "Required for DRIP type (in minutes)" },
+                        "food": { "type": "string", "enum": ["BEFORE", "AFTER"], "description": "For regular medicines" },
+                        "morning": { "type": "boolean" },
+                        "afternoon": { "type": "boolean" },
+                        "night": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Prescription and nurse tasks created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "prescription_id": { "type": "string", "format": "uuid" },
+                        "nurse_tasks_created": { "type": "integer" },
+                        "total_medicines": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/profile": {
+      "get": {
+        "summary": "Get student/patient profile",
+        "description": "Returns the authenticated student's profile information",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "patient_id": { "type": "string", "format": "uuid" },
+                        "roll_no": { "type": "string", "example": "P001" },
+                        "name": { "type": "string", "example": "John Doe" },
+                        "dob": { "type": "string", "format": "date" },
+                        "gender": { "type": "string", "enum": ["MALE", "FEMALE", "OTHER"] },
+                        "blood_group": { "type": "string", "example": "O+" },
+                        "phone": { "type": "string" },
+                        "emergency_contact": { "type": "string" },
+                        "email": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Profile not found" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "put": {
+        "summary": "Update student/patient profile",
+        "description": "Allows student to update their phone and emergency contact",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "9876543210" },
+                  "emergency_contact": { "type": "string", "example": "9876543211" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Profile updated successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Profile not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/visits": {
+      "get": {
+        "summary": "Get student's visit history with filters",
+        "description": "Returns all visits for the authenticated student with optional filters for date range, status, and doctor name",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Filter visits from this date (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "description": "Filter visits up to this date (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by visit status",
+            "schema": { "type": "string", "enum": ["SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED", "DIAGNOSED", "PRESCRIBED"] }
+          },
+          {
+            "name": "doctorName",
+            "in": "query",
+            "required": false,
+            "description": "Filter by doctor name (partial match)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visits retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "visit_id": { "type": "string", "format": "uuid" },
+                          "visit_date": { "type": "string", "format": "date-time" },
+                          "visit_type": { "type": "string", "enum": ["OPD", "IPD", "EMERGENCY"] },
+                          "reason": { "type": "string" },
+                          "status": { "type": "string" },
+                          "doctor_name": { "type": "string" },
+                          "specialization": { "type": "string" },
+                          "diagnosis_name": { "type": "string" },
+                          "diagnosis_notes": { "type": "string" },
+                          "diagnosis_code": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Patient not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/prescriptions": {
+      "get": {
+        "summary": "Get student's prescription history with filters",
+        "description": "Returns all prescriptions for the authenticated student with optional filters",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["PENDING", "ISSUED", "COMPLETED", "CANCELLED"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prescriptions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "prescription_id": { "type": "string", "format": "uuid" },
+                          "created_at": { "type": "string", "format": "date-time" },
+                          "prescription_status": { "type": "string" },
+                          "visit_date": { "type": "string", "format": "date-time" },
+                          "doctor_name": { "type": "string" },
+                          "specialization": { "type": "string" },
+                          "item_id": { "type": "string" },
+                          "medicine_id": { "type": "string" },
+                          "med_name": { "type": "string" },
+                          "med_type": { "type": "string" },
+                          "total_days": { "type": "integer" },
+                          "food": { "type": "string" },
+                          "morning": { "type": "boolean" },
+                          "afternoon": { "type": "boolean" },
+                          "night": { "type": "boolean" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Patient not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/lab-tests": {
+      "get": {
+        "summary": "Get student's lab test history with filters",
+        "description": "Returns all lab tests for the authenticated student with optional filters",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "testName",
+            "in": "query",
+            "required": false,
+            "description": "Filter by test name (partial match)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lab tests retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "lab_test_id": { "type": "string", "format": "uuid" },
+                          "test_name": { "type": "string" },
+                          "ordered_date": { "type": "string", "format": "date-time" },
+                          "result": { "type": "string" },
+                          "normal_range": { "type": "string" },
+                          "visit_date": { "type": "string", "format": "date-time" },
+                          "doctor_name": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Patient not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/vitals": {
+      "get": {
+        "summary": "Get student's vitals history with filters",
+        "description": "Returns all vitals records for the authenticated student with optional date range filters",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vitals retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "vitals_id": { "type": "string", "format": "uuid" },
+                          "temperature": { "type": "number", "example": 98.6 },
+                          "bp_systolic": { "type": "integer", "example": 120 },
+                          "bp_diastolic": { "type": "integer", "example": 80 },
+                          "heart_rate": { "type": "integer", "example": 72 },
+                          "visit_date": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Patient not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/students/doctors/available": {
+      "get": {
+        "summary": "Get available doctors for booking",
+        "description": "Returns list of doctors with availability_status = 'AVAILABLE', optionally filtered by specialization",
+        "tags": ["Student"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "specialization",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available doctors retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "doctor_id": { "type": "string", "format": "uuid" },
+                          "name": { "type": "string" },
+                          "specialization": { "type": "string" },
+                          "phone": { "type": "string" },
+                          "availability_status": { "type": "string", "example": "AVAILABLE" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Internal server error" }
+        }
+      }
     }
 
   }
