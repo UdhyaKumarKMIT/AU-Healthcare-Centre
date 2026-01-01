@@ -7,7 +7,7 @@ import AdminSidebar from '../../components/Admin/AdminSidebar';
 import Header from '../../components/Header/Header';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faUserMd, faCalendarCheck, faClock, faUserTie, faPills } from '@fortawesome/free-solid-svg-icons';
-import styles from './AdminDashboard.module.css';
+import styles from './ReceptionistManagement.module.css';
 import statStyles from '../../components/Admin/ReceptionistStats.module.css'
 
 const AdminDashboard = () => {
@@ -128,11 +128,11 @@ const AdminDashboard = () => {
     }
 
     return (
-      <>
+      <div className={styles.dashboardContent} >
         {/* Dashboard Header */}
         <div className={styles.dashboardHeader}>
-          <div className={styles.headerLeft}>
-            <h1>Admin Dashboard</h1>
+          <div>
+            <h1 className={styles.title}>Admin Dashboard</h1>
             <p>Welcome to MIT Health Centre Administration Panel</p>
           </div>
         </div>
@@ -294,7 +294,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   };
 
