@@ -170,7 +170,7 @@ const AdminDashboard = () => {
               className={styles.dashboardCard}
               onClick={() => handleCardClick(card.route)}
             >
-              <div className={styles.cardIcon} style={{ backgroundColor: `${card.color}20`, color: card.color }}>
+              <div className={styles.cardIcon} >
                 <FontAwesomeIcon icon={card.icon} />
               </div>
               <div className={styles.cardContent}>
