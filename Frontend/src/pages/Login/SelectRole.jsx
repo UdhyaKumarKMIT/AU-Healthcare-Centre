@@ -8,10 +8,12 @@ import {
   faPills, 
   faUserNurse, 
   faClipboard, 
-  faUser 
+  faUser,
+  faUserTie
 } from '@fortawesome/free-solid-svg-icons';
 
 const roles = [
+  { label: 'Admin', path: '/login/admin', icon: faUserTie },
   { label: 'Doctor', path: '/login/doctor', icon: faUserMd },
   { label: 'Pharmacist', path: '/login/pharmacist', icon: faPills },
   { label: 'Nurse', path: '/login/nurse', icon: faUserNurse },

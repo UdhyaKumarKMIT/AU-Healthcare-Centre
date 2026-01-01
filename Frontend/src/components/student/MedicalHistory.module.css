@@ -50,6 +50,127 @@
   font-size: 16px;
 }
 
+/* Filter Bar */
+.filterBar {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filterButton {
+  padding: 10px 20px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  background: #0d47a1;
+  transform: translateY(-1px);
+}
+
+/* Filter Panel */
+.filterPanel {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filterPanel h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #1a237e;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterField label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filterField input,
+.filterField select {
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.filterField input:focus,
+.filterField select:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.filterActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.applyBtn,
+.resetBtn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.applyBtn {
+  background: #10b981;
+  color: white;
+}
+
+.applyBtn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.resetBtn {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.resetBtn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.sectionButton svg {
+  font-size: 16px;
+}
+
 /* Section Content */
 .section {
   animation: fadeIn 0.3s ease;

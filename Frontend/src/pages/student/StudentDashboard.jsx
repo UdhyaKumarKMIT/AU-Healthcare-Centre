@@ -9,7 +9,7 @@ import {
   fetchStudentPrescriptions,
   fetchStudentLabTests,
   fetchStudentVitals,
-  fetchMedicalHistory
+  fetchStudentMedicalHistory
 } from '../../store/slices/studentsSlice';
 import Header from '../../components/Header/Header';
 import StudentProfile from '../../components/student/StudentProfile';
@@ -52,7 +52,7 @@ const StudentDashboard = () => {
       dispatch(fetchStudentPrescriptions());
       dispatch(fetchStudentLabTests());
       dispatch(fetchStudentVitals());
-      dispatch(fetchMedicalHistory());
+      dispatch(fetchStudentMedicalHistory());
     }
   };
 
