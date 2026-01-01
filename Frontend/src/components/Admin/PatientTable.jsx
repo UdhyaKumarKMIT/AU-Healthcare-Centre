@@ -31,7 +31,6 @@ const PatientTable = ({ patients = [], onView, onEdit }) => {
             <th>Phone</th>
             <th>Last Visit</th>
             <th>Status</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -65,22 +64,6 @@ const PatientTable = ({ patients = [], onView, onEdit }) => {
                 <span className={`${styles.statusBadge} ${patient.isNew ? styles.new : styles.returning}`}>
                   {patient.isNew ? 'New' : 'Returning'}
                 </span>
-              </td>
-              <td>
-                <div className={styles.actionButtons}>
-                  <button
-                    className={styles.viewBtn}
-                    onClick={() => onView(patient.id)}
-                  >
-                    View
-                  </button>
-                  <button
-                    className={styles.editBtn}
-                    onClick={() => onEdit(patient.id)}
-                  >
-                    Edit
-                  </button>
-                </div>
               </td>
             </tr>
           ))}

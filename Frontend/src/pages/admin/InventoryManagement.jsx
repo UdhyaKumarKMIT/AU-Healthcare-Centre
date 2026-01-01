@@ -214,7 +214,6 @@ const InventoryManagement = () => {
                 <th>Batches</th>
                 <th>Nearest Expiry</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -268,40 +267,6 @@ const InventoryManagement = () => {
                     }}>
                       {item.status.replace('_', ' ')}
                     </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => navigate(`/admin/inventory/${item.medicine_id}`)}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#e6f2ff',
-                          color: '#1a365d',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => navigate(`/admin/inventory/${item.medicine_id}/restock`)}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#f0e6ff',
-                          color: '#5a2d82',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        Restock
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
