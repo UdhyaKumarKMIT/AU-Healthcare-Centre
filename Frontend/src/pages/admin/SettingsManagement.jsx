@@ -1,6 +1,8 @@
 // src/pages/admin/SettingsManagement.jsx
 import React, { useState } from 'react';
-import styles from './SettingsManagement.module.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import styles from './ReceptionistManagement.module.css';
 
 const SettingsManagement = () => {
   const [settings, setSettings] = useState({
@@ -32,255 +34,476 @@ const SettingsManagement = () => {
   };
 
   return (
-    <div className={styles.settingsContainer}>
+    <div className={styles.receptionistManagement}>
+      {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>⚙️ System Settings</h1>
-        <p className={styles.subtitle}>
-          Configure system preferences and settings
-        </p>
+        <div>
+          <h1 className={styles.title}>⚙️ System Settings</h1>
+          <p className={styles.subtitle}>
+            Configure system preferences and settings
+          </p>
+        </div>
       </div>
 
-      <div className={styles.tabsContainer}>
-        <button
-          className={`${styles.tab} ${activeTab === 'general' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('general')}
-        >
-          General
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'notifications' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('notifications')}
-        >
-          Notifications
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'security' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('security')}
-        >
-          Security
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'backup' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('backup')}
-        >
-          Backup
-        </button>
+      {/* Tabs */}
+      <div style={{
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+        border: '1px solid #e2e8f0',
+        marginBottom: '24px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          borderBottom: '2px solid #e2e8f0'
+        }}>
+          {['general', 'notifications', 'security', 'backup'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1,
+                padding: '16px 24px',
+                background: activeTab === tab ? '#1a365d' : 'transparent',
+                color: activeTab === tab ? 'white' : '#4a5568',
+                border: 'none',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textTransform: 'capitalize',
+                transition: 'all 0.2s'
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div style={{ padding: '32px' }}>
+          {activeTab === 'general' && (
+            <div>
+              <h2 style={{ 
+                fontSize: '20px', 
+                fontWeight: '600', 
+                color: '#1a365d', 
+                marginBottom: '24px' 
+              }}>
+                General Settings
+              </h2>
+              
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Hospital Name
+                </label>
+                <input
+                  type="text"
+                  value={settings.hospitalName}
+                  onChange={(e) => handleChange('hospitalName', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '20px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Hospital Email
+                </label>
+                <input
+                  type="email"
+                  value={settings.hospitalEmail}
+                  onChange={(e) => handleChange('hospitalEmail', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '20px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Hospital Phone
+                </label>
+                <input
+                  type="tel"
+                  value={settings.hospitalPhone}
+                  onChange={(e) => handleChange('hospitalPhone', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '20px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Address
+                </label>
+                <textarea
+                  value={settings.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  className={styles.searchInput}
+                  rows="3"
+                  style={{ marginBottom: '20px', resize: 'vertical', minHeight: '80px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Working Hours
+                </label>
+                <input
+                  type="text"
+                  value={settings.workingHours}
+                  onChange={(e) => handleChange('workingHours', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '20px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Emergency Contact
+                </label>
+                <input
+                  type="tel"
+                  value={settings.emergencyContact}
+                  onChange={(e) => handleChange('emergencyContact', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '20px' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Max Visits Per Day
+                </label>
+                <input
+                  type="number"
+                  value={settings.maxVisitsPerDay}
+                  onChange={(e) => handleChange('maxVisitsPerDay', e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <div>
+              <h2 style={{ 
+                fontSize: '20px', 
+                fontWeight: '600', 
+                color: '#1a365d', 
+                marginBottom: '24px' 
+              }}>
+                Notification Settings
+              </h2>
+              
+              {[
+                { key: 'emailNotifications', label: 'Email Notifications', desc: 'Send email notifications for appointments and updates' },
+                { key: 'smsNotifications', label: 'SMS Notifications', desc: 'Send SMS notifications for urgent updates' },
+                { key: 'appointmentReminders', label: 'Appointment Reminders', desc: 'Automatically send appointment reminders to patients' }
+              ].map((item) => (
+                <div key={item.key} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '20px 0',
+                  borderBottom: '1px solid #e2e8f0'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '500', color: '#1a365d', marginBottom: '4px' }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#718096' }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                  <label style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: '48px',
+                    height: '24px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={settings[item.key]}
+                      onChange={(e) => handleChange(item.key, e.target.checked)}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <span style={{
+                      position: 'absolute',
+                      cursor: 'pointer',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: settings[item.key] ? '#1a365d' : '#cbd5e0',
+                      transition: '0.3s',
+                      borderRadius: '24px'
+                    }}>
+                      <span style={{
+                        position: 'absolute',
+                        content: '',
+                        height: '18px',
+                        width: '18px',
+                        left: settings[item.key] ? '27px' : '3px',
+                        bottom: '3px',
+                        backgroundColor: 'white',
+                        transition: '0.3s',
+                        borderRadius: '50%'
+                      }} />
+                    </span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div>
+              <h2 style={{ 
+                fontSize: '20px', 
+                fontWeight: '600', 
+                color: '#1a365d', 
+                marginBottom: '24px' 
+              }}>
+                Security Settings
+              </h2>
+              
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Session Timeout (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={settings.sessionTimeout}
+                  onChange={(e) => handleChange('sessionTimeout', e.target.value)}
+                  className={styles.searchInput}
+                  style={{ marginBottom: '8px' }}
+                />
+                <p style={{ fontSize: '13px', color: '#718096', margin: '0 0 24px 0' }}>
+                  Users will be automatically logged out after this period of inactivity
+                </p>
+              </div>
+
+              <div style={{
+                background: '#e6f2ff',
+                border: '1px solid #1a365d',
+                borderRadius: '8px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1a365d', margin: '0 0 12px 0' }}>
+                  Password Requirements
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#4a5568' }}>
+                  <li style={{ marginBottom: '8px' }}>Minimum 6 characters</li>
+                  <li style={{ marginBottom: '8px' }}>Must contain letters and numbers</li>
+                  <li>Password expires every 90 days</li>
+                </ul>
+              </div>
+
+              <div style={{
+                background: '#fff5f5',
+                border: '1px solid #e53e3e',
+                borderRadius: '8px',
+                padding: '20px'
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#c53030', margin: '0 0 16px 0' }}>
+                  Danger Zone
+                </h3>
+                <button style={{
+                  width: '100%',
+                  padding: '12px 24px',
+                  background: '#e53e3e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  marginBottom: '12px'
+                }}>
+                  Reset All User Passwords
+                </button>
+                <button style={{
+                  width: '100%',
+                  padding: '12px 24px',
+                  background: '#e53e3e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}>
+                  Clear All Sessions
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'backup' && (
+            <div>
+              <h2 style={{ 
+                fontSize: '20px', 
+                fontWeight: '600', 
+                color: '#1a365d', 
+                marginBottom: '24px' 
+              }}>
+                Backup Settings
+              </h2>
+              
+              <div className={styles.formGroup}>
+                <label style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#4a5568',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Backup Frequency
+                </label>
+                <select
+                  value={settings.backupFrequency}
+                  onChange={(e) => handleChange('backupFrequency', e.target.value)}
+                  className={styles.filterSelect}
+                  style={{ marginBottom: '24px', width: '100%' }}
+                >
+                  <option value="hourly">Hourly</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+
+              <div style={{
+                background: '#f7fafc',
+                borderRadius: '8px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1a365d', margin: '0 0 12px 0' }}>
+                  Last Backup
+                </h3>
+                <p style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
+                  December 31, 2025 - 8:00 AM
+                </p>
+                <p style={{ fontSize: '14px', color: '#38a169', margin: '8px 0', fontWeight: '500' }}>
+                  ✓ Backup completed successfully
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #1a365d 0%, #2d3748 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}>
+                  Backup Now
+                </button>
+                <button style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: '#e2e8f0',
+                  color: '#4a5568',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}>
+                  View Backup History
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className={styles.settingsContent}>
-        {activeTab === 'general' && (
-          <div className={styles.settingsSection}>
-            <h2>General Settings</h2>
-            
-            <div className={styles.formGroup}>
-              <label>Hospital Name</label>
-              <input
-                type="text"
-                value={settings.hospitalName}
-                onChange={(e) => handleChange('hospitalName', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Hospital Email</label>
-              <input
-                type="email"
-                value={settings.hospitalEmail}
-                onChange={(e) => handleChange('hospitalEmail', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Hospital Phone</label>
-              <input
-                type="tel"
-                value={settings.hospitalPhone}
-                onChange={(e) => handleChange('hospitalPhone', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Address</label>
-              <textarea
-                value={settings.address}
-                onChange={(e) => handleChange('address', e.target.value)}
-                className={styles.textarea}
-                rows="3"
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Working Hours</label>
-              <input
-                type="text"
-                value={settings.workingHours}
-                onChange={(e) => handleChange('workingHours', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Emergency Contact</label>
-              <input
-                type="tel"
-                value={settings.emergencyContact}
-                onChange={(e) => handleChange('emergencyContact', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Max Visits Per Day</label>
-              <input
-                type="number"
-                value={settings.maxVisitsPerDay}
-                onChange={(e) => handleChange('maxVisitsPerDay', e.target.value)}
-                className={styles.input}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'notifications' && (
-          <div className={styles.settingsSection}>
-            <h2>Notification Settings</h2>
-            
-            <div className={styles.switchGroup}>
-              <div className={styles.switchLabel}>
-                <span>Email Notifications</span>
-                <p className={styles.switchDescription}>
-                  Send email notifications for appointments and updates
-                </p>
-              </div>
-              <label className={styles.switch}>
-                <input
-                  type="checkbox"
-                  checked={settings.emailNotifications}
-                  onChange={(e) => handleChange('emailNotifications', e.target.checked)}
-                />
-                <span className={styles.slider}></span>
-              </label>
-            </div>
-
-            <div className={styles.switchGroup}>
-              <div className={styles.switchLabel}>
-                <span>SMS Notifications</span>
-                <p className={styles.switchDescription}>
-                  Send SMS notifications for urgent updates
-                </p>
-              </div>
-              <label className={styles.switch}>
-                <input
-                  type="checkbox"
-                  checked={settings.smsNotifications}
-                  onChange={(e) => handleChange('smsNotifications', e.target.checked)}
-                />
-                <span className={styles.slider}></span>
-              </label>
-            </div>
-
-            <div className={styles.switchGroup}>
-              <div className={styles.switchLabel}>
-                <span>Appointment Reminders</span>
-                <p className={styles.switchDescription}>
-                  Automatically send appointment reminders to patients
-                </p>
-              </div>
-              <label className={styles.switch}>
-                <input
-                  type="checkbox"
-                  checked={settings.appointmentReminders}
-                  onChange={(e) => handleChange('appointmentReminders', e.target.checked)}
-                />
-                <span className={styles.slider}></span>
-              </label>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'security' && (
-          <div className={styles.settingsSection}>
-            <h2>Security Settings</h2>
-            
-            <div className={styles.formGroup}>
-              <label>Session Timeout (minutes)</label>
-              <input
-                type="number"
-                value={settings.sessionTimeout}
-                onChange={(e) => handleChange('sessionTimeout', e.target.value)}
-                className={styles.input}
-              />
-              <p className={styles.hint}>
-                Users will be automatically logged out after this period of inactivity
-              </p>
-            </div>
-
-            <div className={styles.infoBox}>
-              <h3>Password Requirements</h3>
-              <ul>
-                <li>Minimum 6 characters</li>
-                <li>Must contain letters and numbers</li>
-                <li>Password expires every 90 days</li>
-              </ul>
-            </div>
-
-            <div className={styles.dangerZone}>
-              <h3>Danger Zone</h3>
-              <button className={styles.dangerButton}>
-                Reset All User Passwords
-              </button>
-              <button className={styles.dangerButton}>
-                Clear All Sessions
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'backup' && (
-          <div className={styles.settingsSection}>
-            <h2>Backup Settings</h2>
-            
-            <div className={styles.formGroup}>
-              <label>Backup Frequency</label>
-              <select
-                value={settings.backupFrequency}
-                onChange={(e) => handleChange('backupFrequency', e.target.value)}
-                className={styles.select}
-              >
-                <option value="hourly">Hourly</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-
-            <div className={styles.backupInfo}>
-              <h3>Last Backup</h3>
-              <p>December 31, 2025 - 8:00 AM</p>
-              <p className={styles.success}>✓ Backup completed successfully</p>
-            </div>
-
-            <div className={styles.actionButtons}>
-              <button className={styles.primaryButton}>
-                Backup Now
-              </button>
-              <button className={styles.secondaryButton}>
-                View Backup History
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className={styles.footer}>
-        <button className={styles.saveButton} onClick={handleSave}>
-          Save Settings
+      {/* Footer Actions */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '12px',
+        padding: '24px 0'
+      }}>
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            padding: '12px 24px',
+            background: '#e2e8f0',
+            color: '#4a5568',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <FontAwesomeIcon icon={faTimes} /> Cancel
         </button>
-        <button className={styles.cancelButton}>
-          Cancel
+        <button
+          onClick={handleSave}
+          className={styles.addButton}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <FontAwesomeIcon icon={faSave} /> Save Settings
         </button>
       </div>
     </div>
