@@ -31,9 +31,8 @@ export const getAllUsers = async (req, res, next) => {
 
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, role, phone, specialization } = req.body;
+    const { name, email, password, role, phone, specialization, qualification, register_number } = req.body;
     
-    // Required fields validation
     if (!name || !email || !password || !role) {
       return res.status(400).json({ 
         success: false, 
@@ -41,7 +40,6 @@ export const createUser = async (req, res, next) => {
       });
     }
     
-    // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -50,7 +48,6 @@ export const createUser = async (req, res, next) => {
       });
     }
     
-    // Role validation
     const validRoles = ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST'];
     if (!validRoles.includes(role.toUpperCase())) {
       return res.status(400).json({ 
@@ -59,7 +56,6 @@ export const createUser = async (req, res, next) => {
       });
     }
     
-    // Password length validation
     if (password.length < 6) {
       return res.status(400).json({ 
         success: false, 
@@ -67,7 +63,6 @@ export const createUser = async (req, res, next) => {
       });
     }
     
-    // Role-specific validation
     if (role.toUpperCase() === 'DOCTOR') {
       if (!specialization) {
         return res.status(400).json({ 
@@ -82,15 +77,31 @@ export const createUser = async (req, res, next) => {
         });
       }
     }
+
+    if (role.toUpperCase() === 'NURSE') {
+      if (!qualification) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Qualification is required for nurses' 
+        });
+      }
+      if (!register_number) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Register number is required for nurses' 
+        });
+      }
+    }
     
-    // Create user with all provided fields
     const user = await adminService.createUser({
       name,
       email,
       password,
       role,
       phone,
-      specialization
+      specialization,
+      qualification,
+      register_number
     });
     
     res.status(201).json({ 
@@ -102,6 +113,7 @@ export const createUser = async (req, res, next) => {
     next(err);
   }
 };
+
 export const updateUserStatus = async (req, res, next) => {
   try {
     const { user_id } = req.params;
@@ -160,6 +172,24 @@ export const getAllReceptionists = async (req, res, next) => {
   }
 };
 
+export const getAllNurses = async (req, res, next) => {
+  try {
+    const nurses = await adminService.getAllNurses();
+    res.json({ success: true, data: nurses, count: nurses.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAllPharmacists = async (req, res, next) => {
+  try {
+    const pharmacists = await adminService.getAllPharmacists();
+    res.json({ success: true, data: pharmacists, count: pharmacists.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getAllVisits = async (req, res, next) => {
   try {
     const { date, status } = req.query;
@@ -169,3 +199,33 @@ export const getAllVisits = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getMedicineInventory = async (req, res, next) => {
+  try {
+    const { status, search } = req.query;
+    const inventory = await adminService.getMedicineInventory({ status, search });
+    res.json({ success: true, data: inventory, count: inventory.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSystemLogs = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const logs = await adminService.getSystemLogs({
+      startDate,
+      endDate
+    });
+
+    res.json({
+      success: true,
+      data: logs,
+      count: logs.length
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
