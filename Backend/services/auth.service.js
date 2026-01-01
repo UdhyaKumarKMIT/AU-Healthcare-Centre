@@ -82,15 +82,20 @@ export const login = async (email, password) => {
     }
   }
 
-  // If pharmacist, fetch pharmacist_id from pharmacist table (optional - add if you have this)
+  // If pharmacist, fetch pharmacist_id and profile from pharmacist table
   if (user.role === ROLES.PHARMACIST) {
     const [pharmacistRows] = await pool.execute(
-      'SELECT pharmacist_id FROM pharmacist WHERE user_id = ?',
+      'SELECT pharmacist_id, name, email, phone FROM pharmacist WHERE user_id = ?',
       [user.user_id]
     )
     
     if (pharmacistRows.length > 0) {
       response.user.pharmacist_id = pharmacistRows[0].pharmacist_id
+      response.user.name = pharmacistRows[0].name
+      response.user.pharmacist_email = pharmacistRows[0].email
+      response.user.phone = pharmacistRows[0].phone
+    } else {
+      console.warn('⚠️ Pharmacist user found but no pharmacist profile exists for user_id:', user.user_id)
     }
   }
 

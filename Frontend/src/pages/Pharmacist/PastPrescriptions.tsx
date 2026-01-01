@@ -6,7 +6,9 @@ import {
   FileCheck,
   Pill,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- Types ---------- */
 interface PastPrescription {
@@ -45,6 +47,11 @@ const formatDateTime = (date: string) =>
 
 /* ---------- Component ---------- */
 const PastPrescriptions = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const pharmacistId = user?.pharmacist_id;
+
   const [prescriptions, setPrescriptions] = useState<PastPrescription[]>([]);
   const [selected, setSelected] = useState<{ items?: PrescriptionItem[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,9 +65,16 @@ const PastPrescriptions = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
+
     const fetchPast = async () => {
       try {
-        const res = await api.get("/pharmacy/transactions");
+        const res = await api.get("/pharmacy/transactions", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setPrescriptions(res.data || []);
       } catch {
         alert("Could not load past prescriptions.");
@@ -69,7 +83,7 @@ const PastPrescriptions = () => {
       }
     };
     fetchPast();
-  }, []);
+  }, [pharmacistId, navigate]);
 
   /* FILTER LOGIC (SAME AS PENDING) */
   const filteredPrescriptions = prescriptions.filter((p) => {
@@ -184,7 +198,10 @@ const PastPrescriptions = () => {
                   tabIndex={0}
                   onClick={async () => {
                     const res = await api.get(
-                      `/pharmacy/transactionDetails/${p.prescription_id}`
+                      `/pharmacy/transactionDetails/${p.prescription_id}`,
+                      {
+                        params: { pharmacist_id: pharmacistId }
+                      }
                     );
                     setPatientName(p.patient_name);
                     setPharmacistName(p.name);

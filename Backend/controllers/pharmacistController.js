@@ -74,13 +74,18 @@ export const login = async (req, res) => {
 
 // GET PHARMACIST DETAILS (NEW)
 export const getPharmacistDetails = async (req, res) => {
-  const pharmacistId = req.user.pharmacist_id; // set by auth middleware 
+  const { pharmacist_id } = req.query;
+  
+  if (!pharmacist_id) {
+    return res.status(400).json({ message: "pharmacist_id query parameter is required" });
+  }
+
   try {
     const [rows] = await pool.query(
       `SELECT pharmacist_id, name, email, phone
        FROM pharmacist
        WHERE pharmacist_id = ?`,
-      [pharmacistId]
+      [pharmacist_id]
     );
 
     if (rows.length === 0)
@@ -208,11 +213,10 @@ GROUP BY
 
 // ISSUE MEDICINE 
 export const issueMedicine = async (req , res) => {
-  const pharmacistId = req.user.pharmacist_id; // from auth middleware
-  const { prescription_id, issued_days, batches } = req.body; 
+  const { pharmacist_id, prescription_id, issued_days, batches } = req.body; 
   // batches = [{ batch_id: string, quantity: number }, ...]
 
-  if (!prescription_id || !issued_days || !batches || !batches.length) {
+  if (!pharmacist_id || !prescription_id || !issued_days || !batches || !batches.length) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -264,7 +268,7 @@ export const issueMedicine = async (req , res) => {
       `INSERT INTO pharmacy_transaction
        (prescription_id, pharmacist_id, issued_days)
        VALUES (?, ?, ?)`,
-      [prescription_id, pharmacistId, issued_days]
+      [prescription_id, pharmacist_id, issued_days]
     );
  
     // --- Step 4: Update prescription status ---
@@ -296,8 +300,11 @@ export const issueMedicine = async (req , res) => {
 
 // UPDATE PHARMACIST DETAILS
 export const updatePharmacistDetails = async (req, res) => {
-  const pharmacistId = req.user.pharmacist_id; // set by auth middleware
-  const { name, email, phone } = req.body;
+  const { pharmacist_id, name, email, phone } = req.body;
+
+  if (!pharmacist_id) {
+    return res.status(400).json({ message: "pharmacist_id is required" });
+  }
 
   if (!name && !email && !phone) {
     return res.status(400).json({ message: "At least one field is required to update" });
@@ -308,7 +315,7 @@ export const updatePharmacistDetails = async (req, res) => {
     if (email) {
       const [existing] = await pool.query(
         "SELECT * FROM pharmacist WHERE email = ? AND pharmacist_id != ?",
-        [email, pharmacistId]
+        [email, pharmacist_id]
       );
       if (existing.length) {
         return res.status(409).json({ message: "Email already in use" });
@@ -332,7 +339,7 @@ export const updatePharmacistDetails = async (req, res) => {
       values.push(phone);
     }
 
-    values.push(pharmacistId); // for WHERE clause
+    values.push(pharmacist_id); // for WHERE clause
 
     const query = `UPDATE pharmacist SET ${fields.join(", ")} WHERE pharmacist_id = ?`;
 
@@ -493,13 +500,16 @@ export const getMedicineDetails = async (req, res) => {
 export const addMedicineBatch = async (req, res) => {
   try {
     const {
+      pharmacist_id,
       batch_id,
       medicine_name,
       expiry_date,
       in_stock
     } = req.body;
 
-    const pharmacistId = req.user.pharmacist_id; 
+    if (!pharmacist_id) {
+      return res.status(400).json({ message: "pharmacist_id is required" });
+    } 
 
     const [result] = await pool.query(
       `
@@ -523,7 +533,7 @@ export const addMedicineBatch = async (req, res) => {
         batch_id,
         expiry_date,
         in_stock,
-        pharmacistId,
+        pharmacist_id,
         medicine_name
       ]
     );
@@ -583,7 +593,11 @@ export const clearMedicineBatch = async (req, res) => {
 
   try {
     const { batch_id } = req.params;
-    const clearedPharmacistId = req.user.pharmacist_id;
+    const { pharmacist_id } = req.body;
+
+    if (!pharmacist_id) {
+      return res.status(400).json({ message: "pharmacist_id is required" });
+    }
 
     await connection.beginTransaction();
  
@@ -644,6 +658,7 @@ export const clearMedicineBatch = async (req, res) => {
 
 export const addMedicine = async (req, res) => {
   const {
+    pharmacist_id,
     name,
     type,
     batch_id,
@@ -651,9 +666,11 @@ export const addMedicine = async (req, res) => {
     in_stock
   } = req.body;
 
-  const pharmacistId = req.user.pharmacist_id; 
+  if (!pharmacist_id) {
+    return res.status(400).json({ message: "pharmacist_id is required" });
+  } 
 
-  if (!name || !type || !batch_id || !expiry_date || !in_stock) {
+  if (!name || !type || !batch_id || !expiry_date || !in_stock || !pharmacist_id) {
     return res.status(400).json({ message: "Missing required fields" });
   }
  
@@ -680,7 +697,7 @@ export const addMedicine = async (req, res) => {
         medicine_id,
         expiry_date,
         in_stock,
-        pharmacistId
+        pharmacist_id
       ]
     );
 
@@ -710,7 +727,11 @@ export const deleteMedicineBatch = async (req, res) => {
 
   try {
     const { batch_id } = req.params;
-    const pharmacistId = req.user.pharmacist_id;
+    const { pharmacist_id } = req.body;
+
+    if (!pharmacist_id) {
+      return res.status(400).json({ message: "pharmacist_id is required" });
+    }
 
     await connection.beginTransaction();
 

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 import { replace, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- Types ---------- */
 interface Prescription {
@@ -28,6 +29,11 @@ const toTitleCase = (str: string) =>
 
 /* ---------- Component ---------- */
 const PendingPrescriptions = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const pharmacistId = user?.pharmacist_id;
+
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,12 +43,17 @@ const PendingPrescriptions = () => {
   );
   const [searchTerm, setSearchTerm] = useState("");
 
-  const navigate = useNavigate();
-
   useEffect(() => {
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
+
     const fetchPrescriptions = async () => {
       try {
-        const res = await api.get("/pharmacy/prescriptions");
+        const res = await api.get("/pharmacy/prescriptions", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setPrescriptions(res.data || []);
       } catch (err) {
         console.error("Failed to fetch prescriptions:", err);
@@ -53,7 +64,7 @@ const PendingPrescriptions = () => {
     };
 
     fetchPrescriptions();
-  }, []);
+  }, [pharmacistId, navigate]);
 
   /* FILTER LOGIC (NEW) */
   const filteredPrescriptions = prescriptions.filter((p) => {

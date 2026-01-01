@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Pencil, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState({ 
     name: "",
@@ -16,25 +18,33 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const pharmacistId = user?.pharmacist_id;
+
   // Fetch pharmacist details
   useEffect(() => { 
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
 
     const fetchProfile = async () => {
       try {
-        const res = await api.get("/pharmacy/pharmacistDetails");
+        const res = await api.get("/pharmacy/pharmacistDetails", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setProfile(res.data);
         setFormData(res.data);
       } catch (err) {
         console.error(err);
         alert("Failed to fetch profile. Please login again.");
-        window.location.href = "/pharmacist/login";
+        navigate("/login/pharmacist");
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [navigate]);
+  }, [navigate, pharmacistId]);
 
   // Handlers
   const handleEdit = () => setIsEditing(true);

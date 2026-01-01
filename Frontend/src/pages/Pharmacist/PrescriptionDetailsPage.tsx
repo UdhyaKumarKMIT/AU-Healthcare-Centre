@@ -10,6 +10,7 @@ import {
   Layers,
 } from "lucide-react";
 import api from "../../api/axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- TYPES ---------- */
 
@@ -35,6 +36,9 @@ interface AllocatedBatch {
 const PrescriptionDetailsPage = () => {
   const id = sessionStorage.getItem("prescriptionId");
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const pharmacistId = user?.pharmacist_id;
 
   const [patientName, setPatientName] = useState("");
   const [doctorName, setDoctorName] = useState("");
@@ -51,10 +55,15 @@ const PrescriptionDetailsPage = () => {
   /* ---------- FETCH DETAILS ---------- */
 
   useEffect(() => {
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
+
     const fetchDetails = async () => {
       try {
         const res = await api.get("/pharmacy/prescriptionDetails", {
-          params: { id },
+          params: { id, pharmacist_id: pharmacistId },
         });
 
         setPatientName(res.data.patient_name || "");
@@ -70,7 +79,7 @@ const PrescriptionDetailsPage = () => {
     };
 
     fetchDetails();
-  }, [id]);
+  }, [id, pharmacistId, navigate]);
 
   /* ---------- GET BATCHES ---------- */
 
@@ -90,6 +99,7 @@ const PrescriptionDetailsPage = () => {
     try {
       const res = await api.get("/pharmacy/getBatches", {
         params: {
+          pharmacist_id: pharmacistId,
           medicine_name: item.medicine_name,
           duration_days: durationDays,
           quantity: qty,
@@ -108,7 +118,7 @@ const PrescriptionDetailsPage = () => {
   /* ---------- COMPLETE ISSUE ---------- */
 
   const handleComplete = async () => {
-    if (!id || !issuedDays) {
+    if (!id || !issuedDays || !pharmacistId) {
       alert("Please fill all required fields.");
       return;
     }
@@ -127,6 +137,7 @@ const PrescriptionDetailsPage = () => {
 
     try {
       await api.post("/pharmacy/issue", {
+        pharmacist_id: pharmacistId,
         prescription_id: id,
         issued_days: Number(issuedDays),
         batches: items.flatMap((med) =>

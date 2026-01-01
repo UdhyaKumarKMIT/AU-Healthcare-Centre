@@ -2,10 +2,14 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Pill, ArrowLeft, Activity } from "lucide-react";
 import api from "../../api/axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 const AddMedicineStockPage = () => {
   const { name } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const pharmacistId = user?.pharmacist_id;
 
   const [batchId, setBatchId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -13,8 +17,16 @@ const AddMedicineStockPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!pharmacistId) {
+      alert("Please login again");
+      navigate("/login/pharmacist");
+      return;
+    }
+
     try {
       const response = await api.post("/pharmacy/medicine/addStock", {
+        pharmacist_id: pharmacistId,
         medicine_name: name,
         batch_id: batchId,
         in_stock: quantity,
