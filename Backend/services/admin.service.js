@@ -623,32 +623,38 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
           pt.issued_at                  AS timestamp,
           'PHARMACY_ISSUED'             AS action,
 
-          ph.pharmacist_id              AS pharmacist_id,
-          ph.user_id                    AS pharmacist_user_id,
-          NULL                          AS nurse_id,
-          NULL                          AS nurse_user_id,
+          ph.name                       AS pharmacist_name,
+          pu.email                      AS pharmacist_email,
+          NULL                          AS nurse_name,
 
           pr.prescription_id            AS prescription_id,
           v.visit_id                    AS visit_id,
-          v.patient_id                  AS patient_id,
-          v.doctor_id                   AS doctor_id,
+          pat.name                      AS patient_name,
+          d.name                        AS doctor_name,
 
           m.name                        AS medicine_name,
           pt.issued_days                AS issued_days,
 
           CONCAT(
             'Medicine ', m.name,
-            ' issued for ', pt.issued_days,
+            ' issued by ', ph.name,
+            ' for ', pt.issued_days,
             ' days'
           ) AS description
 
         FROM pharmacy_transaction pt
         JOIN pharmacist ph
           ON pt.pharmacist_id = ph.pharmacist_id
+        JOIN users pu
+          ON ph.user_id = pu.user_id
         JOIN prescription pr
           ON pt.prescription_id = pr.prescription_id
         JOIN visit v
           ON pr.visit_id = v.visit_id
+        JOIN patient_profile pat
+          ON v.patient_id = pat.patient_id
+        JOIN doctor d
+          ON v.doctor_id = d.doctor_id
         JOIN prescription_items pi
           ON pr.prescription_id = pi.prescription_id
         JOIN medicine m
@@ -664,31 +670,37 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
           nt.performed_at               AS timestamp,
           'NURSE_TASK_COMPLETED'        AS action,
 
-          NULL                          AS pharmacist_id,
-          NULL                          AS pharmacist_user_id,
-          n.nurse_id                    AS nurse_id,
-          n.user_id                     AS nurse_user_id,
+          NULL                          AS pharmacist_name,
+          NULL                          AS pharmacist_email,
+          n.name                        AS nurse_name,
 
           NULL                          AS prescription_id,
           v.visit_id                    AS visit_id,
-          v.patient_id                  AS patient_id,
-          v.doctor_id                   AS doctor_id,
+          pat.name                      AS patient_name,
+          d.name                        AS doctor_name,
 
           m.name                        AS medicine_name,
           NULL                          AS issued_days,
 
           CONCAT(
-            'Nurse task completed. Observation: ',
+            'Nurse ', n.name,
+            ' completed task. Observation: ',
             COALESCE(nt.observation, 'None')
           ) AS description
 
         FROM nurse_transaction nt
         JOIN nurse n
           ON nt.nurse_id = n.nurse_id
+        JOIN users nu
+          ON n.user_id = nu.user_id
         JOIN nurse_task t
           ON nt.task_id = t.task_id
         JOIN visit v
           ON t.visit_id = v.visit_id
+        JOIN patient_profile pat
+          ON v.patient_id = pat.patient_id
+        JOIN doctor d
+          ON v.doctor_id = d.doctor_id
         LEFT JOIN nurse_task_details nd
           ON t.task_id = nd.task_id
         LEFT JOIN medicine m
