@@ -33,6 +33,15 @@ const initialState = {
   visitsLoading: false,
   error: null,
   successMessage: null,
+  nurses: [],
+pharmacists: [],
+inventory: [],
+systemLogs: [],
+nursesLoading: false,
+pharmacistsLoading: false,
+inventoryLoading: false,
+logsLoading: false,
+
 };
 
 // Helper function to get auth headers
@@ -306,6 +315,57 @@ export const fetchVisits = createAsyncThunk(
     }
   }
 );
+export const fetchNurses = createAsyncThunk(
+  'admin/fetchNurses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/nurses`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error((await res.json()).message);
+      return (await res.json()).data;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
+
+export const fetchPharmacists = createAsyncThunk(
+  'admin/fetchPharmacists',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/pharmacists`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error((await res.json()).message);
+      return (await res.json()).data;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
+
+export const fetchInventory = createAsyncThunk(
+  'admin/fetchInventory',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/inventory`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error((await res.json()).message);
+      return (await res.json()).data;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
+
+export const fetchSystemLogs = createAsyncThunk(
+  'admin/fetchSystemLogs',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/logs`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error((await res.json()).message);
+      return (await res.json()).data;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
 
 const adminSlice = createSlice({
   name: 'admin',
@@ -339,7 +399,7 @@ const adminSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Patient Overview
       .addCase(fetchPatientOverview.pending, (state) => {
         state.loading = true;
@@ -353,7 +413,7 @@ const adminSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Users
       .addCase(fetchUsers.pending, (state) => {
         state.usersLoading = true;
@@ -362,35 +422,23 @@ const adminSlice = createSlice({
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.usersLoading = false;
         state.users = action.payload;
-        
-        // Calculate user statistics
-        const stats = {
-          active: 0,
-          inactive: 0,
-          pending: 0,
-          suspended: 0,
-          byRole: {}
-        };
-        
+
+        const stats = { active: 0, inactive: 0, pending: 0, suspended: 0, byRole: {} };
         action.payload.forEach(user => {
-          // Count by status
           const status = user.status || 'active';
-          stats[status] = (stats[status] || 0) + 1;
-          
-          // Count by role
+          stats[status]++;
           if (user.role) {
             const role = user.role.toLowerCase();
             stats.byRole[role] = (stats.byRole[role] || 0) + 1;
           }
         });
-        
         state.userStats = stats;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.usersLoading = false;
         state.error = action.payload;
       })
-      
+
       // Create User
       .addCase(createUser.pending, (state) => {
         state.usersLoading = true;
@@ -399,10 +447,9 @@ const adminSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         state.usersLoading = false;
-        state.users.unshift(action.payload); // Add to beginning
+        state.users.unshift(action.payload);
         state.successMessage = 'User created successfully';
-        
-        // Update stats
+
         const role = action.payload.role.toLowerCase();
         state.userStats.byRole[role] = (state.userStats.byRole[role] || 0) + 1;
         state.userStats.active += 1;
@@ -411,14 +458,14 @@ const adminSlice = createSlice({
         state.usersLoading = false;
         state.error = action.payload;
       })
-      
+
       // Create Doctor
       .addCase(createDoctor.pending, (state) => {
         state.doctorsLoading = true;
         state.error = null;
         state.successMessage = null;
       })
-      .addCase(createDoctor.fulfilled, (state, action) => {
+      .addCase(createDoctor.fulfilled, (state) => {
         state.doctorsLoading = false;
         state.successMessage = 'Doctor created successfully';
       })
@@ -426,14 +473,14 @@ const adminSlice = createSlice({
         state.doctorsLoading = false;
         state.error = action.payload;
       })
-      
+
       // Create Receptionist
       .addCase(createReceptionist.pending, (state) => {
         state.receptionistsLoading = true;
         state.error = null;
         state.successMessage = null;
       })
-      .addCase(createReceptionist.fulfilled, (state, action) => {
+      .addCase(createReceptionist.fulfilled, (state) => {
         state.receptionistsLoading = false;
         state.successMessage = 'Receptionist created successfully';
       })
@@ -441,7 +488,7 @@ const adminSlice = createSlice({
         state.receptionistsLoading = false;
         state.error = action.payload;
       })
-      
+
       // Update User Status
       .addCase(updateUserStatus.pending, (state) => {
         state.usersLoading = true;
@@ -450,24 +497,20 @@ const adminSlice = createSlice({
       .addCase(updateUserStatus.fulfilled, (state, action) => {
         state.usersLoading = false;
         const { userId, status } = action.payload;
-        const userIndex = state.users.findIndex(user => user.user_id === userId);
-        
-        if (userIndex !== -1) {
-          const oldStatus = state.users[userIndex].status || 'active';
-          state.users[userIndex].status = status;
-          
-          // Update stats
-          state.userStats[oldStatus] = Math.max(0, (state.userStats[oldStatus] || 0) - 1);
-          state.userStats[status] = (state.userStats[status] || 0) + 1;
+        const idx = state.users.findIndex(u => u.user_id === userId);
+        if (idx !== -1) {
+          const oldStatus = state.users[idx].status || 'active';
+          state.users[idx].status = status;
+          state.userStats[oldStatus]--;
+          state.userStats[status]++;
         }
-        
         state.successMessage = 'User status updated successfully';
       })
       .addCase(updateUserStatus.rejected, (state, action) => {
         state.usersLoading = false;
         state.error = action.payload;
       })
-      
+
       // Delete User
       .addCase(deleteUser.pending, (state) => {
         state.usersLoading = true;
@@ -475,25 +518,14 @@ const adminSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.usersLoading = false;
-        const deletedUser = state.users.find(user => user.user_id === action.payload);
-        
-        if (deletedUser) {
-          // Update stats before removing
-          const status = deletedUser.status || 'active';
-          const role = deletedUser.role.toLowerCase();
-          
-          state.userStats[status] = Math.max(0, (state.userStats[status] || 0) - 1);
-          state.userStats.byRole[role] = Math.max(0, (state.userStats.byRole[role] || 0) - 1);
-        }
-        
-        state.users = state.users.filter(user => user.user_id !== action.payload);
+        state.users = state.users.filter(u => u.user_id !== action.payload);
         state.successMessage = 'User deleted successfully';
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.usersLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Doctors
       .addCase(fetchDoctors.pending, (state) => {
         state.doctorsLoading = true;
@@ -507,7 +539,7 @@ const adminSlice = createSlice({
         state.doctorsLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Receptionists
       .addCase(fetchReceptionists.pending, (state) => {
         state.receptionistsLoading = true;
@@ -521,7 +553,7 @@ const adminSlice = createSlice({
         state.receptionistsLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Visits
       .addCase(fetchVisits.pending, (state) => {
         state.visitsLoading = true;
@@ -534,8 +566,65 @@ const adminSlice = createSlice({
       .addCase(fetchVisits.rejected, (state, action) => {
         state.visitsLoading = false;
         state.error = action.payload;
+      })
+
+      // Fetch Nurses
+      .addCase(fetchNurses.pending, (state) => {
+        state.nursesLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchNurses.fulfilled, (state, action) => {
+        state.nursesLoading = false;
+        state.nurses = action.payload;
+      })
+      .addCase(fetchNurses.rejected, (state, action) => {
+        state.nursesLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch Pharmacists
+      .addCase(fetchPharmacists.pending, (state) => {
+        state.pharmacistsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchPharmacists.fulfilled, (state, action) => {
+        state.pharmacistsLoading = false;
+        state.pharmacists = action.payload;
+      })
+      .addCase(fetchPharmacists.rejected, (state, action) => {
+        state.pharmacistsLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch Inventory
+      .addCase(fetchInventory.pending, (state) => {
+        state.inventoryLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchInventory.fulfilled, (state, action) => {
+        state.inventoryLoading = false;
+        state.inventory = action.payload;
+      })
+      .addCase(fetchInventory.rejected, (state, action) => {
+        state.inventoryLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch System Logs
+      .addCase(fetchSystemLogs.pending, (state) => {
+        state.logsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSystemLogs.fulfilled, (state, action) => {
+        state.logsLoading = false;
+        state.systemLogs = action.payload;
+      })
+      .addCase(fetchSystemLogs.rejected, (state, action) => {
+        state.logsLoading = false;
+        state.error = action.payload;
       });
   },
+
 });
 
 export const { clearAdminStats, clearError, clearSuccessMessage } = adminSlice.actions;
