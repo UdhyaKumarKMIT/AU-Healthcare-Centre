@@ -13,7 +13,7 @@ import {
 } from '../../store/slices/studentsSlice';
 import Header from '../../components/Header/Header';
 import StudentProfile from '../../components/student/StudentProfile';
-import DoctorSchedule from '../../components/student/doctorSchedule';
+import DoctorSchedule from '../../components/student/DoctorSchedule';
 import MedicalHistory from '../../components/student/MedicalHistory';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
