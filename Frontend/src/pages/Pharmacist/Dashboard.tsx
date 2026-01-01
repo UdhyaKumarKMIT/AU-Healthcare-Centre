@@ -79,7 +79,7 @@ const Dashboard = () => {
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
               <Activity />
               <div>
-                <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
+                <h2 style={{ margin: 0 }}>Anna University Pharmacy</h2>
                 <small>Pharmacist Dashboard</small>
               </div>
             </div>

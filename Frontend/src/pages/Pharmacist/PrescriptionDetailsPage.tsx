@@ -4,13 +4,14 @@ import {
   Activity,
   PillBottle,
   PersonStanding,
-  Package,
   CalendarDays,
   Stethoscope,
   CheckLine,
   Layers,
 } from "lucide-react";
 import api from "../../api/axios";
+
+/* ---------- TYPES ---------- */
 
 interface PrescriptionItem {
   medicine_name: string;
@@ -24,46 +25,87 @@ interface PrescriptionItem {
   };
 }
 
-interface BatchItem {
-  medicine_name: string;
+interface AllocatedBatch {
   batch_id: string;
+  used: number;
 }
+
+/* ---------- COMPONENT ---------- */
 
 const PrescriptionDetailsPage = () => {
   const id = sessionStorage.getItem("prescriptionId");
   const navigate = useNavigate();
 
-  const [patientName, setPatientName] = useState(""); 
-  const [doctorName, setDoctorName] = useState(""); 
+  const [patientName, setPatientName] = useState("");
+  const [doctorName, setDoctorName] = useState("");
   const [items, setItems] = useState<PrescriptionItem[]>([]);
-  const [issuedDays, setIssuedDays] = useState(""); 
+  const [issuedDays, setIssuedDays] = useState<number | "">("");
+  const [durationDays, setDurationDays] = useState<number>(0);
 
-  // Batches and quantities keyed by medicine name
-  const [batchIds, setBatchIds] = useState<Record<string, string>>({});  
-  const [quantities, setQuantities] = useState<Record<string, number>>({});  
-  const [groupedBatches, setGroupedBatches] = useState<Record<string, string[]>>({});
+  // 🔹 Quantities & allocated batches keyed by medicine name
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [allocatedBatches, setAllocatedBatches] = useState<
+    Record<string, AllocatedBatch[]>
+  >({});
+
+  /* ---------- FETCH DETAILS ---------- */
 
   useEffect(() => {
     const fetchDetails = async () => {
-      try {  
-        const res = await api.get("/pharmacy/prescriptionDetails", { params: { id } });
-        setPatientName(res.data.patient_name || ""); 
-        setDoctorName(res.data.doctor_name || ""); 
+      try {
+        const res = await api.get("/pharmacy/prescriptionDetails", {
+          params: { id },
+        });
+
+        setPatientName(res.data.patient_name || "");
+        setDoctorName(res.data.doctor_name || "");
         setItems(res.data.items || []);
 
-        const grouped: Record<string, string[]> = {};
-        res.data.batchIds.forEach((item: BatchItem) => {
-          if (!grouped[item.medicine_name]) grouped[item.medicine_name] = [];
-          grouped[item.medicine_name].push(item.batch_id);
-        });
-        setGroupedBatches(grouped);
-
+        if (res.data.items?.length) {
+          setDurationDays(res.data.items[0].duration_days);
+        }
       } catch {
         alert("Could not load prescription details.");
       }
     };
+
     fetchDetails();
   }, [id]);
+
+  /* ---------- GET BATCHES ---------- */
+
+  const handleGetBatches = async (item: PrescriptionItem) => {
+    const qty = quantities[item.medicine_name];
+
+    if (!qty || qty <= 0) {
+      alert("Enter the quantity");
+      return;
+    }
+
+    if (!issuedDays) {
+      alert("Enter issued days first");
+      return;
+    }
+
+    try {
+      const res = await api.get("/pharmacy/getBatches", {
+        params: {
+          medicine_name: item.medicine_name,
+          duration_days: durationDays,
+          quantity: qty,
+        },
+      });
+
+      setAllocatedBatches((prev) => ({
+        ...prev,
+        [item.medicine_name]: res.data.batches,
+      }));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Unable to fetch batches");
+    }
+  };
+
+  /* ---------- COMPLETE ISSUE ---------- */
 
   const handleComplete = async () => {
     if (!id || !issuedDays) {
@@ -71,13 +113,14 @@ const PrescriptionDetailsPage = () => {
       return;
     }
 
-    // Show “in process” notification
     alert("Medicine issuing in process...");
 
-    // Check all batch IDs and quantities
-    for (const med of items) { 
-      if (!batchIds[med.medicine_name] || !(quantities[med.medicine_name] > 0)) {
-        alert("All batch IDs and quantities must be valid.");
+    for (const med of items) {
+      if (
+        !allocatedBatches[med.medicine_name]?.length ||
+        !(quantities[med.medicine_name] > 0)
+      ) {
+        alert("All batch allocations and quantities must be valid.");
         return;
       }
     }
@@ -86,10 +129,12 @@ const PrescriptionDetailsPage = () => {
       await api.post("/pharmacy/issue", {
         prescription_id: id,
         issued_days: Number(issuedDays),
-        batches: items.map((med) => ({
-          batch_id: batchIds[med.medicine_name],
-          quantity: quantities[med.medicine_name],
-        })),
+        batches: items.flatMap((med) =>
+          allocatedBatches[med.medicine_name].map((b) => ({
+            batch_id: b.batch_id,
+            quantity: b.used,
+          }))
+        ),
       });
 
       alert("Prescription issued successfully!");
@@ -100,16 +145,25 @@ const PrescriptionDetailsPage = () => {
     }
   };
 
+  /* ---------- HELPERS ---------- */
+
   function toTitleCase(str: string) {
     return str.replace(/\w\S*/g, (txt) =>
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
     );
   }
 
+  /* ---------- JSX ---------- */
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* HEADER */}
-      <header style={{ background: "linear-gradient(90deg, #1e40af, #1e3a8a)", color: "white" }}>
+      <header
+        style={{
+          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
+          color: "white",
+        }}
+      >
         <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <Activity />
@@ -122,55 +176,63 @@ const PrescriptionDetailsPage = () => {
       </header>
 
       {/* MAIN */}
-      <main style={{ maxWidth: 900, margin: "auto", padding: "2rem", color: "black" }}>
+      <main
+        style={{ maxWidth: 900, margin: "auto", padding: "2rem", color: "black" }}
+      >
         <div style={sectionCardStyle}>
-          {/* Patient Info */}
           <div style={patientBarStyle}>
             <PersonStanding size={20} color="#0039caff" />
-            <span style={{ color: "#0039caff", fontWeight: 700 }}>Patient:</span>
-            <span style={{ fontWeight: 700 }}>{toTitleCase(patientName)}</span>
-          </div>
-          <div style={patientBarStyle}>
-            <Stethoscope size={20} color="#0039caff" />
-            <span style={{ color: "#0039caff", fontWeight: 700 }}>Doctor:</span>
-            <span style={{ fontWeight: 700 }}>{toTitleCase(doctorName)}</span>
+            <span style={{ color: "#0039caff", fontWeight: 700 }}>
+              Patient:
+            </span>
+            <span style={{ fontWeight: 700 }}>
+              {toTitleCase(patientName)}
+            </span>
           </div>
 
-          {/* Issued Days */}
+          <div style={patientBarStyle}>
+            <Stethoscope size={20} color="#0039caff" />
+            <span style={{ color: "#0039caff", fontWeight: 700 }}>
+              Doctor:
+            </span>
+            <span style={{ fontWeight: 700 }}>
+              {toTitleCase(doctorName)}
+            </span>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <CalendarDays size={18} color="#0039caff" />{" "}
+            <strong style={{ color: "#0039caff" }}>
+              Duration Days: {durationDays}
+            </strong>
+          </div>
+
           <div style={{ marginTop: 16 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <CalendarDays size={18} color="#0039caff" />
-              <span style={{ color: "#0039caff", fontWeight: 700 }}>Issued Days</span>
+              <strong style={{ color: "#0039caff" }}>Issued Days</strong>
               <input
                 type="number"
                 min={1}
+                max={durationDays}
                 value={issuedDays}
-                onChange={(e) => setIssuedDays(e.target.value)}
-                required
+                onChange={(e) => setIssuedDays(Number(e.target.value))}
                 style={inputStyle}
               />
             </label>
           </div>
+
           <br />
 
-          {/* Prescription Items */}
           {items.map((item) => (
             <div key={item.medicine_name} style={medicineCardStyle}>
               <div style={medicineHeaderStyle}>
                 <PillBottle />
                 <strong>{toTitleCase(item.medicine_name)}</strong>
+                <span>({toTitleCase(item.medicine_type)})</span>
               </div>
 
-              <div style={medicineGridStyle}>
-                <div style={rowStyle}>
-                  <span style={labelStyle}>Type:</span>
-                  <span>{toTitleCase(item.medicine_type)}</span>
-                </div>
-
-                <div style={rowStyle}>
-                  <span style={labelStyle}>Duration:</span>
-                  <span>{item.duration_days} days</span>
-                </div>
+              <div style={medicineGridStyle}> 
 
                 <div style={rowStyle}>
                   <span style={labelStyle}>Food Instruction:</span>
@@ -203,67 +265,63 @@ const PrescriptionDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Batch Dropdown */}
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Package size={18} color="#0039caff" />
-                    <span style={{ color: "#0039caff", fontWeight: 700 }}>
-                      {item.medicine_name} - Batch ID
-                    </span>
+                <div style={{ marginTop: 6 }}>
+                  <Layers size={18} color="#0039caff" />{" "}
+                  <strong style={{ color: "#0039caff" }}>Quantity</strong>
+                  <input
+                    type="number"
+                    min={1}
+                    value={quantities[item.medicine_name] || ""}
+                    onChange={(e) => {
+                      setQuantities((p) => ({
+                        ...p,
+                        [item.medicine_name]: Number(e.target.value),
+                      }))
+                      setAllocatedBatches((prev) => ({
+      ...prev,
+      [item.medicine_name]: [],
+    }));
+                    }
+                      
+                    }
+                    style={inputStyle}
+                  />
+                  <br />
+                  <button
+                    onClick={() => handleGetBatches(item)}
+                    style={{
+                      ...secondaryButtonStyle,
+                      padding: "4px 10px",
+                      fontSize: 12,
+                      height: 28,
+                      marginTop: 6,
+                    }}
+                  >
+                    Get Batches
+                  </button>
+                </div>
 
-                    <select
-                      value={batchIds[item.medicine_name] || ""}
-                      onChange={(e) =>
-                        setBatchIds((prev) => ({
-                          ...prev,
-                          [item.medicine_name]: e.target.value,
-                        }))
-                      }
-                      required
-                      style={selectStyle}
-                    >
-                      <option value="" disabled>
-                        Select Batch
-                      </option>
-                      {groupedBatches[item.medicine_name]?.map((batchId) => (
-                        <option key={batchId} value={batchId}>
-                          {batchId}
-                        </option>
+                {allocatedBatches[item.medicine_name]?.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <strong>Allocated Batches:</strong>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {allocatedBatches[item.medicine_name].map((b) => (
+                        <span key={b.batch_id} style={batchBadge}>
+                          {b.batch_id} - Quantity: {b.used}
+                        </span>
                       ))}
-                    </select>
-                  </label>
-                </div>
-
-                {/* Quantity */}
-                <div style={{ marginTop: 4 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Layers size={18} color="#0039caff" />
-                    <span style={{ color: "#0039caff", fontWeight: 700 }}>Quantity</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={quantities[item.medicine_name] || ""}
-                      onChange={(e) =>
-                        setQuantities((prev) => ({
-                          ...prev,
-                          [item.medicine_name]: Number(e.target.value),
-                        }))
-                      }
-                      required
-                      style={inputStyle}
-                    />
-                  </label>
-                </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
 
-          {/* Buttons */}
           <div style={buttonRowStyle}>
-            <button type="button" style={secondaryButtonStyle} onClick={() => navigate(-1)}>
+            <button onClick={() => navigate(-1)} style={secondaryButtonStyle}>
               Back
             </button>
-            <button type="button" style={successButtonStyle} onClick={handleComplete}>
+            <button onClick={handleComplete} style={successButtonStyle}>
               <CheckLine size={16} /> Complete
             </button>
           </div>
@@ -274,7 +332,6 @@ const PrescriptionDetailsPage = () => {
 };
 
 /* ---------- STYLES ---------- */
-
 const sectionCardStyle: React.CSSProperties = {
   background: "#ffffff",
   borderRadius: "10px",
@@ -388,7 +445,15 @@ const emptyStyle: React.CSSProperties = {
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
   cursor: "pointer",
-  width: "50%"
+  width: "50%",
+};
+
+const batchBadge: React.CSSProperties = {
+  background: "#e8f0ff",
+  padding: "5px 10px",
+  marginTop: "10px",
+  borderRadius: 20,
+  fontSize: 15,
 };
 
 export default PrescriptionDetailsPage;

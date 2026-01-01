@@ -268,4 +268,10 @@ router.post(
   pharmacistController.addMedicine
 );
  
+router.get(
+  "/getBatches",
+  auth,
+  pharmacistController.getBatches
+);
+
 export default router;

@@ -45,6 +45,7 @@ export const login = async (req, res) => {
       "SELECT * FROM pharmacist WHERE email = ?",
       [email]
     );
+    
     if (rows.length === 0)
       return res.status(401).json({ message: "Invalid credentials" });
 
@@ -133,7 +134,7 @@ export const getPrescriptionDetails = async (req, res) => {
       SELECT DISTINCT 
     pat.name AS patient_name,
     d.name AS doctor_name, 
-    pi.total_days AS duration_days,
+    pi.duration_days AS duration_days,
     pi.food,
     pi.morning,
     pi.afternoon,
@@ -166,6 +167,7 @@ JOIN medicine_batch mb
     ON mb.medicine_id = pi.medicine_id
 WHERE pi.prescription_id = ?
   AND mb.status = 'ACTIVE'
+  AND mb.in_stock > 0
 GROUP BY
     m.name,
     mb.batch_id`, [id] );
@@ -205,25 +207,28 @@ GROUP BY
 };
 
 // ISSUE MEDICINE 
-export const issueMedicine = async (req, res) => {
+export const issueMedicine = async (req , res) => {
   const pharmacistId = req.user.pharmacist_id; // from auth middleware
   const { prescription_id, issued_days, batches } = req.body; 
   // batches = [{ batch_id: string, quantity: number }, ...]
-  console.log(req.body);
+
+  if (!prescription_id || !issued_days || !batches || !batches.length) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
 
   const conn = await pool.getConnection();
 
   try {
     await conn.beginTransaction();
 
-    // --- Step 1: Reduce stock for each batch ---
+    // --- Step 1: Validate and reduce stock for each batch ---
     for (const batch of batches) {
       const [rows] = await conn.query(
         `SELECT in_stock FROM medicine_batch WHERE batch_id = ? FOR UPDATE`,
         [batch.batch_id]
       );
 
-      if (rows.length === 0) {
+      if (!rows.length) {
         throw new Error(`Batch ID ${batch.batch_id} not found`);
       }
 
@@ -239,6 +244,13 @@ export const issueMedicine = async (req, res) => {
         `UPDATE medicine_batch SET in_stock = in_stock - ? WHERE batch_id = ?`,
         [batch.quantity, batch.batch_id]
       );
+
+      // If stock becomes 0, remove batch
+      if (inStock === batch.quantity) {
+        await conn.query(`DELETE FROM medicine_batch WHERE batch_id = ?`, [
+          batch.batch_id,
+        ]);
+      }
     }
 
     // --- Step 2: Delete previous transaction if exists (optional) ---
@@ -248,23 +260,20 @@ export const issueMedicine = async (req, res) => {
     );
 
     // --- Step 3: Insert new transaction ---
-    await conn.query(
+    const [result] = await conn.query(
       `INSERT INTO pharmacy_transaction
        (prescription_id, pharmacist_id, issued_days)
        VALUES (?, ?, ?)`,
       [prescription_id, pharmacistId, issued_days]
     );
-
+ 
     // --- Step 4: Update prescription status ---
     await conn.query(
-      `UPDATE prescription
-       SET status = 'ISSUED'
-       WHERE prescription_id = ?`,
+      `UPDATE prescription SET status = 'ISSUED' WHERE prescription_id = ?`,
       [prescription_id]
     );
 
-    await conn.commit();
-
+    // --- Step 5: Generate PDF and send email if available ---
     const details = await prescriptionPDF(conn, prescription_id);
     const pdfPath = generatePrescriptionPDF(details);
 
@@ -272,12 +281,13 @@ export const issueMedicine = async (req, res) => {
       await sendEmailWithPDF(details.email, pdfPath);
     }
 
-    res.json({ message: "Medicine issued successfully" });
+    await conn.commit();
 
+    res.json({ message: "Medicine issued successfully" });
   } catch (err) {
     await conn.rollback();
     console.error("Issue medicine error:", err.message);
-    res.status(400).json({ message: err.message || "Medicine issuing failed" });
+    res.status(400).json({ message: err.message });
   } finally {
     conn.release();
   }
@@ -367,7 +377,8 @@ export const getTransactions = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "No transactions found" });
+      res.status(200).json(rows);
+      return;
     }
 
     const transactions = rows.map(row => ({
@@ -397,7 +408,7 @@ export const getTransactionDetails = async (req, res) => {
      SELECT
     m.name AS medicine_name, 
     m.type AS medicine_type,
-    ppi.total_days AS duration_days,
+    ppi.duration_days AS duration_days,
     ppi.food,
     ppi.morning,
     ppi.afternoon,
@@ -449,6 +460,7 @@ export const getMedicineDetails = async (req, res) => {
   LEFT JOIN medicine_batch mb
       ON m.medicine_id = mb.medicine_id
       AND mb.status = 'ACTIVE'
+      AND mb.in_stock > 0
   ORDER BY m.name, mb.expiry_date;
       `
     );
@@ -785,7 +797,7 @@ WHERE pt.prescription_id = ?;
       pi.morning,
       pi.afternoon,
       pi.night,
-      pi.total_days AS duration_days,
+      pi.duration_days AS duration_days,
       pi.food
     FROM prescription_items pi
     JOIN medicine m ON pi.medicine_id = m.medicine_id
@@ -859,7 +871,7 @@ const generatePrescriptionPDF = (data) => {
   doc.fontSize(12).font("Helvetica");
 
   doc.text(`Patient Name : ${data.patient_name}`);
-  doc.text(`Doctor Name  : Dr. ${data.doctor_name}`);
+  doc.text(`Doctor Name  : ${data.doctor_name}`);
   doc.text(`Issued For   : ${data.issued_days} days`);
   doc.text(`Date         : ${new Date().toLocaleDateString()}`);
 
@@ -925,7 +937,7 @@ const sendEmailWithPDF = async (email, pdfPath) => {
 
   await transporter.sendMail({
     from: `"Anna University HealthCenter" <${process.env.EMAIL_USER}>`,
-    to: email,
+    to: "r.sooryaprakash2704@gmail.com",
     subject: "Prescription from Anna University HealthCenter",
     text: "Please find your prescription attached.",
     attachments: [
@@ -935,4 +947,146 @@ const sendEmailWithPDF = async (email, pdfPath) => {
       },
     ],
   });
+};
+
+export const updateStockStatus = async () => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();  
+
+    // Update expired batches
+    const [updateResult] = await connection.query(
+      `
+      UPDATE medicine_batch
+      SET status = 'EXPIRED'
+      WHERE expiry_date < CURDATE() AND status = 'ACTIVE';
+      `
+    ); 
+
+    await connection.commit();
+
+    console.log(`Stock status updated. Expired batches: ${updateResult.affectedRows}`);
+
+  } catch (err) {
+    await connection.rollback();
+    console.error("Update stock status error:", err);
+
+  } finally {
+    connection.release();
+  }
+};
+
+export const getBatches = async (req, res) => {
+  const { medicine_name, duration_days, quantity } = req.query;
+
+  if (!medicine_name || !duration_days || !quantity) {
+    return res.status(400).json({ message: "Missing parameters" });
+  }
+
+  const conn = await pool.getConnection();
+
+  try {
+    // 🔹 GET medicine_id FROM medicine_name
+    const [medicineRows] = await conn.query(
+      `
+      SELECT medicine_id
+      FROM medicine
+      WHERE name = ?
+      `,
+      [medicine_name]
+    );
+
+    if (medicineRows.length === 0) {
+      return res.status(404).json({ message: "Medicine not found" });
+    }
+
+    const medicine_id = medicineRows[0].medicine_id;
+
+    let batches = [];
+
+    // 🔹 CASE 1: duration >= 30 → ONLY 3+ months expiry
+    if (Number(duration_days) >= 30) {
+      const [rows] = await conn.query(
+        `
+        SELECT batch_id, in_stock, expiry_date
+        FROM medicine_batch
+        WHERE medicine_id = ?
+          AND in_stock > 0
+          AND status = 'ACTIVE'
+          AND expiry_date >= DATE_ADD(CURDATE(), INTERVAL 3 MONTH)
+        ORDER BY expiry_date ASC
+        `,
+        [medicine_id]
+      );
+      batches = rows;
+    }
+
+    // 🔹 CASE 2: duration < 30 → 1 month first, then 3+ months
+    else {
+      const [nearExpiry] = await conn.query(
+        `
+        SELECT batch_id, in_stock, expiry_date
+        FROM medicine_batch
+        WHERE medicine_id = ?
+          AND in_stock > 0
+          AND status = 'ACTIVE'
+          AND expiry_date < DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+        ORDER BY expiry_date ASC
+        `,
+        [medicine_id]
+      );
+
+      const [longExpiry] = await conn.query(
+        `
+        SELECT batch_id, in_stock, expiry_date
+        FROM medicine_batch
+        WHERE medicine_id = ?
+          AND in_stock > 0
+          AND expiry_date >= DATE_ADD(CURDATE(), INTERVAL 3 MONTH)
+        ORDER BY expiry_date ASC
+        `,
+        [medicine_id]
+      );
+
+      batches = [...nearExpiry, ...longExpiry];
+    }
+
+    // 🔹 COLLECT BATCHES UNTIL QUANTITY SATISFIED
+    let remainingQty = Number(quantity);
+    const selectedBatches = [];
+
+    for (const batch of batches) {
+      if (remainingQty <= 0) break;
+
+      const usedQty = Math.min(batch.in_stock, remainingQty);
+
+      selectedBatches.push({
+        batch_id: batch.batch_id,
+        available: batch.in_stock,
+        used: usedQty,
+        expiry_date: batch.expiry_date,
+      });
+
+      remainingQty -= usedQty;
+    }
+
+    // 🔴 If stock not sufficient
+    if (remainingQty > 0) {
+      return res.status(400).json({
+        message: "Insufficient stock to fulfill required quantity",
+      });
+    }
+
+    // ✅ SUCCESS
+    res.json({ 
+      batches: selectedBatches,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch batches" });
+  } finally {
+    conn.release();
+  }
 };
