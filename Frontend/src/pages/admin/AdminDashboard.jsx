@@ -17,7 +17,6 @@ const AdminDashboard = () => {
   const { stats: adminStats, patientOverview, loading: adminLoading, error } = useSelector((state) => state.admin || {});
   
   const [activeModule, setActiveModule] = useState('dashboard');
-  const [selectedTimeRange, setSelectedTimeRange] = useState('today');
 
   useEffect(() => {
     if (activeModule === 'dashboard') {
@@ -97,9 +96,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleTimeRangeChange = (range) => {
-    setSelectedTimeRange(range);
-  };
 
   const isLoading = adminLoading;
 
