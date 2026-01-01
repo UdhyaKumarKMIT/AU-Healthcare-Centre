@@ -17,7 +17,7 @@ import { useAuth } from "../../contexts/AuthContext";
 interface PrescriptionItem {
   medicine_name: string;
   medicine_type: string;
-  duration_days: number;
+  total_days: number;
   food: string;
   timing: {
     morning: number;
@@ -71,7 +71,7 @@ const PrescriptionDetailsPage = () => {
         setItems(res.data.items || []);
 
         if (res.data.items?.length) {
-          setDurationDays(res.data.items[0].duration_days);
+          setDurationDays(res.data.items[0].total_days);
         }
       } catch {
         alert("Could not load prescription details.");
@@ -101,7 +101,7 @@ const PrescriptionDetailsPage = () => {
         params: {
           pharmacist_id: pharmacistId,
           medicine_name: item.medicine_name,
-          duration_days: durationDays,
+          total_days: durationDays,
           quantity: qty,
         },
       });

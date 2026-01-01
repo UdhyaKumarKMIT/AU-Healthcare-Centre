@@ -23,7 +23,7 @@ interface PastPrescription {
 interface PrescriptionItem {
   medicine_name: string; 
   medicine_type: string;
-  duration_days: number; 
+  total_days: number; 
   food: string,
   morning: number,
   afternoon: number,
@@ -250,7 +250,7 @@ const PastPrescriptions = () => {
                     <Pill size={18} /> <strong>Medicine:</strong>{" "}
                     {toTitleCase(item.medicine_name)} - {toTitleCase(item.medicine_type)}
                   </p> 
-                  <p><strong>Prescribed Duration:</strong> {item.duration_days} days</p> 
+                  <p><strong>Prescribed Duration:</strong> {item.total_days} days</p> 
                   <p><strong>Dispensed Duration:</strong> {item.issued_days} days</p>
                   <p><strong>Food Instruction: </strong> {toTitleCase(item.food)} food </p><br />
                   <div style={timingStyle}>

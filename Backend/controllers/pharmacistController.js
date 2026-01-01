@@ -139,7 +139,7 @@ export const getPrescriptionDetails = async (req, res) => {
       SELECT DISTINCT 
     pat.name AS patient_name,
     d.name AS doctor_name, 
-    pi.duration_days AS duration_days,
+    pi.total_days AS total_days,
     pi.food,
     pi.morning,
     pi.afternoon,
@@ -185,7 +185,7 @@ GROUP BY
     const items = rows.map(row => ({ 
       medicine_name: row.medicine_name,
       medicine_type: row.medicine_type,
-      duration_days: row.duration_days,
+      total_days: row.total_days,
       food: row.food,
       timing: {
         morning: row.morning,
@@ -415,7 +415,7 @@ export const getTransactionDetails = async (req, res) => {
      SELECT
     m.name AS medicine_name, 
     m.type AS medicine_type,
-    ppi.duration_days AS duration_days,
+    ppi.total_days AS total_days,
     ppi.food,
     ppi.morning,
     ppi.afternoon,
@@ -435,7 +435,7 @@ WHERE ppi.prescription_id = ?;
     const items = rows.map(row => ({  
       medicine_name: row.medicine_name,
       medicine_type: row.medicine_type,
-      duration_days: row.duration_days,  
+      total_days: row.total_days,  
       food: row.food,
       morning: row.morning,
       afternoon: row.afternoon,
@@ -818,7 +818,7 @@ WHERE pt.prescription_id = ?;
       pi.morning,
       pi.afternoon,
       pi.night,
-      pi.duration_days AS duration_days,
+      pi.total_days AS total_days,
       pi.food
     FROM prescription_items pi
     JOIN medicine m ON pi.medicine_id = m.medicine_id
@@ -919,7 +919,7 @@ const generatePrescriptionPDF = (data) => {
         `   Dosage      : ${m.morning} - ${m.afternoon} - ${m.night}`
       );
 
-    doc.text(`   Duration    : ${m.duration_days} days`);
+    doc.text(`   Duration    : ${m.total_days} days`);
     doc.text(`   Instruction : ${m.food === 1 ? "After Food" : "Before Food"}`);
 
     doc.moveDown(0.5);
@@ -999,9 +999,9 @@ export const updateStockStatus = async () => {
 };
 
 export const getBatches = async (req, res) => {
-  const { medicine_name, duration_days, quantity } = req.query;
+  const { medicine_name, total_days, quantity } = req.query;
 
-  if (!medicine_name || !duration_days || !quantity) {
+  if (!medicine_name || !total_days || !quantity) {
     return res.status(400).json({ message: "Missing parameters" });
   }
 
@@ -1027,7 +1027,7 @@ export const getBatches = async (req, res) => {
     let batches = [];
 
     // 🔹 CASE 1: duration >= 30 → ONLY 3+ months expiry
-    if (Number(duration_days) >= 30) {
+    if (Number(total_days) >= 30) {
       const [rows] = await conn.query(
         `
         SELECT batch_id, in_stock, expiry_date
