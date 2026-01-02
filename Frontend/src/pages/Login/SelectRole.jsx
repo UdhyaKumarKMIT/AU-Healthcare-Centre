@@ -9,7 +9,8 @@ import {
   faUserNurse, 
   faClipboard, 
   faUser,
-  faUserTie
+  faUserTie,
+  faVial
 } from '@fortawesome/free-solid-svg-icons';
 
 const roles = [
@@ -19,6 +20,7 @@ const roles = [
   { label: 'Nurse', path: '/login/nurse', icon: faUserNurse },
   { label: 'Receptionist', path: '/login/receptionist', icon: faClipboard },
   { label: 'Patient', path: '/login/patient', icon: faUser },
+  { label: 'Lab Technician', path: '/login/labtech', icon: faVial }
 ];
 
 const SelectRole = () => {

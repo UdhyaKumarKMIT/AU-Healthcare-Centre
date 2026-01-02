@@ -13,6 +13,7 @@ const ROLE_MAP = {
   nurse: 'NURSE',
   receptionist: 'RECEPTIONIST',
   patient: 'PATIENT',
+  labtech: 'LAB_TECHNICIAN'
 };
 
 const Login = () => {
@@ -60,6 +61,9 @@ const Login = () => {
           break;
         case 'PHARMACIST':
           navigate('/pharmacist/dashboard');
+          break;
+        case 'LAB_TECHNICIAN':
+          navigate('/labtech/dashboard');
           break;
         // default:
         //   navigate('/');
