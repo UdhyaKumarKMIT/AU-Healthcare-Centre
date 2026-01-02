@@ -46,6 +46,10 @@ import RegisterPatientPage from './pages/receptionist/RegisterPatientPage.jsx';
 // Student/Patient Pages (New Mobile-Responsive Dashboard)
 import StudentDashboard from './pages/student/StudentDashboard.jsx';
 
+import LabTechDashboard from './pages/labtech/LabTechDashboard';
+import LabTestsManagement from './pages/labtech/LabTestsManagement';
+import LabTestReport from './pages/labtech/LabTestReport';
+
 
 import NurseDashboard from './pages/Nurse/NurseDashboard.jsx';
 function App() {
@@ -112,6 +116,11 @@ function App() {
             {/* Nurse Routes */}
             <Route element={<ProtectedRoute allowedRoles={['NURSE']} />}>
               <Route path="/nurse/dashboard" element={<NurseDashboard />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['LAB_TECHNICIAN']} />}>
+              <Route path="/labtech/dashboard" element={<LabTechDashboard />} />
+              <Route path="/labtech/tests" element={<LabTestsManagement />} />
+              <Route path="/labtech/tests/:testId" element={<LabTestReport />} />
             </Route>
             {/* Catch-all Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
