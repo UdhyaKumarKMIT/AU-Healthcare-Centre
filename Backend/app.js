@@ -15,6 +15,7 @@ import studentRoutes from './routes/student.routes.js';
 // Middleware
 import errorHandler from './middlewares/error.middleware.js';
 import nurseRoutes from './routes/nurse.routes.js';
+import labtechRoutes from './routes/labtech.routes.js';
 const app = express();
 
 // -------------------
@@ -54,6 +55,7 @@ app.use('/api/doctor', doctorRoutes);
 app.use('/api/pharmacy', pharmacyRoutes); // pharmacist-specific routes
 app.use('/api/students', studentRoutes); // student-specific routes
 app.use('/api/nurse', nurseRoutes);
+app.use('/api/labtech', labtechRoutes);
 // -------------------
 // Health check
 // -------------------
