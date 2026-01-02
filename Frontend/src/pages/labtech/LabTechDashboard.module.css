@@ -391,3 +391,11 @@
     grid-template-columns: 1fr;
   }
 }
+.mainContent {
+  flex: 1;
+  padding: 24px;
+  margin-top: 72px; /* 🔥 THIS is missing */
+  background: #f7fafc;
+}
+
+

@@ -154,28 +154,6 @@ const LabTechDashboard = () => {
               <h1>Lab Technician Dashboard</h1>
               <p>Welcome to the Laboratory Management System</p>
             </div>
-            <div className={styles.headerRight}>
-              <div className={styles.timeRangeSelector}>
-                <button 
-                  className={`${styles.timeRangeBtn} ${selectedTimeRange === 'today' ? styles.active : ''}`}
-                  onClick={() => handleTimeRangeChange('today')}
-                >
-                  Today
-                </button>
-                <button 
-                  className={`${styles.timeRangeBtn} ${selectedTimeRange === 'week' ? styles.active : ''}`}
-                  onClick={() => handleTimeRangeChange('week')}
-                >
-                  This Week
-                </button>
-                <button 
-                  className={`${styles.timeRangeBtn} ${selectedTimeRange === 'month' ? styles.active : ''}`}
-                  onClick={() => handleTimeRangeChange('month')}
-                >
-                  This Month
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Stats Cards Grid */}

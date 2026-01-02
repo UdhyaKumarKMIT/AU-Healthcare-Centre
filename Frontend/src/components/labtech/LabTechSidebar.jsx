@@ -19,11 +19,6 @@ const LabTechSidebar = () => {
       title: 'Lab Tests',
       icon: faMicroscope,
       path: '/labtech/tests'
-    },
-    {
-      title: 'Test Reports',
-      icon: faClipboardList,
-      path: '/labtech/reports'
     }
   ];
 

@@ -3,10 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { fetchLabTests } from '../../store/slices/labTechSlice';
-import styles from '../admin/ReceptionistManagement.module.css';
+import LabTechSidebar from '../../components/labtech/LabTechSidebar';
+import Header from '../../components/Header/Header';
+
+import styles from './LabTechDashboard.module.css';
 import tableStyles from '../../components/Admin/ReceptionistTable.module.css';
+import adminStyles from '../admin/ReceptionistManagement.module.css';
 
 const LabTestsManagement = () => {
   const dispatch = useDispatch();
@@ -62,10 +66,13 @@ dispatch(fetchLabTests(query));
 
   if (testsLoading) {
     return (
-      <div className={styles.receptionistManagement}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner}></div>
-          <p>Loading lab tests...</p>
+      <div className={styles.labTechDashboard}>
+        <Header title="MIT Health Centre" subtitle="Lab Tests" showLogout userRole="Lab Technician" />
+        <div className={styles.mainContainer}>
+          <LabTechSidebar />
+          <main className={styles.mainContent}>
+            <p>Loading lab tests…</p>
+          </main>
         </div>
       </div>
     );
@@ -73,167 +80,77 @@ dispatch(fetchLabTests(query));
 
   if (error) {
     return (
-      <div className={styles.receptionistManagement}>
-        <p>Error: {error}</p>
-        <button onClick={() => dispatch(fetchLabTests())}>Retry</button>
+      <div className={styles.labTechDashboard}>
+        <Header title="MIT Health Centre" subtitle="Lab Tests" showLogout userRole="Lab Technician" />
+        <div className={styles.mainContainer}>
+          <LabTechSidebar />
+          <main className={styles.mainContent}>
+            <p>Error: {error}</p>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.receptionistManagement}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>🔬 Lab Tests Management</h1>
-          <p className={styles.subtitle}>
-            Process and manage laboratory tests
-          </p>
-        </div>
-      </div>
+    <div className={styles.labTechDashboard}>
+      <Header
+        title="MIT Health Centre"
+        subtitle="Lab Tests Management"
+        showLogout
+        userRole="Lab Technician"
+      />
 
-      {/* Statistics */}
-      <section className={styles.statsSection}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '20px',
-          marginBottom: '24px'
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '14px', color: '#718096', margin: '0 0 12px 0' }}>
-              Total Tests
-            </h3>
-            <p style={{ fontSize: '32px', fontWeight: '700', color: '#1a365d', margin: 0 }}>
-              {testStats.total}
-            </p>
+      <div className={styles.mainContainer}>
+        <LabTechSidebar />
+
+        <main className={styles.mainContent}>
+          {/* Page Header */}
+          <div className={styles.dashboardHeader}>
+              <div className={styles.headerLeft}>
+                  <h1>Lab Technician Dashboard</h1>
+                  <p>Welcome to the Laboratory Management System</p>
+                </div>
+            </div>
+
+          {/* Filters */}
+          <div className={adminStyles.filtersSection}>
+            <div className={adminStyles.searchBox}>
+              <input
+                className={adminStyles.searchInput}
+                placeholder="Search by test / patient / ID"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <span className={adminStyles.searchIcon}>
+                <FontAwesomeIcon icon={faSearch} />
+              </span>
+            </div>
+
+            <div className={adminStyles.filterGroup}>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={adminStyles.filterSelect}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className={adminStyles.filterSelect}
+              >
+                <option value="all">All Priority</option>
+                <option value="urgent">Urgent</option>
+                <option value="normal">Normal</option>
+              </select>
+            </div>
           </div>
 
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '14px', color: '#718096', margin: '0 0 12px 0' }}>
-              Pending
-            </h3>
-            <p style={{ fontSize: '32px', fontWeight: '700', color: '#ed8936', margin: 0 }}>
-              {testStats.pending}
-            </p>
-          </div>
-
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '14px', color: '#718096', margin: '0 0 12px 0' }}>
-              In Progress
-            </h3>
-            <p style={{ fontSize: '32px', fontWeight: '700', color: '#3182ce', margin: 0 }}>
-              {testStats.inProgress}
-            </p>
-          </div>
-
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '14px', color: '#718096', margin: '0 0 12px 0' }}>
-              Completed
-            </h3>
-            <p style={{ fontSize: '32px', fontWeight: '700', color: '#38a169', margin: 0 }}>
-              {testStats.completed}
-            </p>
-          </div>
-
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '14px', color: '#718096', margin: '0 0 12px 0' }}>
-              Urgent
-            </h3>
-            <p style={{ fontSize: '32px', fontWeight: '700', color: '#e53e3e', margin: 0 }}>
-              {testStats.urgent}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Filters */}
-      <section className={styles.filtersSection}>
-        <div className={styles.searchBox}>
-          <input
-            className={styles.searchInput}
-            placeholder="Search by test name, patient, or test ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <span className={styles.searchIcon}>
-            <FontAwesomeIcon icon={faSearch} />
-          </span>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <div className={styles.filter}>
-            <label className={styles.filterLabel}>Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          <div className={styles.filter}>
-            <label className={styles.filterLabel}>Priority</label>
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="normal">Normal</option>
-            </select>
-          </div>
-
-          <button
-            className={styles.resetFiltersBtn}
-            onClick={() => {
-              setSearchQuery('');
-              setStatusFilter('all');
-              setPriorityFilter('all');
-            }}
-          >
-            Reset Filters
-          </button>
-        </div>
-      </section>
-
-      {/* Tests Table */}
+                {/* Tests Table */}
       <section className={styles.tableSection}>
         <div className={tableStyles.tableContainer}>
           <table className={tableStyles.receptionistTable}>
@@ -352,6 +269,8 @@ dispatch(fetchLabTests(query));
           )}
         </div>
       </section>
+        </main>
+      </div>
     </div>
   );
 };
