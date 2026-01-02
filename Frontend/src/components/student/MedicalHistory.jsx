@@ -499,12 +499,10 @@ const MedicalHistory = () => {
 
                     {p.medicines.map((m, i) => (
                       <div key={i} className={styles.medicationBox}>
-                        <p>{m.med_name}</p>
-                        <p>{m.med_type}</p>
-                        <p>Morning: {m.morning ? "Yes" : "No"}</p>
-                        <p>Afternoon: {m.afternoon ? "Yes" : "No"}</p>
-                        <p>Night: {m.night ? "Yes" : "No"}</p>
-                        <p>Days: {m.total_days}</p>
+                        <p><b>Medicine:</b> {m.med_name} ({m.med_type})</p>
+                        <p><b>When to take:</b> {m.morning ? "1" : "0"} - {m.afternoon ? "1" : "0"} - {m.night ? "1" : "0"} (Morning - Afternoon - Night)</p>
+                        <p><b>Food:</b> {m.food}</p>
+                        <p><b>Duration:</b> {m.total_days} {m.total_days === 1 ? "day" : "days"}</p>
                       </div>
                     ))}
                   </div>

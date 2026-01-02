@@ -4,58 +4,48 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import ApiError from '../utils/ApiError.js';
 
-/**
- * Get admin dashboard statistics
- * Based on actual database: 6 users, 1 doctor, 1 receptionist, 2 patients
- */
 export const getAdminStats = async () => {
   try {
     console.log('📊 Fetching admin stats from database...');
     
-    // Get total users (should be 6)
     const [userCount] = await pool.execute(
       `SELECT COUNT(*) as total FROM users`
     );
-    console.log('👥 Total Users:', userCount[0].total);
     
-    // Get total doctors (should be 1)
     const [doctorCount] = await pool.execute(
       `SELECT COUNT(*) as total FROM doctor`
     );
-    console.log('👨‍⚕️ Total Doctors:', doctorCount[0].total);
     
-    // Get total receptionists (should be 1, not 2!)
     const [receptionistCount] = await pool.execute(
       `SELECT COUNT(*) as total FROM receptionist`
     );
-    console.log('👔 Total Receptionists:', receptionistCount[0].total);
     
-    // Get total patients (should be 2)
     const [patientCount] = await pool.execute(
       `SELECT COUNT(*) as total FROM patient_profile`
     );
-    console.log('🏥 Total Patients:', patientCount[0].total);
+
+    const [nurseCount] = await pool.execute(
+      `SELECT COUNT(*) as total FROM nurse`
+    );
+
+    const [pharmacistCount] = await pool.execute(
+      `SELECT COUNT(*) as total FROM pharmacist`
+    );
     
-    // Get counts by role from users table
     const [roleCounts] = await pool.execute(
       `SELECT role, COUNT(*) as count FROM users GROUP BY role`
     );
-    console.log('📊 Role Counts:', roleCounts);
     
-    // Convert role counts to object
     const roleCountsObj = roleCounts.reduce((acc, row) => {
       acc[row.role.toLowerCase()] = row.count;
       return acc;
     }, {});
     
-    // Get today's visits (should be 0 - all visits are older)
     const [todayVisits] = await pool.execute(
       `SELECT COUNT(*) as total FROM visit 
        WHERE DATE(visit_date) = CURDATE()`
     );
-    console.log('📅 Today\'s Visits:', todayVisits[0].total);
     
-    // Get new patients today (should be 0)
     const [newPatientsToday] = await pool.execute(
       `SELECT COUNT(DISTINCT v.patient_id) as total 
        FROM visit v
@@ -67,18 +57,17 @@ export const getAdminStats = async () => {
          HAVING MIN(DATE(visit_date)) = CURDATE()
        )`
     );
-    console.log('✨ New Patients Today:', newPatientsToday[0].total);
     
     const stats = {
-      totalUsers: userCount[0].total,              // 6
-      totalDoctors: doctorCount[0].total,          // 1
-      totalReceptionists: receptionistCount[0].total, // 1
-      totalNurses: roleCountsObj.nurse || 0,       // 0
-      totalPharmacists: roleCountsObj.pharmacist || 0, // 0
-      totalAdministrators: roleCountsObj.admin || 0,   // 1
-      totalPatients: patientCount[0].total,        // 2
-      todayVisits: todayVisits[0].total,          // 0
-      newPatientsToday: newPatientsToday[0].total // 0
+      totalUsers: userCount[0].total,
+      totalDoctors: doctorCount[0].total,
+      totalReceptionists: receptionistCount[0].total,
+      totalNurses: nurseCount[0].total,
+      totalPharmacists: pharmacistCount[0].total,
+      totalAdministrators: roleCountsObj.admin || 0,
+      totalPatients: patientCount[0].total,
+      todayVisits: todayVisits[0].total,
+      newPatientsToday: newPatientsToday[0].total
     };
     
     console.log('✅ Final Stats Object:', stats);
@@ -90,14 +79,10 @@ export const getAdminStats = async () => {
   }
 };
 
-/**
- * Get patient overview and demographics
- */
 export const getPatientOverview = async () => {
   try {
     console.log('📊 Fetching patient overview...');
     
-    // Get gender demographics (should show: MALE: 2)
     const [demographics] = await pool.execute(
       `SELECT 
          gender,
@@ -106,9 +91,7 @@ export const getPatientOverview = async () => {
        WHERE gender IS NOT NULL
        GROUP BY gender`
     );
-    console.log('👥 Demographics:', demographics);
     
-    // Get visit trends (should show: Dec: 20 visits)
     const [visitTrends] = await pool.execute(
       `SELECT 
          DATE_FORMAT(visit_date, '%b') as month,
@@ -120,7 +103,6 @@ export const getPatientOverview = async () => {
        GROUP BY YEAR(visit_date), MONTH(visit_date), DATE_FORMAT(visit_date, '%b')
        ORDER BY year, month_num ASC`
     );
-    console.log('📈 Visit Trends:', visitTrends);
     
     const result = {
       demographics: demographics.reduce((acc, row) => {
@@ -133,7 +115,6 @@ export const getPatientOverview = async () => {
       }))
     };
     
-    console.log('✅ Patient Overview Result:', result);
     return result;
     
   } catch (error) {
@@ -142,9 +123,6 @@ export const getPatientOverview = async () => {
   }
 };
 
-/**
- * Get all users with optional filters
- */
 export const getAllUsers = async ({ role, status, search }) => {
   try {
     console.log('👥 Fetching users with filters:', { role, status, search });
@@ -154,13 +132,15 @@ export const getAllUsers = async ({ role, status, search }) => {
         u.user_id,
         u.email,
         u.role,
-        COALESCE(d.name, r.receptionist_name, 'Unknown') as name,
-        COALESCE(d.doctor_id, r.receptionist_id) as role_id,
-        COALESCE(d.specialization, 'N/A') as department,
-        COALESCE(d.phone, 'N/A') as phone
+        COALESCE(d.name, r.receptionist_name, n.name, p.name, 'Unknown') as name,
+        COALESCE(d.doctor_id, r.receptionist_id, n.nurse_id, CAST(p.pharmacist_id AS CHAR)) as role_id,
+        COALESCE(d.specialization, n.qualification, 'N/A') as department,
+        COALESCE(d.phone, n.phone, p.phone, 'N/A') as phone
       FROM users u
       LEFT JOIN doctor d ON u.user_id = d.user_id AND u.role = 'DOCTOR'
       LEFT JOIN receptionist r ON u.user_id = r.user_id AND u.role = 'RECEPTIONIST'
+      LEFT JOIN nurse n ON u.user_id = n.user_id AND u.role = 'NURSE'
+      LEFT JOIN pharmacist p ON u.user_id = p.user_id AND u.role = 'PHARMACIST'
       WHERE 1=1
     `;
     
@@ -172,18 +152,14 @@ export const getAllUsers = async ({ role, status, search }) => {
     }
     
     if (search) {
-      query += ` AND (u.email LIKE ? OR d.name LIKE ? OR r.receptionist_name LIKE ?)`;
+      query += ` AND (u.email LIKE ? OR d.name LIKE ? OR r.receptionist_name LIKE ? OR n.name LIKE ? OR p.name LIKE ?)`;
       const searchParam = `%${search}%`;
-      params.push(searchParam, searchParam, searchParam);
+      params.push(searchParam, searchParam, searchParam, searchParam, searchParam);
     }
     
     query += ` ORDER BY u.email ASC`;
     
-    console.log('🔍 SQL Query:', query);
-    console.log('🔍 Params:', params);
-    
     const [users] = await pool.execute(query, params);
-    console.log('✅ Found users:', users.length);
     
     const mappedUsers = users.map(user => ({
       user_id: user.user_id,
@@ -196,7 +172,6 @@ export const getAllUsers = async ({ role, status, search }) => {
       registeredDate: null
     }));
     
-    console.log('✅ Mapped Users:', mappedUsers);
     return mappedUsers;
     
   } catch (error) {
@@ -205,14 +180,13 @@ export const getAllUsers = async ({ role, status, search }) => {
   }
 };
 
-export const createUser = async ({ name, email, password, role, phone, specialization }) => {
+export const createUser = async ({ name, email, password, role, phone, specialization, qualification, register_number }) => {
   const connection = await pool.getConnection();
   
   try {
-    console.log('➕ Creating user:', { name, email, role, phone, specialization });
+    console.log('➕ Creating user:', { name, email, role });
     await connection.beginTransaction();
     
-    // Check if user already exists
     const [existing] = await connection.execute(
       `SELECT user_id FROM users WHERE email = ?`,
       [email]
@@ -225,46 +199,42 @@ export const createUser = async ({ name, email, password, role, phone, specializ
     const userId = crypto.randomUUID();
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    console.log('Creating user with ID:', userId);
-    
-    // Insert into users table
     await connection.execute(
       `INSERT INTO users (user_id, email, password, role)
        VALUES (?, ?, ?, ?)`,
       [userId, email, hashedPassword, role.toUpperCase()]
     );
     
-    // Insert into role-specific table
     if (role.toUpperCase() === 'DOCTOR') {
       const doctorId = crypto.randomUUID();
-      console.log('Creating doctor with ID:', doctorId);
-      
-      // Doctor table has: doctor_id, user_id, name, specialization, phone, availability_status
       await connection.execute(
         `INSERT INTO doctor (doctor_id, user_id, name, specialization, phone, availability_status)
          VALUES (?, ?, ?, ?, ?, 'AVAILABLE')`,
-        [
-          doctorId, 
-          userId, 
-          name, 
-          specialization || 'General',
-          phone || null
-        ]
+        [doctorId, userId, name, specialization || 'General', phone || null]
       );
     } else if (role.toUpperCase() === 'RECEPTIONIST') {
       const receptionistId = crypto.randomUUID();
-      console.log('Creating receptionist with ID:', receptionistId);
-      
-      // Receptionist table only has: receptionist_id, user_id, receptionist_name
       await connection.execute(
         `INSERT INTO receptionist (receptionist_id, user_id, receptionist_name)
          VALUES (?, ?, ?)`,
         [receptionistId, userId, name]
       );
+    } else if (role.toUpperCase() === 'NURSE') {
+      const nurseId = crypto.randomUUID();
+      await connection.execute(
+        `INSERT INTO nurse (nurse_id, user_id, name, qualification, phone, register_number)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [nurseId, userId, name, qualification || 'RN', phone || null, register_number || `RN-${Date.now()}`]
+      );
+    } else if (role.toUpperCase() === 'PHARMACIST') {
+      await connection.execute(
+        `INSERT INTO pharmacist (user_id, name, email, phone, password_hash)
+         VALUES (?, ?, ?, ?, ?)`,
+        [userId, name, email, phone || null, hashedPassword]
+      );
     }
     
     await connection.commit();
-    console.log('✅ User created successfully');
     
     return {
       user_id: userId,
@@ -276,7 +246,6 @@ export const createUser = async ({ name, email, password, role, phone, specializ
     };
   } catch (error) {
     await connection.rollback();
-    console.error('❌ Error creating user:', error);
     
     if (error instanceof ApiError) {
       throw error;
@@ -287,14 +256,8 @@ export const createUser = async ({ name, email, password, role, phone, specializ
   }
 };
 
-/**
- * Update user status
- */
 export const updateUserStatus = async (userId, status, reason) => {
   try {
-    console.log('🔄 Updating user status:', { userId, status, reason });
-    
-    // Verify user exists
     const [users] = await pool.execute(
       `SELECT user_id, role FROM users WHERE user_id = ?`,
       [userId]
@@ -304,8 +267,6 @@ export const updateUserStatus = async (userId, status, reason) => {
       throw new ApiError(404, 'User not found');
     }
     
-    console.log('✅ User found, status updated (placeholder)');
-    
     return { 
       userId, 
       status, 
@@ -313,8 +274,6 @@ export const updateUserStatus = async (userId, status, reason) => {
       message: 'Status tracking not yet implemented. Add status column to users table.'
     };
   } catch (error) {
-    console.error('❌ Error updating user status:', error);
-    
     if (error instanceof ApiError) {
       throw error;
     }
@@ -322,14 +281,10 @@ export const updateUserStatus = async (userId, status, reason) => {
   }
 };
 
-/**
- * Delete a user
- */
 export const deleteUser = async (userId) => {
   const connection = await pool.getConnection();
   
   try {
-    console.log('🗑️ Deleting user:', userId);
     await connection.beginTransaction();
     
     const [users] = await connection.execute(
@@ -342,11 +297,8 @@ export const deleteUser = async (userId) => {
     }
     
     const user = users[0];
-    console.log('User to delete:', user);
     
-    // Delete from role-specific table first
     if (user.role === 'DOCTOR') {
-      // Check for visits
       const [visits] = await connection.execute(
         `SELECT COUNT(*) as count FROM visit WHERE doctor_id IN (SELECT doctor_id FROM doctor WHERE user_id = ?)`,
         [userId]
@@ -359,6 +311,10 @@ export const deleteUser = async (userId) => {
       await connection.execute(`DELETE FROM doctor WHERE user_id = ?`, [userId]);
     } else if (user.role === 'RECEPTIONIST') {
       await connection.execute(`DELETE FROM receptionist WHERE user_id = ?`, [userId]);
+    } else if (user.role === 'NURSE') {
+      await connection.execute(`DELETE FROM nurse WHERE user_id = ?`, [userId]);
+    } else if (user.role === 'PHARMACIST') {
+      await connection.execute(`DELETE FROM pharmacist WHERE user_id = ?`, [userId]);
     } else if (user.role === 'PATIENT') {
       const [visits] = await connection.execute(
         `SELECT COUNT(*) as count FROM visit WHERE patient_id IN (SELECT patient_id FROM patient_profile WHERE user_id = ?)`,
@@ -372,11 +328,9 @@ export const deleteUser = async (userId) => {
       await connection.execute(`DELETE FROM patient_profile WHERE user_id = ?`, [userId]);
     }
     
-    // Delete from users table
     await connection.execute(`DELETE FROM users WHERE user_id = ?`, [userId]);
     
     await connection.commit();
-    console.log('✅ User deleted successfully');
     
     return { 
       userId,
@@ -384,7 +338,6 @@ export const deleteUser = async (userId) => {
     };
   } catch (error) {
     await connection.rollback();
-    console.error('❌ Error deleting user:', error);
     
     if (error instanceof ApiError) {
       throw error;
@@ -395,14 +348,8 @@ export const deleteUser = async (userId) => {
   }
 };
 
-/**
- * Get all doctors
- * Expected: 1 doctor (John, Cardiology, doctor1@mit.edu)
- */
 export const getAllDoctors = async () => {
   try {
-    console.log('👨‍⚕️ Fetching all doctors...');
-    
     const [doctors] = await pool.execute(
       `SELECT 
         d.doctor_id,
@@ -417,9 +364,6 @@ export const getAllDoctors = async () => {
       ORDER BY d.name ASC`
     );
     
-    console.log('✅ Found doctors:', doctors.length);
-    console.log('📋 Doctor details:', doctors);
-    
     return doctors.map(doctor => ({
       id: doctor.doctor_id,
       doctor_id: doctor.doctor_id,
@@ -433,21 +377,12 @@ export const getAllDoctors = async () => {
     }));
     
   } catch (error) {
-    console.error('❌ Error fetching doctors:', error);
     throw new ApiError(500, 'Failed to fetch doctors: ' + error.message);
   }
 };
 
-/**
- * Get all receptionists
- * Expected: 1 receptionist (receptionist1, receptionist2@mit.edu)
- * NOTE: receptionist table has NO phone or shift columns!
- */
 export const getAllReceptionists = async () => {
   try {
-    console.log('👔 Fetching all receptionists...');
-    
-    // Receptionist table only has: receptionist_id, user_id, receptionist_name
     const [receptionists] = await pool.execute(
       `SELECT 
         r.receptionist_id,
@@ -459,10 +394,6 @@ export const getAllReceptionists = async () => {
       ORDER BY r.receptionist_name ASC`
     );
     
-    console.log('✅ Found receptionists:', receptionists.length);
-    console.log('📋 Receptionist details:', receptionists);
-    
-    // Get patient counts for today for each receptionist
     const receptionistsWithStats = await Promise.all(
       receptionists.map(async (receptionist) => {
         const [patientCount] = await pool.execute(
@@ -479,8 +410,8 @@ export const getAllReceptionists = async () => {
           user_id: receptionist.user_id,
           name: receptionist.name,
           email: receptionist.email,
-          phone: 'N/A', // Not in database
-          shift: 'flexible', // Not in database - default value
+          phone: 'N/A',
+          shift: 'flexible',
           employeeId: receptionist.receptionist_id.substring(0, 8),
           status: 'active',
           patientsToday: patientCount[0].count,
@@ -489,22 +420,110 @@ export const getAllReceptionists = async () => {
       })
     );
     
-    console.log('✅ Receptionists with stats:', receptionistsWithStats);
     return receptionistsWithStats;
     
   } catch (error) {
-    console.error('❌ Error fetching receptionists:', error);
     throw new ApiError(500, 'Failed to fetch receptionists: ' + error.message);
   }
 };
 
-/**
- * Get all visits with optional filters
- */
+export const getAllNurses = async () => {
+  try {
+    const [nurses] = await pool.execute(
+      `SELECT 
+        n.nurse_id,
+        n.user_id,
+        n.name,
+        n.qualification,
+        n.phone,
+        n.register_number,
+        u.email,
+        n.created_at
+      FROM nurse n
+      JOIN users u ON n.user_id = u.user_id
+      ORDER BY n.name ASC`
+    );
+    
+    const nursesWithStats = await Promise.all(
+      nurses.map(async (nurse) => {
+        const [taskCount] = await pool.execute(
+          `SELECT COUNT(*) as count 
+           FROM nurse_task 
+           WHERE nurse_id = ? 
+           AND DATE(created_at) = CURDATE()`,
+          [nurse.nurse_id]
+        );
+        
+        return {
+          id: nurse.nurse_id,
+          nurse_id: nurse.nurse_id,
+          user_id: nurse.user_id,
+          name: nurse.name,
+          email: nurse.email,
+          qualification: nurse.qualification,
+          phone: nurse.phone || 'N/A',
+          register_number: nurse.register_number,
+          status: 'active',
+          tasksToday: taskCount[0].count,
+          joinedDate: nurse.created_at
+        };
+      })
+    );
+    
+    return nursesWithStats;
+    
+  } catch (error) {
+    throw new ApiError(500, 'Failed to fetch nurses: ' + error.message);
+  }
+};
+
+export const getAllPharmacists = async () => {
+  try {
+    const [pharmacists] = await pool.execute(
+      `SELECT 
+        p.pharmacist_id,
+        p.user_id,
+        p.name,
+        p.email,
+        p.phone,
+        p.created_at
+      FROM pharmacist p
+      ORDER BY p.name ASC`
+    );
+    
+    const pharmacistsWithStats = await Promise.all(
+      pharmacists.map(async (pharmacist) => {
+        const [transactionCount] = await pool.execute(
+          `SELECT COUNT(*) as count 
+           FROM pharmacy_transaction 
+           WHERE pharmacist_id = ? 
+           AND DATE(issued_at) = CURDATE()`,
+          [pharmacist.pharmacist_id]
+        );
+        
+        return {
+          id: pharmacist.pharmacist_id,
+          pharmacist_id: pharmacist.pharmacist_id,
+          user_id: pharmacist.user_id,
+          name: pharmacist.name,
+          email: pharmacist.email,
+          phone: pharmacist.phone || 'N/A',
+          status: 'active',
+          transactionsToday: transactionCount[0].count,
+          joinedDate: pharmacist.created_at
+        };
+      })
+    );
+    
+    return pharmacistsWithStats;
+    
+  } catch (error) {
+    throw new ApiError(500, 'Failed to fetch pharmacists: ' + error.message);
+  }
+};
+
 export const getAllVisits = async ({ date, status }) => {
   try {
-    console.log('🏥 Fetching visits with filters:', { date, status });
-    
     let query = `
       SELECT 
         v.visit_id,
@@ -537,16 +556,180 @@ export const getAllVisits = async ({ date, status }) => {
     
     query += ` ORDER BY v.visit_date DESC`;
     
-    console.log('🔍 SQL Query:', query);
-    console.log('🔍 Params:', params);
-    
     const [visits] = await pool.execute(query, params);
-    console.log('✅ Found visits:', visits.length);
     
     return visits;
     
   } catch (error) {
-    console.error('❌ Error fetching visits:', error);
     throw new ApiError(500, 'Failed to fetch visits: ' + error.message);
   }
 };
+
+export const getMedicineInventory = async ({ status, search }) => {
+  try {
+    let query = `
+      SELECT 
+        m.medicine_id,
+        m.name,
+        m.type,
+        m.created_at,
+        COALESCE(SUM(mb.in_stock), 0) as total_stock,
+        COUNT(DISTINCT mb.batch_id) as batch_count,
+        MIN(mb.expiry_date) as nearest_expiry
+      FROM medicine m
+      LEFT JOIN medicine_batch mb ON m.medicine_id = mb.medicine_id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    
+    if (status && status !== 'all') {
+      query += ` AND mb.status = ?`;
+      params.push(status.toUpperCase());
+    }
+    
+    if (search) {
+      query += ` AND m.name LIKE ?`;
+      params.push(`%${search}%`);
+    }
+    
+    query += ` GROUP BY m.medicine_id, m.name, m.type, m.created_at ORDER BY m.name ASC`;
+    
+    const [inventory] = await pool.execute(query, params);
+    
+    return inventory.map(item => ({
+      medicine_id: item.medicine_id,
+      name: item.name,
+      type: item.type,
+      total_stock: item.total_stock,
+      batch_count: item.batch_count,
+      nearest_expiry: item.nearest_expiry,
+      status: item.total_stock === 0 ? 'OUT_OF_STOCK' : 
+              item.total_stock < 10 ? 'LOW_STOCK' : 'IN_STOCK'
+    }));
+    
+  } catch (error) {
+    throw new ApiError(500, 'Failed to fetch medicine inventory: ' + error.message);
+  }
+};
+
+export const getSystemLogs = async ({ startDate, endDate }) => {
+  try {
+    let query = `
+      (
+        SELECT
+          'PHARMACY'                    AS transaction_type,
+          pt.transaction_id             AS log_id,
+          pt.issued_at                  AS timestamp,
+          'PHARMACY_ISSUED'             AS action,
+
+          ph.name                       AS pharmacist_name,
+          pu.email                      AS pharmacist_email,
+          NULL                          AS nurse_name,
+
+          pr.prescription_id            AS prescription_id,
+          v.visit_id                    AS visit_id,
+          pat.name                      AS patient_name,
+          d.name                        AS doctor_name,
+
+          m.name                        AS medicine_name,
+          pt.issued_days                AS issued_days,
+
+          CONCAT(
+            'Medicine ', m.name,
+            ' issued by ', ph.name,
+            ' for ', pt.issued_days,
+            ' days'
+          ) AS description
+
+        FROM pharmacy_transaction pt
+        JOIN pharmacist ph
+          ON pt.pharmacist_id = ph.pharmacist_id
+        JOIN users pu
+          ON ph.user_id = pu.user_id
+        JOIN prescription pr
+          ON pt.prescription_id = pr.prescription_id
+        JOIN visit v
+          ON pr.visit_id = v.visit_id
+        JOIN patient_profile pat
+          ON v.patient_id = pat.patient_id
+        JOIN doctor d
+          ON v.doctor_id = d.doctor_id
+        JOIN prescription_items pi
+          ON pr.prescription_id = pi.prescription_id
+        JOIN medicine m
+          ON pi.medicine_id = m.medicine_id
+      )
+
+      UNION ALL
+
+      (
+        SELECT
+          'NURSE'                       AS transaction_type,
+          nt.nurse_txn_id               AS log_id,
+          nt.performed_at               AS timestamp,
+          'NURSE_TASK_COMPLETED'        AS action,
+
+          NULL                          AS pharmacist_name,
+          NULL                          AS pharmacist_email,
+          n.name                        AS nurse_name,
+
+          NULL                          AS prescription_id,
+          v.visit_id                    AS visit_id,
+          pat.name                      AS patient_name,
+          d.name                        AS doctor_name,
+
+          m.name                        AS medicine_name,
+          NULL                          AS issued_days,
+
+          CONCAT(
+            'Nurse ', n.name,
+            ' completed task. Observation: ',
+            COALESCE(nt.observation, 'None')
+          ) AS description
+
+        FROM nurse_transaction nt
+        JOIN nurse n
+          ON nt.nurse_id = n.nurse_id
+        JOIN users nu
+          ON n.user_id = nu.user_id
+        JOIN nurse_task t
+          ON nt.task_id = t.task_id
+        JOIN visit v
+          ON t.visit_id = v.visit_id
+        JOIN patient_profile pat
+          ON v.patient_id = pat.patient_id
+        JOIN doctor d
+          ON v.doctor_id = d.doctor_id
+        LEFT JOIN nurse_task_details nd
+          ON t.task_id = nd.task_id
+        LEFT JOIN medicine m
+          ON nd.medicine_id = m.medicine_id
+      )
+    `;
+
+    const params = [];
+
+    if (startDate) {
+      query += ` AND DATE(timestamp) >= ?`;
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      query += ` AND DATE(timestamp) <= ?`;
+      params.push(endDate);
+    }
+
+    query += `
+      ORDER BY timestamp DESC
+      LIMIT 200
+    `;
+
+    const [rows] = await pool.execute(query, params);
+    return rows;
+
+  } catch (error) {
+    throw new ApiError(500, 'Failed to fetch system logs: ' + error.message);
+  }
+};
+

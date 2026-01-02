@@ -226,7 +226,6 @@ const VisitManagement = () => {
                 <th>Type</th>
                 <th>Reason</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -263,17 +262,6 @@ const VisitManagement = () => {
                   <td>{visit.reason || 'General checkup'}</td>
                   <td>
                     {getStatusBadge(visit.status)}
-                  </td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      <button
-                        className={styles.viewButton}
-                        onClick={() => setSelectedVisit(visit)}
-                        title="View Details"
-                      >
-                        View
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}

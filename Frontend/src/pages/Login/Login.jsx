@@ -20,7 +20,7 @@ const Login = () => {
   const userRole = ROLE_MAP[role];
   const navigate = useNavigate();
   const { login } = useAuth();
-  console.log('Login role param:', role, 'mapped to', userRole);
+  
   // If pharmacist, render the imported PharmacistLogin component
   // if (role === 'pharmacist') {
   //   return <PharmacistLogin />;

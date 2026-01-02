@@ -97,7 +97,6 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
             <th>Status</th>
             <th>Patients Today</th>
             <th>Phone</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -142,17 +141,6 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
                 </div>
               </td>
               <td>{receptionist.phone}</td>
-              <td>
-                <div className={styles.actionButtons}>
-                  <button
-                    className={styles.viewBtn}
-                    onClick={() => onView(receptionist.id)}
-                    title="View Details"
-                  >
-                    <FontAwesomeIcon icon={faEye} />
-                  </button>
-                </div>
-              </td>
             </tr>
           ))}
         </tbody>

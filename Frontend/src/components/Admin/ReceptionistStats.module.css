@@ -1,4 +1,12 @@
 /* src/components/Admin/ReceptionistStats.module.css */
+
+.statIcon {
+  background: #1a365d;
+  color: white;
+}
+
+/* rest of your CSS exactly as-is */
+
 .statsContainer {
   background: white;
   border-radius: 12px;

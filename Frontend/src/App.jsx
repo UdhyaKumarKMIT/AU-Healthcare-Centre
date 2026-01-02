@@ -24,18 +24,16 @@ import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.jsx';
 // Admin Layout & Pages
 import AdminLayout from './components/Admin/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import UserManagement from './pages/admin/UserManagement.jsx';
 import UserForm from './pages/admin/UserForm.jsx';
 import DoctorManagement from './pages/admin/DoctorManagement.jsx';
 import NursesManagement from './pages/admin/NursesManagement.jsx';
 import ReceptionistManagement from './pages/admin/ReceptionistManagement.jsx';
-import MedicinesManagement from './pages/admin/MedicinesManagement.jsx';
-import SuppliersManagement from './pages/admin/SuppliersManagement.jsx';
+import InventoryManagement from './pages/admin/InventoryManagement.jsx';
 import VisitManagement from './pages/admin/VisitManagement.jsx';
 import ScheduleVisit from './pages/admin/ScheduleVisit.jsx';
 import LogsManagement from './pages/admin/LogsManagement.jsx';
 import SettingsManagement from './pages/admin/SettingsManagement.jsx';
-
+import PharmacistsManagement from './pages/admin/PharmacistsManagement.jsx';
 // Doctor Pages
 import DoctorDashboard from './pages/doctor/DoctorDashboard.jsx';
 import VisitDetails from './pages/doctor/VisitDetails.jsx';
@@ -77,16 +75,14 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
               <Route element={<AdminLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/users/add" element={<UserForm mode="add" />} />
                 <Route path="/admin/users/:userId" element={<UserForm mode="view" />} />
                 <Route path="/admin/users/:userId/edit" element={<UserForm mode="edit" />} />
                 <Route path="/admin/doctors" element={<DoctorManagement />} />
                 <Route path="/admin/nurses" element={<NursesManagement />} />
-                <Route path="/admin/pharmacists" element={<MedicinesManagement />} />
+                <Route path="/admin/pharmacists" element={<PharmacistsManagement/>} />
                 <Route path="/admin/receptionists" element={<ReceptionistManagement />} />
-                <Route path="/admin/medicines" element={<MedicinesManagement />} />
-                <Route path="/admin/suppliers" element={<SuppliersManagement />} />
+                <Route path="/admin/inventory" element={<InventoryManagement />} />
                 <Route path="/admin/visits" element={<VisitManagement />} />
                 <Route path="/admin/visits/new" element={<ScheduleVisit />} />
                 <Route path="/admin/logs" element={<LogsManagement />} />

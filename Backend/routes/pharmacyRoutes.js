@@ -1,14 +1,19 @@
 import express from "express";
-import auth from "../middlewares/auth.js";
+import authenticate from "../middlewares/auth.middleware.js";
+import authorize from "../middlewares/role.middleware.js";
+import ROLES from "../constants/roles.js";
 import * as pharmacistController from "../controllers/pharmacistController.js";
 
 const router = express.Router();
+
+// Note: Pharmacist login/register are now handled via centralized /api/auth/login
+// These custom endpoints can be removed if not needed
 
 /**
  * @swagger
  * /api/pharmacist/register:
  *   post:
- *     summary: Register a new pharmacist
+ *     summary: Register a new pharmacist (DEPRECATED - Use admin endpoint)
  *     tags: [Pharmacist]
  *     requestBody:
  *       required: true
@@ -41,7 +46,7 @@ router.post("/register", pharmacistController.register);
  * @swagger
  * /api/pharmacist/login:
  *   post:
- *     summary: Login pharmacist
+ *     summary: Login pharmacist (DEPRECATED - Use /api/auth/login)
  *     tags: [Pharmacist]
  *     requestBody:
  *       required: true
@@ -80,7 +85,7 @@ router.post("/login", pharmacistController.login);
  *       404:
  *         description: Pharmacist not found
  */
-router.get("/pharmacistDetails", auth, pharmacistController.getPharmacistDetails);
+router.get("/pharmacistDetails", authenticate, authorize(ROLES.PHARMACIST), pharmacistController.getPharmacistDetails);
 
 /**
  * @swagger
@@ -111,7 +116,7 @@ router.get("/pharmacistDetails", auth, pharmacistController.getPharmacistDetails
  *       401:
  *         description: Unauthorized
  */
-router.patch("/updatePharmacistDetails", auth, pharmacistController.updatePharmacistDetails);
+router.patch("/updatePharmacistDetails", authenticate, authorize(ROLES.PHARMACIST), pharmacistController.updatePharmacistDetails);
 
 /**
  * @swagger
@@ -129,7 +134,8 @@ router.patch("/updatePharmacistDetails", auth, pharmacistController.updatePharma
  */
 router.get(
   "/prescriptions",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getAllPrescriptions
 );
 
@@ -157,7 +163,8 @@ router.get(
  */
 router.get(
   "/prescriptionDetails",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getPrescriptionDetails
 );
 
@@ -193,7 +200,8 @@ router.get(
  */
 router.post(
   "/issue",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.issueMedicine
 );
 
@@ -222,50 +230,65 @@ router.post(
  */
 router.get(
   "/transactionDetails/:id",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getTransactionDetails
 );
 
 router.get(
   "/transactions",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getTransactions
 );
 
 router.get(
   "/expiryMedicine",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getExpiredMedicineBatches
 );
 
 router.get(
   "/medicine",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.getMedicineDetails
 );
 
 router.post(
   "/medicine/addStock",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.addMedicineBatch
 );
 
 router.delete(
   "/medicine/deleteStock/:batch_id",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.deleteMedicineBatch
 )
 
 router.delete(
   "/clearMedicineBatch/:batch_id",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.clearMedicineBatch
 );
 
 router.post(
   "/addMedicine",
-  auth,
+  authenticate,
+  authorize(ROLES.PHARMACIST),
   pharmacistController.addMedicine
 );
  
+router.get(
+  "/getBatches",
+  authenticate,
+  authorize(ROLES.PHARMACIST),
+  pharmacistController.getBatches
+);
+
 export default router;

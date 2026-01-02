@@ -72,7 +72,7 @@ INSERT INTO `users` VALUES
 ('nurse-uuid-002','nurse2@hms.com','$2b$10$3JANZjLL7latRUDM.2Kdd.QGG9Ab3qrcpEtG/s5NzF8De1GUcSrOq','NURSE'),
 ('nurse-uuid-003','nurse3@hms.com','$2b$10$3JANZjLL7latRUDM.2Kdd.QGG9Ab3qrcpEtG/s5NzF8De1GUcSrOq','NURSE'),
 ('nurse-uuid-004','nurse4@hms.com','$2b$10$3JANZjLL7latRUDM.2Kdd.QGG9Ab3qrcpEtG/s5NzF8De1GUcSrOq','NURSE'),
-('pharma-uuid-001','pharma1@hms.com','$2b$10$KIX5x6yXJZ7G4pQ5wN5Gue4P8q8E8Jx8C0K7XJvJ9m9z8F9ZxO2eW','PHARMACIST');
+('pharma-uuid-001','pharma1@hms.com','$2a$10$8l0udMeGx9vfGYcVveX6KObsNz7vcXMQQzRTvZXtqZ7Lrw2HjwvcO','PHARMACIST');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -146,7 +146,7 @@ CREATE TABLE `pharmacist` (
 LOCK TABLES `pharmacist` WRITE;
 /*!40000 ALTER TABLE `pharmacist` DISABLE KEYS */;
 INSERT INTO `pharmacist` VALUES
-(1,'pharma-uuid-001','Pharma One','pharma1@hms.com','9000000002','$2b$10$skA4S1mQOQ6fvw7bsQOn0uv0gwemp9.0Nu1hiwDEhjjlHiWelwlui','2025-12-30 22:09:50','2025-12-30 22:09:50');
+(1,'pharma-uuid-001','Pharma One','pharma1@hms.com','9000000002','$2a$10$8l0udMeGx9vfGYcVveX6KObsNz7vcXMQQzRTvZXtqZ7Lrw2HjwvcO','2025-12-30 22:09:50','2025-12-30 22:09:50');
 /*!40000 ALTER TABLE `pharmacist` ENABLE KEYS */;
 UNLOCK TABLES;
 

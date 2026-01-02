@@ -1,162 +1,57 @@
 // src/pages/admin/DoctorManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDoctors, createDoctor } from '../../store/slices/adminSlice';
-import styles from './DoctorManagement.module.css';
+import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { fetchDoctors } from '../../store/slices/adminSlice';
+import ReceptionistStats from '../../components/Admin/ReceptionistStats';
+import ReceptionistTable from '../../components/Admin/ReceptionistTable';
+import styles from './ReceptionistManagement.module.css';
 
 const DoctorManagement = () => {
   const dispatch = useDispatch();
-  const { doctors, doctorsLoading, error } = useSelector((state) => state.admin);
+  const navigate = useNavigate();
   
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [newDoctor, setNewDoctor] = useState({
-    name: '',
-    specialization: '',
-    phone: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const { doctors, doctorsLoading, error } = useSelector((state) => state.admin);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    console.log('👨‍⚕️ Fetching doctors...');
     dispatch(fetchDoctors());
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log('👨‍⚕️ Doctors from Redux:', doctors);
-  }, [doctors]);
-
-  const getStatusBadge = (status) => {
-    return status === 'active' 
-      ? <span className={styles.statusActive}>Active</span>
-      : <span className={styles.statusInactive}>Inactive</span>;
+  const doctorStats = {
+    total: doctors.length,
+    active: doctors.filter(d => d.status === 'active').length,
+    inactive: doctors.filter(d => d.status === 'inactive').length,
+    onDuty: doctors.filter(d => d.availability === 'AVAILABLE').length,
+    avgPatientsPerDay: 0, // Could calculate from visits data if available
+    efficiency: 97
   };
 
-  const getAvailabilityBadge = (availability) => {
-    return availability === 'AVAILABLE'
-      ? <span className={styles.available}>Available</span>
-      : <span className={styles.unavailable}>Unavailable</span>;
-  };
+  const filteredDoctors = doctors.filter(doctor =>
+    doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doctor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const validateForm = () => {
-    if (!newDoctor.name.trim()) {
-      setFormError('Name is required');
-      return false;
-    }
-
-    if (!newDoctor.specialization.trim()) {
-      setFormError('Specialization is required');
-      return false;
-    }
-
-    if (!newDoctor.phone.trim()) {
-      setFormError('Phone number is required');
-      return false;
-    }
-
-    // Basic phone validation (10 digits)
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(newDoctor.phone.replace(/\D/g, ''))) {
-      setFormError('Phone number must be 10 digits');
-      return false;
-    }
-
-    if (!newDoctor.email.trim()) {
-      setFormError('Email is required');
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newDoctor.email)) {
-      setFormError('Invalid email format');
-      return false;
-    }
-
-    if (!newDoctor.password) {
-      setFormError('Password is required');
-      return false;
-    }
-
-    if (newDoctor.password.length < 6) {
-      setFormError('Password must be at least 6 characters');
-      return false;
-    }
-
-    if (newDoctor.password !== newDoctor.confirmPassword) {
-      setFormError('Passwords do not match');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleAddDoctor = async (e) => {
-    e.preventDefault();
-    setFormError('');
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      setFormLoading(true);
-      
-      const doctorData = {
-        name: newDoctor.name.trim(),
-        email: newDoctor.email.trim().toLowerCase(),
-        password: newDoctor.password,
-        phone: newDoctor.phone.trim(),
-        specialization: newDoctor.specialization.trim()
-      };
-
-      console.log('📤 Creating doctor:', doctorData);
-      
-      await dispatch(createDoctor(doctorData)).unwrap();
-      
-      console.log('✅ Doctor created successfully');
-      
-      // Reset form and close modal
-      setNewDoctor({ 
-        name: '', 
-        specialization: '',
-        phone: '', 
-        email: '', 
-        password: '', 
-        confirmPassword: '' 
-      });
-      setShowAddForm(false);
-      
-      // Refresh the doctors list
-      await dispatch(fetchDoctors());
-      
-      alert('Doctor created successfully!');
-    } catch (error) {
-      console.error('❌ Error creating doctor:', error);
-      setFormError(error || 'Failed to create doctor');
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowAddForm(false);
-    setFormError('');
-    setNewDoctor({ 
-      name: '', 
-      specialization: '',
-      phone: '', 
-      email: '', 
-      password: '', 
-      confirmPassword: '' 
-    });
-  };
+  // Transform doctors data to match receptionist table format
+  const transformedDoctors = filteredDoctors.map(doctor => ({
+    id: doctor.doctor_id,
+    name: doctor.name,
+    email: doctor.email,
+    employeeId: `DR-${doctor.doctor_id.substring(0, 6)}`,
+    shift: doctor.specialization,
+    patientsToday: 0, // Could be populated from visits data
+    status: doctor.status,
+    phone: doctor.phone,
+    availability: doctor.availability,
+    avatar: doctor.name.charAt(0).toUpperCase()
+  }));
 
   if (doctorsLoading) {
     return (
-      <div className={styles.container}>
+      <div className={styles.receptionistManagement}>
         <div className={styles.loadingContainer}>
           <div className={styles.spinner}></div>
           <p>Loading doctors...</p>
@@ -167,189 +62,75 @@ const DoctorManagement = () => {
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.errorContainer}>
-          <p>Error loading doctors: {error}</p>
-          <button onClick={() => dispatch(fetchDoctors())}>Retry</button>
-        </div>
+      <div className={styles.receptionistManagement}>
+        <p>Error: {error}</p>
+        <button onClick={() => dispatch(fetchDoctors())}>Retry</button>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
-      {/* Header */}
+    <div className={styles.receptionistManagement}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Doctor Management</h1>
-          <p className={styles.subtitle}>Manage doctors and their availability</p>
+          <h1 className={styles.title}>👨‍⚕️ Doctor Management</h1>
+          <p className={styles.subtitle}>
+            Manage doctors and their availability
+          </p>
         </div>
-        <button 
+
+        <button
           className={styles.addButton}
-          onClick={() => setShowAddForm(true)}
+          onClick={() => navigate('/admin/users/add?role=DOCTOR')}
         >
-          + Add New Doctor
+          <FontAwesomeIcon icon={faPlus} /> Add Doctor
         </button>
       </div>
 
-      {/* Add Doctor Form (Modal) */}
-      {showAddForm && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h3>Add New Doctor</h3>
-              <button 
-                className={styles.closeButton}
-                onClick={handleCloseModal}
-                type="button"
-              >
-                ✕
-              </button>
-            </div>
-            
-            {formError && (
-              <div className={styles.errorAlert}>
-                {formError}
-              </div>
-            )}
+      <section className={styles.statsSection}>
+        <ReceptionistStats 
+          stats={doctorStats}
+          title="Doctor Statistics"
+          labels={{
+            onDuty: 'Available',
+            avgPatientsPerDay: 'Avg Patients/Day'
+          }}
+        />
+      </section>
 
-            <form onSubmit={handleAddDoctor} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  value={newDoctor.name}
-                  onChange={(e) => setNewDoctor({...newDoctor, name: e.target.value})}
-                  placeholder="Dr. John Smith"
-                  required
-                  disabled={formLoading}
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Specialization *</label>
-                <input
-                  type="text"
-                  value={newDoctor.specialization}
-                  onChange={(e) => setNewDoctor({...newDoctor, specialization: e.target.value})}
-                  placeholder="Cardiology"
-                  required
-                  disabled={formLoading}
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Phone Number *</label>
-                <input
-                  type="tel"
-                  value={newDoctor.phone}
-                  onChange={(e) => setNewDoctor({...newDoctor, phone: e.target.value})}
-                  placeholder="9876543210"
-                  required
-                  disabled={formLoading}
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Email Address *</label>
-                <input
-                  type="email"
-                  value={newDoctor.email}
-                  onChange={(e) => setNewDoctor({...newDoctor, email: e.target.value})}
-                  placeholder="doctor@hospital.com"
-                  required
-                  disabled={formLoading}
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Password *</label>
-                <input
-                  type="password"
-                  value={newDoctor.password}
-                  onChange={(e) => setNewDoctor({...newDoctor, password: e.target.value})}
-                  placeholder="Minimum 6 characters"
-                  required
-                  minLength={6}
-                  disabled={formLoading}
-                />
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Confirm Password *</label>
-                <input
-                  type="password"
-                  value={newDoctor.confirmPassword}
-                  onChange={(e) => setNewDoctor({...newDoctor, confirmPassword: e.target.value})}
-                  placeholder="Re-enter password"
-                  required
-                  disabled={formLoading}
-                />
-              </div>
-
-              <div className={styles.formActions}>
-                <button 
-                  type="button" 
-                  onClick={handleCloseModal}
-                  disabled={formLoading}
-                  className={styles.cancelButton}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className={styles.submitButton}
-                  disabled={formLoading}
-                >
-                  {formLoading ? 'Creating...' : 'Add Doctor'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <section className={styles.filtersSection}>
+        <div className={styles.searchBox}>
+          <input
+            className={styles.searchInput}
+            placeholder="Search doctors by name, email, or specialization..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <span className={styles.searchIcon}>
+            <FontAwesomeIcon icon={faSearch} />
+          </span>
         </div>
-      )}
+      </section>
 
-      {/* Doctors Table */}
-      <div className={styles.tableContainer}>
-        {doctors.length === 0 ? (
+      <section className={styles.tableSection}>
+        {transformedDoctors.length === 0 ? (
           <div className={styles.emptyState}>
-            <p>No doctors found</p>
+            <p>No doctors found matching your search.</p>
           </div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Doctor Name</th>
-                <th>Specialization</th>
-                <th>Contact</th>
-                <th>Status</th>
-                <th>Availability</th>
-              </tr>
-            </thead>
-            <tbody>
-              {doctors.map((doctor) => (
-                <tr key={doctor.id}>
-                  <td>
-                    <div className={styles.doctorCell}>
-                      <div className={styles.doctorAvatar}>
-                        {doctor.name.charAt(0)}
-                      </div>
-                      <div>
-                        <strong>{doctor.name}</strong>
-                        <div className={styles.doctorEmail}>{doctor.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{doctor.specialization}</td>
-                  <td>{doctor.phone}</td>
-                  <td>{getStatusBadge(doctor.status)}</td>
-                  <td>{getAvailabilityBadge(doctor.availability)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ReceptionistTable
+            receptionists={transformedDoctors}
+            onView={(id) => navigate(`/admin/doctors/${id}`)}
+            onEdit={(id) => navigate(`/admin/doctors/${id}/edit`)}
+            columnHeaders={{
+              employeeId: 'Doctor ID',
+              shift: 'Specialization',
+              patientsToday: 'Patients Today'
+            }}
+            showAvailability={true}
+          />
         )}
-      </div>
+      </section>
     </div>
   );
 };

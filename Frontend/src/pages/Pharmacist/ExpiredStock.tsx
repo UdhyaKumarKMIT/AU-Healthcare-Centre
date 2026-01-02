@@ -1,16 +1,30 @@
 import { useState, useEffect } from "react";
 import { Activity, ShieldX, Pill } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- Component ---------- */
 const ExpiredStockPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const pharmacistId = user?.pharmacist_id;
+
   const [expiredMedicines, setExpiredMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
+
     const fetchExpiredMedicine = async () => {
       try {
-        const response = await api.get("/pharmacy/expiryMedicine");
+        const response = await api.get("/pharmacy/expiryMedicine", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setExpiredMedicines(response.data.items || []);
       } catch (err) {
         console.error("Failed to fetch expired medicine:", err);
@@ -21,17 +35,22 @@ const ExpiredStockPage = () => {
     };
 
     fetchExpiredMedicine();
-  }, []);
+  }, [pharmacistId, navigate]);
 
   const handleClear = async (batchId: string) => {
     if (!window.confirm("Are you sure you want to clear this batch?")) return;
 
     try {
       const response = await api.delete(
-        `/pharmacy/clearMedicineBatch/${batchId}`
+        `/pharmacy/clearMedicineBatch/${batchId}`,
+        {
+          params: { pharmacist_id: pharmacistId }
+        }
       );
       if (response.status === 200) {
-        const response = await api.get("/pharmacy/expiryMedicine");
+        const response = await api.get("/pharmacy/expiryMedicine", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setExpiredMedicines(response.data.items || []);
         alert("Stock cleared successfully!");
       }

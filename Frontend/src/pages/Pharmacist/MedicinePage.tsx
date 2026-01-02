@@ -2,9 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { Plus, Activity, PillBottle, Trash2 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- Component ---------- */
 const MedicinePage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const pharmacistId = user?.pharmacist_id;
+
   const [medicine, setMedicine] = useState<any>({});
   const [filterType, setFilterType] = useState<"all" | "name">("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,13 +28,17 @@ const [newMed, setNewMed] = useState({
   in_stock: "",
 });
 
-
-  const navigate = useNavigate();
-
   useEffect(() => {
+    if (!pharmacistId) {
+      navigate("/login/pharmacist");
+      return;
+    }
+
     const loadMedicineDetails = async () => {
       try {
-        const res = await api.get("/pharmacy/medicine");
+        const res = await api.get("/pharmacy/medicine", {
+          params: { pharmacist_id: pharmacistId }
+        });
         setMedicine(res.data.medicines);
       } catch (err) {
         alert("Failed to load medicine details");
@@ -36,7 +46,7 @@ const [newMed, setNewMed] = useState({
       }
     };
     loadMedicineDetails();
-  }, []);
+  }, [pharmacistId, navigate]);
 
   const getRemainingTime = (expiryDate: string) => {
     const now = new Date();
@@ -70,6 +80,7 @@ const [newMed, setNewMed] = useState({
   const handleAddMedicine = async () => {
   try {
     await api.post("/pharmacy/addMedicine", {
+      pharmacist_id: pharmacistId,
       ...newMed,
       in_stock: Number(newMed.in_stock),
     });
@@ -86,7 +97,9 @@ const [newMed, setNewMed] = useState({
     });
 
     // reload medicines
-    const res = await api.get("/pharmacy/medicine");
+    const res = await api.get("/pharmacy/medicine", {
+      params: { pharmacist_id: pharmacistId }
+    });
     setMedicine(res.data.medicines);
 
   } catch (err) {
@@ -104,12 +117,16 @@ const handleDeleteBatch = async (batchId: string) => {
 
   try {
     // Call backend API to delete batch
-    await api.delete(`/pharmacy/medicine/deleteStock/${batchId}`);
+    await api.delete(`/pharmacy/medicine/deleteStock/${batchId}`, {
+      params: { pharmacist_id: pharmacistId }
+    });
 
     alert("Medicine Batch deleted successfully");
 
     // Reload medicine list after deletion
-    const res = await api.get("/pharmacy/medicine");
+    const res = await api.get("/pharmacy/medicine", {
+      params: { pharmacist_id: pharmacistId }
+    });
     setMedicine(res.data.medicines);
 
   } catch (err) {

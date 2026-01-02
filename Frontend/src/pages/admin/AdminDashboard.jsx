@@ -7,7 +7,8 @@ import AdminSidebar from '../../components/Admin/AdminSidebar';
 import Header from '../../components/Header/Header';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faUserMd, faCalendarCheck, faClock, faUserTie, faPills } from '@fortawesome/free-solid-svg-icons';
-import styles from './AdminDashboard.module.css';
+import styles from './ReceptionistManagement.module.css';
+import statStyles from '../../components/Admin/ReceptionistStats.module.css'
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -16,7 +17,6 @@ const AdminDashboard = () => {
   const { stats: adminStats, patientOverview, loading: adminLoading, error } = useSelector((state) => state.admin || {});
   
   const [activeModule, setActiveModule] = useState('dashboard');
-  const [selectedTimeRange, setSelectedTimeRange] = useState('today');
 
   useEffect(() => {
     if (activeModule === 'dashboard') {
@@ -96,9 +96,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleTimeRangeChange = (range) => {
-    setSelectedTimeRange(range);
-  };
 
   const isLoading = adminLoading;
 
@@ -131,57 +128,34 @@ const AdminDashboard = () => {
     }
 
     return (
-      <>
+      <div className={styles.dashboardContent} >
         {/* Dashboard Header */}
         <div className={styles.dashboardHeader}>
-          <div className={styles.headerLeft}>
-            <h1>Admin Dashboard</h1>
+          <div>
+            <h1 className={styles.title}>Admin Dashboard</h1>
             <p>Welcome to MIT Health Centre Administration Panel</p>
-          </div>
-          <div className={styles.headerRight}>
-            <div className={styles.timeRangeSelector}>
-              <button 
-                className={`${styles.timeRangeBtn} ${selectedTimeRange === 'today' ? styles.active : ''}`}
-                onClick={() => handleTimeRangeChange('today')}
-              >
-                Today
-              </button>
-              <button 
-                className={`${styles.timeRangeBtn} ${selectedTimeRange === 'week' ? styles.active : ''}`}
-                onClick={() => handleTimeRangeChange('week')}
-              >
-                This Week
-              </button>
-              <button 
-                className={`${styles.timeRangeBtn} ${selectedTimeRange === 'month' ? styles.active : ''}`}
-                onClick={() => handleTimeRangeChange('month')}
-              >
-                This Month
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Stats Cards Grid */}
-        <div className={styles.statsGrid}>
-          {dashboardCards.map((card, index) => (
-            <div 
-              key={index}
-              className={styles.dashboardCard}
-              onClick={() => handleCardClick(card.route)}
-            >
-              <div className={styles.cardIcon} style={{ backgroundColor: `${card.color}20`, color: card.color }}>
-                <FontAwesomeIcon icon={card.icon} />
-              </div>
-              <div className={styles.cardContent}>
-                <h3 className={styles.cardTitle}>{card.title}</h3>
-                <div className={styles.cardValue}>
-                  {card.value}{card.unit || ''}
+        <div className={statStyles.statsContainer}>
+          <h3 className={statStyles.sectionTitle}>System Overview</h3>
+
+          <div className={statStyles.statsGrid}>
+            {dashboardCards.map((card, index) => (
+              <div key={index} className={statStyles.statCard}>
+                <div className={statStyles.statHeader}>
+                  <div className={statStyles.statIcon}>
+                    <FontAwesomeIcon icon={card.icon} />
+                  </div>
+                  <h4 className={statStyles.statTitle}>{card.title}</h4>
                 </div>
+                <div className={statStyles.statValue}>{card.value}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
 
         {/* Charts and Additional Stats */}
         <div className={styles.chartsContainer}>
@@ -320,7 +294,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   };
 

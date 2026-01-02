@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Activity, PillBottle, FileScan, ShieldX, FileCheck } from "lucide-react";
 import api from "../../api/axios";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 /* ---------- Helpers ---------- */
 function toTitleCase(str: string) {
@@ -16,44 +16,47 @@ function toTitleCase(str: string) {
 /* ---------- Component ---------- */
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [message, setMessage] = useState(""); 
-  const [userName, setUserName] = useState("");
   const [profileOpen, setProfileOpen] = useState(false); 
   const [loading, setLoading] = useState(true);
 
-
-  const token = localStorage.getItem("token");
-  let pharmacistId: number | null = null;
+  // Get pharmacist_id from AuthContext (same pattern as doctor/receptionist)
+  const pharmacistId = user?.pharmacist_id;
+  const userName = user?.name || "";
 
   /* ---------- AUTH + INITIAL LOAD ---------- */
   useEffect(() => {
-    if (!token) {
-      navigate("/login");
+    if (!user || !pharmacistId) {
+      navigate("/login/pharmacist");
       return;
     }
 
+    // Fetch initial data if needed
     const fetchProfile = async () => {
-    try {
-      const res = await api.get("/pharmacy/pharmacistDetails");
-      setUserName(res.data.name); 
-      setMessage("The system is operational!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch profile. Please login again.");
-      window.location.href = "/pharmacist/login";
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const res = await api.get("/pharmacy/pharmacistDetails", {
+          params: { pharmacist_id: pharmacistId }
+        });
+        setMessage("The system is operational!");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to fetch profile. Please login again.");
+        navigate("/login/pharmacist");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchProfile();
+    fetchProfile();
   
-  }, [navigate, token]); 
+  }, [navigate, user, pharmacistId]); 
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.href = "/login/pharmacist";
+    localStorage.removeItem("user");
+    navigate("/login/pharmacist");
   };
 
   
@@ -79,7 +82,7 @@ const Dashboard = () => {
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
               <Activity />
               <div>
-                <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
+                <h2 style={{ margin: 0 }}>Anna University Pharmacy</h2>
                 <small>Pharmacist Dashboard</small>
               </div>
             </div>
