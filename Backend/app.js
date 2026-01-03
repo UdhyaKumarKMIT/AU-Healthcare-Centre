@@ -12,6 +12,7 @@ import receptionistRoutes from './routes/receptionist.routes.js';
 import doctorRoutes from './routes/doctor.route.js';
 import pharmacyRoutes from './routes/pharmacyRoutes.js';
 import studentRoutes from './routes/student.routes.js';
+import userRoutes from './routes/user.routes.js';
 // Middleware
 import errorHandler from './middlewares/error.middleware.js';
 import nurseRoutes from './routes/nurse.routes.js';
@@ -54,6 +55,7 @@ app.use('/api/receptionist', receptionistRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/pharmacy', pharmacyRoutes); // pharmacist-specific routes
 app.use('/api/students', studentRoutes); // student-specific routes
+app.use('/api/users', userRoutes); // user management (admin)
 app.use('/api/nurse', nurseRoutes);
 app.use('/api/labtech', labtechRoutes);
 // -------------------
