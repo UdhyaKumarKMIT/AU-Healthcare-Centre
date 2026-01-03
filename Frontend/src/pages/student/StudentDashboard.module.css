@@ -1,0 +1,422 @@
+/* src/pages/student/StudentDashboard.module.css - MOBILE-FIRST RESPONSIVE */
+
+.dashboard {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.mainContent {
+  padding-top: 70px;
+  min-height: calc(100vh - 70px);
+  padding-bottom: 80px; /* Space for fixed bottom tabs on mobile */
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Mobile-Optimized Profile Card */
+.profileCard {
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.profileHeader {
+  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+  padding: 20px;
+  color: white;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.studentName {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: white;
+}
+
+.rollNumber {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smallIcon {
+  font-size: 12px;
+}
+
+/* Quick Stats Row */
+.quickStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.statIcon {
+  width: 40px;
+  height: 40px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a237e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bottom Tab Navigation - Mobile First */
+.tabNavigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  z-index: 100;
+}
+
+.tabButton {
+  padding: 12px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #64748b;
+  position: relative;
+}
+
+.tabButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: #1a237e;
+  transition: width 0.2s ease;
+  border-radius: 0 0 3px 3px;
+}
+
+.tabButton.activeTab::before {
+  width: 60%;
+}
+
+.tabButton:active {
+  background: #f8fafc;
+}
+
+.tabButton.activeTab {
+  color: #1a237e;
+}
+
+.tabIcon {
+  font-size: 20px;
+}
+
+.tabLabel {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Tab Content */
+.tabContent {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+/* Loading States */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #1a237e;
+  gap: 16px;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Error States */
+.errorContainer {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.retryButton {
+  padding: 12px 32px;
+  background: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  background: #3949ab;
+  box-shadow: 0 2px 8px rgba(26, 35, 126, 0.3);
+}
+
+/* Tablet - 768px and up */
+@media (min-width: 768px) {
+  .mainContent {
+    padding-bottom: 30px;
+  }
+
+  .container {
+    padding: 24px;
+  }
+
+  .profileCard {
+    margin-bottom: 24px;
+  }
+
+  .profileHeader {
+    padding: 24px;
+  }
+
+  .avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+  }
+
+  .studentName {
+    font-size: 24px;
+  }
+
+  .rollNumber {
+    font-size: 15px;
+  }
+
+  .quickStats {
+    grid-template-columns: repeat(4, 1fr);
+    padding: 20px;
+  }
+
+  /* Switch to horizontal tabs on tablet */
+  .tabNavigation {
+    position: static;
+    display: flex;
+    gap: 8px;
+    background: white;
+    border: none;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+  }
+
+  .tabButton {
+    flex: 1;
+    flex-direction: row;
+    padding: 12px 16px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .tabButton::before {
+    display: none;
+  }
+
+  .tabButton:hover {
+    background: #f8fafc;
+  }
+
+  .tabButton.activeTab {
+    background: #1a237e;
+    color: white;
+  }
+
+  .tabLabel {
+    font-size: 14px;
+  }
+
+  .tabContent {
+    margin-bottom: 0;
+  }
+}
+
+/* Desktop - 1024px and up */
+@media (min-width: 1024px) {
+  .container {
+    padding: 30px;
+  }
+
+  .profileCard {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 24px;
+  }
+
+  .profileHeader {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .avatarSection {
+    gap: 20px;
+  }
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 36px;
+  }
+
+  .studentName {
+    font-size: 28px;
+  }
+
+  .rollNumber {
+    font-size: 16px;
+  }
+
+  .quickStats {
+    flex-shrink: 0;
+    width: 400px;
+    grid-template-columns: repeat(2, 1fr);
+    padding: 24px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .statCard {
+    padding: 14px;
+  }
+
+  .statIcon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .statValue {
+    font-size: 18px;
+  }
+
+  .tabNavigation {
+    gap: 12px;
+  }
+
+  .tabButton {
+    padding: 14px 24px;
+  }
+
+  .tabIcon {
+    font-size: 18px;
+  }
+
+  .tabLabel {
+    font-size: 16px;
+  }
+}
+
+/* Large Desktop - 1440px and up */
+@media (min-width: 1440px) {
+  .profileHeader {
+    padding: 32px;
+  }
+
+  .quickStats {
+    width: 450px;
+    padding: 32px;
+  }
+}

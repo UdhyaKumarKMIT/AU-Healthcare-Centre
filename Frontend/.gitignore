@@ -1,3 +1,32 @@
+<<<<<<< HEAD
+# dependencies
+node_modules/
+
+# build folders
+build/
+dist/
+
+# environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+=======
 # Logs
 logs
 *.log
@@ -22,5 +51,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-.env
+>>>>>>> 9c54b63f8566297da7d4ac17fd72984241a9f3f2

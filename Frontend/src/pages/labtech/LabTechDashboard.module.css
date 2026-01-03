@@ -1,0 +1,401 @@
+/* src/pages/labtech/LabTechDashboard.module.css */
+.labTechDashboard {
+  min-height: 100vh;
+  background: #f7fafc;
+}
+
+.mainContainer {
+  display: flex;
+  min-height: calc(100vh - 70px);
+}
+
+.mainContent {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Dashboard Header */
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerLeft h1 {
+  color: #1a365d;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.3px;
+}
+
+.headerLeft p {
+  color: #718096;
+  font-size: 16px;
+  margin: 0;
+}
+
+.headerRight {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.timeRangeSelector {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.timeRangeBtn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.timeRangeBtn:hover {
+  background: #f7fafc;
+}
+
+.timeRangeBtn.active {
+  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  color: white;
+}
+
+/* Pending Tests Section */
+.pendingTestsSection {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sectionHeader h3 {
+  color: #1a365d;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.viewAll {
+  color: #1a365d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.viewAll:hover {
+  color: #2d3748;
+  text-decoration: underline;
+}
+
+.testsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.testCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.testCard:hover {
+  border-color: #1a365d;
+  box-shadow: 0 4px 12px rgba(26, 54, 93, 0.1);
+  transform: translateY(-2px);
+}
+
+.testInfo {
+  flex: 1;
+}
+
+.testHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.testHeader h4 {
+  color: #1a365d;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.urgentBadge {
+  padding: 4px 8px;
+  background: #fed7d7;
+  color: #c53030;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.patientName {
+  color: #4a5568;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.orderedDate {
+  color: #718096;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.processBtn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.processBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 54, 93, 0.3);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.emptyState p {
+  margin-top: 16px;
+  font-size: 16px;
+}
+
+/* Quick Stats Section */
+.quickStatsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.quickStatCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.quickStatCard h4 {
+  color: #718096;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quickStatValue {
+  color: #1a365d;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Activity Section */
+.activitySection {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.activityIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityText {
+  color: #2d3748;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.activityTime {
+  color: #718096;
+  font-size: 13px;
+  margin: 0;
+}
+
+.noActivity {
+  text-align: center;
+  color: #718096;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+/* Loading and Error States */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #1a365d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorContainer p {
+  color: #e53e3e;
+  font-size: 16px;
+  text-align: center;
+}
+
+.errorContainer button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.errorContainer button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 54, 93, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerRight {
+    width: 100%;
+  }
+
+  .timeRangeSelector {
+    width: 100%;
+  }
+
+  .timeRangeBtn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 16px;
+  }
+
+  .dashboardHeader {
+    margin-bottom: 24px;
+  }
+
+  .headerLeft h1 {
+    font-size: 24px;
+  }
+
+  .testCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .processBtn {
+    width: 100%;
+  }
+
+  .quickStatsSection {
+    grid-template-columns: 1fr;
+  }
+}
+.mainContent {
+  flex: 1;
+  padding: 24px;
+  margin-top: 72px; /* 🔥 THIS is missing */
+  background: #f7fafc;
+}
+
+

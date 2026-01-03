@@ -1,0 +1,35 @@
+/* src/components/Admin/AdminLayout.module.css */
+.adminLayout {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.layoutContainer {
+  display: flex;
+  margin-top: 70px; /* Header height */
+  min-height: calc(100vh - 70px);
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 250px; /* Sidebar width */
+  padding: 30px;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 70px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 70px; /* Collapsed sidebar width */
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 15px;
+  }
+}

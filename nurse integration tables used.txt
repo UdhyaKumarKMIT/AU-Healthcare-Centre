@@ -1,0 +1,139 @@
+mysql> CREATE TABLE users (
+    ->   user_id CHAR(36) PRIMARY KEY,
+    ->   email VARCHAR(255) UNIQUE NOT NULL,
+    ->   password VARCHAR(255) NOT NULL,  -- bcrypt hash
+    ->   role ENUM(
+    ->     'ADMIN',
+    ->     'DOCTOR',
+    ->     'NURSE',
+    ->     'PHARMACIST',
+    ->     'RECEPTIONIST',
+    ->     'PATIENT'
+    ->   ) NOT NULL,
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> CREATE TABLE doctor (
+    ->   doctor_id CHAR(36) PRIMARY KEY,
+    ->   user_id CHAR(36) NOT NULL,
+    ->   name VARCHAR(255) NOT NULL,
+    ->   specialization VARCHAR(255),
+    ->   phone VARCHAR(20),
+    ->   availability_status ENUM('AVAILABLE','UNAVAILABLE') DEFAULT 'AVAILABLE',
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.06 sec)
+
+mysql> CREATE TABLE nurse (
+    ->   nurse_id CHAR(36) PRIMARY KEY,
+    ->   user_id CHAR(36) NOT NULL,
+    ->   register_number VARCHAR(100) UNIQUE,
+    ->   name VARCHAR(255) NOT NULL,
+    ->   qualification VARCHAR(255),
+    ->   phone VARCHAR(20),
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> CREATE TABLE pharmacist (
+    ->   pharmacist_id CHAR(36) PRIMARY KEY,
+    ->   user_id CHAR(36) NOT NULL,
+    ->   name VARCHAR(255),
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.06 sec)
+
+mysql> CREATE TABLE receptionist (
+    ->   receptionist_id CHAR(36) PRIMARY KEY,
+    ->   user_id CHAR(36) NOT NULL,
+    ->   name VARCHAR(255),
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> CREATE TABLE patient_profile (
+    ->   patient_id CHAR(36) PRIMARY KEY,
+    ->   user_id CHAR(36) NOT NULL,
+    ->   roll_no VARCHAR(50),
+    ->   name VARCHAR(255) NOT NULL,
+    ->   dob DATE,
+    ->   gender ENUM('MALE','FEMALE','OTHER'),
+    ->   phone VARCHAR(20),
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.06 sec)
+
+mysql> CREATE TABLE visit (
+    ->   visit_id CHAR(36) PRIMARY KEY,
+    ->   patient_id CHAR(36) NOT NULL,
+    ->   doctor_id CHAR(36),
+    ->   receptionist_id CHAR(36),
+    ->   visit_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   visit_type ENUM('OPD','IPD','EMERGENCY'),
+    ->   reason VARCHAR(255),
+    ->   status ENUM(
+    ->     'SCHEDULED',
+    ->     'ONGOING',
+    ->     'COMPLETED',
+    ->     'DIAGNOSED',
+    ->     'PRESCRIBED',
+    ->     'NURSING',
+    ->     'PHARMACY'
+    ->   ),
+    ->   FOREIGN KEY (patient_id) REFERENCES patient_profile(patient_id),
+    ->   FOREIGN KEY (doctor_id) REFERENCES doctor(doctor_id),
+    ->   FOREIGN KEY (receptionist_id) REFERENCES receptionist(receptionist_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.08 sec)
+
+mysql> CREATE TABLE medicine (
+    ->   medicine_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->   name VARCHAR(255) NOT NULL,
+    ->   type ENUM('Tablet','Syrup','Injection'),
+    ->   in_stock BOOLEAN DEFAULT TRUE
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> CREATE TABLE nurse_task (
+    ->   task_id CHAR(36) PRIMARY KEY,
+    ->   visit_id CHAR(36) NOT NULL,
+    ->   doctor_id CHAR(36),
+    ->   nurse_id CHAR(36) NOT NULL,
+    ->   task_type VARCHAR(255) NOT NULL,
+    ->   status ENUM('PENDING','COMPLETED') DEFAULT 'PENDING',
+    ->   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   FOREIGN KEY (visit_id) REFERENCES visit(visit_id),
+    ->   FOREIGN KEY (doctor_id) REFERENCES doctor(doctor_id),
+    ->   FOREIGN KEY (nurse_id) REFERENCES nurse(nurse_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.09 sec)
+
+mysql> CREATE TABLE nurse_task_details (
+    ->   detail_id CHAR(36) PRIMARY KEY,
+    ->   task_id CHAR(36) NOT NULL,
+    ->   medicine_id INT,
+    ->   dosage VARCHAR(100),
+    ->   route ENUM('ORAL','IV','IM','SUBCUTANEOUS'),
+    ->   remarks TEXT,
+    ->   FOREIGN KEY (task_id) REFERENCES nurse_task(task_id),
+    ->   FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> CREATE TABLE nurse_transaction (
+    ->   nurse_txn_id CHAR(36) PRIMARY KEY,
+    ->   task_id CHAR(36) NOT NULL,
+    ->   nurse_id CHAR(36) NOT NULL,
+    ->   status ENUM('COMPLETED') NOT NULL,
+    ->   performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ->   observation TEXT,
+    ->   FOREIGN KEY (task_id) REFERENCES nurse_task(task_id),
+    ->   FOREIGN KEY (nurse_id) REFERENCES nurse(nurse_id)
+    -> ) ENGINE=InnoDB;
+Query OK, 0 rows affected (0.07 sec)

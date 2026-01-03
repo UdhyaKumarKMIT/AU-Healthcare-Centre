@@ -1,0 +1,129 @@
+CREATE TABLE medicine (
+    medicine_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    type enum('capsule','syrup','tablet','injection','ointment','drops'),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (medicine_id)
+);
+
+CREATE TABLE medicine_batch (
+    batch_id VARCHAR(20) NOT NULL,
+    medicine_id INT NOT NULL,
+    expiry_date DATE NOT NULL,
+    in_stock INT NOT NULL,
+    status ENUM('ACTIVE','EXPIRED','DISPOSED') DEFAULT 'ACTIVE',
+    pharmacist_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (batch_id),
+    KEY idx_medicine_id (medicine_id),
+    KEY idx_pharmacist_id (pharmacist_id)
+);
+
+CREATE TABLE medicine_log (
+    batch_id VARCHAR(20) NOT NULL,
+    medicine_id INT NOT NULL,
+    expiry_date DATE NOT NULL,
+    in_stock INT NOT NULL,
+    pharmacist_id INT NOT NULL,
+    cleared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    cleared_pharmacist_id INT NOT NULL,
+    PRIMARY KEY (batch_id)
+);
+
+CREATE TABLE prescription (
+    prescription_id CHAR(36) NOT NULL,
+    visit_id CHAR(36) NOT NULL,
+    doctor_id CHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('PENDING','ISSUED','CANCELLED') DEFAULT 'PENDING',
+    PRIMARY KEY (prescription_id),
+    KEY idx_visit_id (visit_id),
+    KEY idx_doctor_id (doctor_id)
+);
+
+CREATE TABLE prescription_items (
+    item_id CHAR(36) NOT NULL,
+    prescription_id CHAR(36) NOT NULL,
+    med_name VARCHAR(255) NOT NULL,
+    med_type VARCHAR(100),
+    total_days INT,
+    food ENUM('BEFORE','AFTER'),
+    morning TINYINT(1) DEFAULT 0,
+    afternoon TINYINT(1) DEFAULT 0,
+    night TINYINT(1) DEFAULT 0,
+    PRIMARY KEY (item_id),
+    KEY idx_prescription_id (prescription_id)
+);
+
+CREATE TABLE pharmacy_transaction (
+    pharmacy_txn_id INT NOT NULL AUTO_INCREMENT,
+    prescription_id CHAR(36) NOT NULL,
+    pharmacist_id INT NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    issued_days INT NOT NULL,
+    status ENUM('ISSUED') DEFAULT 'ISSUED',
+    PRIMARY KEY (pharmacy_txn_id),
+    KEY idx_prescription_id (prescription_id),
+    KEY idx_pharmacist_id (pharmacist_id)
+);
+
+CREATE TABLE pharmacist (
+    pharmacist_id INT NOT NULL AUTO_INCREMENT,
+    user_id CHAR(36) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (pharmacist_id),
+    KEY idx_user_id (user_id)
+);
+
+CREATE TABLE users (
+    user_id CHAR(36) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('ADMIN','DOCTOR','NURSE','PHARMACIST','RECEPTIONIST','PATIENT') NOT NULL,
+    PRIMARY KEY (user_id),
+    UNIQUE KEY idx_email (email)
+);
+
+CREATE TABLE visit (
+    visit_id CHAR(36) NOT NULL,
+    patient_id CHAR(36) NOT NULL,
+    doctor_id CHAR(36) NOT NULL,
+    receptionist_id CHAR(36),
+    visit_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    visit_type ENUM('OPD','IPD','EMERGENCY'),
+    reason VARCHAR(255),
+    status ENUM('SCHEDULED','ONGOING','COMPLETED','CANCELLED','DIAGNOSED','PRESCRIBED','NURSING','PHARMACY'),
+    PRIMARY KEY (visit_id),
+    KEY idx_patient_id (patient_id),
+    KEY idx_doctor_id (doctor_id),
+    KEY idx_receptionist_id (receptionist_id)
+);
+
+CREATE TABLE doctor (
+    doctor_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    specialization VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    availability_status ENUM('AVAILABLE','UNAVAILABLE') DEFAULT 'AVAILABLE',
+    PRIMARY KEY (doctor_id),
+    KEY idx_user_id (user_id)
+);
+
+CREATE TABLE medicine_stock_log (
+    stock_log_id INT AUTO_INCREMENT PRIMARY KEY,
+    medicine_id INT NOT NULL,
+    batch_id VARCHAR(20),
+    pharmacist_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id),
+    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(pharmacist_id)
+);
+ 

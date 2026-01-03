@@ -1,0 +1,85 @@
+/* src/pages/receptionist/RegisterPatientPage.module.css */
+.dashboard {
+  min-height: 100vh;
+  background-color: #f7fafc;
+}
+
+.mainContent {
+  padding-top: 70px;
+  min-height: calc(100vh - 70px);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.pageHeader {
+  margin-bottom: 32px;
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  color: #4299e1;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.backButton:hover {
+  color: #3182ce;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}
+
+.content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 40px;
+  min-height: 500px;
+}
+
+.formContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .mainContent {
+    padding-top: 60px;
+  }
+  
+  .content {
+    padding: 24px;
+  }
+}
