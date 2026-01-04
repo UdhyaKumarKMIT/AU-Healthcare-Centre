@@ -23,7 +23,7 @@ StaffDetails.init(
             allowNull: false,
         },
         role: {
-            type: DataTypes.ENUM('NURSE', 'PHARMACIST', 'CLERICAL_ASSISTANT'),
+            type: DataTypes.ENUM('NURSE_RECEPTIONIST', 'PHARMACIST', 'CLERICAL_ASSISTANT'),
             allowNull: false,
         },
         code: {

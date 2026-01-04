@@ -20,7 +20,7 @@ User.init(
             allowNull: false,
         },
         role: {
-            type: DataTypes.ENUM('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'CLERICAL_ASSISTANT'),
+            type: DataTypes.ENUM('ADMIN', 'DOCTOR', 'NURSE_RECEPTIONIST', 'PHARMACIST', 'CLERICAL_ASSISTANT', 'LAB_TECHNICIAN'),
             allowNull: false,
         },
         status: {
@@ -32,6 +32,11 @@ User.init(
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW,
+        },
+        is_role_specific: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'True for role-specific accounts (NURSE, PHARMACIST), False for user-specific accounts',
         },
     },
     {
