@@ -20,7 +20,7 @@ User.init(
             allowNull: false,
         },
         role: {
-            type: DataTypes.ENUM('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'CLERICAL_ASSISTANT'),
+            type: DataTypes.ENUM('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'CLERICAL_ASSISTANT','LAB_TECHNICIAN'),
             allowNull: false,
         },
         status: {
