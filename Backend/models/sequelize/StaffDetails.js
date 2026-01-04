@@ -10,14 +10,6 @@ StaffDetails.init(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
         },
-        user_id: {
-            type: DataTypes.UUID,
-            allowNull: false,
-            references: {
-                model: 'users',
-                key: 'user_id',
-            },
-        },
         name: {
             type: DataTypes.STRING(100),
             allowNull: false,

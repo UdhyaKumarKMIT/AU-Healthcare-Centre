@@ -32,67 +32,67 @@ export const getAllUsers = async (req, res, next) => {
 export const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role, phone, specialization, qualification, register_number } = req.body;
-    
+
     if (!name || !email || !password || !role) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Name, email, password, and role are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, password, and role are required'
       });
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid email format' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
       });
     }
-    
+
     const validRoles = ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST'];
     if (!validRoles.includes(role.toUpperCase())) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid role. Must be one of: ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role. Must be one of: ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST'
       });
     }
-    
+
     if (password.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Password must be at least 6 characters' 
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
       });
     }
-    
+
     if (role.toUpperCase() === 'DOCTOR') {
       if (!specialization) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Specialization is required for doctors' 
+        return res.status(400).json({
+          success: false,
+          message: 'Specialization is required for doctors'
         });
       }
       if (!phone) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Phone number is required for doctors' 
+        return res.status(400).json({
+          success: false,
+          message: 'Phone number is required for doctors'
         });
       }
     }
 
     if (role.toUpperCase() === 'NURSE') {
       if (!qualification) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Qualification is required for nurses' 
+        return res.status(400).json({
+          success: false,
+          message: 'Qualification is required for nurses'
         });
       }
       if (!register_number) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Register number is required for nurses' 
+        return res.status(400).json({
+          success: false,
+          message: 'Register number is required for nurses'
         });
       }
     }
-    
+
     const user = await adminService.createUser({
       name,
       email,
@@ -103,11 +103,11 @@ export const createUser = async (req, res, next) => {
       qualification,
       register_number
     });
-    
-    res.status(201).json({ 
-      success: true, 
-      message: `${role} created successfully`, 
-      data: user 
+
+    res.status(201).json({
+      success: true,
+      message: `${role} created successfully`,
+      data: user
     });
   } catch (err) {
     next(err);

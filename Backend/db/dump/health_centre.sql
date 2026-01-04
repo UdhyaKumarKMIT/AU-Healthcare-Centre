@@ -585,8 +585,10 @@ CREATE TABLE `staff_details` (
 
 LOCK TABLES `staff_details` WRITE;
 /*!40000 ALTER TABLE `staff_details` DISABLE KEYS */;
-INSERT INTO `staff_details` VALUES ('shared-nurse-001','a78db729-e92d-11fb-b270-00155d788f6a','Nurse/Receptionist','NURSE_RECEPTIONIST','NRS-SHARED','','','ACTIVE'),
-('shared-pharmacy-001','b89ec83a-e92d-11fb-b270-00155d788f6b','Pharmacist','PHARMACIST','PHM-SHARED','','','ACTIVE');
+INSERT INTO `staff_details` VALUES
+('625d56b3-4288-4679-9fee-3e070fbcf727','a78db729-e92d-11fb-b270-00155d788f6a','P. Sundarammal','NURSE_RECEPTIONIST','1234','9876543210','staff@nursingcollege.edu','ACTIVE'),
+('7824b522-0146-41b2-957a-d9872b1dd5dc','a78db729-e92d-11fb-b270-00155d788f6a','G.Praba','NURSE_RECEPTIONIST','4567','9876543210','staff@nursingcollege1.edu','ACTIVE'),
+('bec3cdb4-f6e3-4e92-9c7e-248c4ee38efd','b89ec83a-e92d-11fb-b270-00155d788f6b','K.Jency','PHARMACIST','7890','9876543120','staff@pharmacy.edu','ACTIVE');
 /*!40000 ALTER TABLE `staff_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
