@@ -10,11 +10,17 @@ const ROLE_MAP = {
   admin: 'ADMIN',
   doctor: 'DOCTOR',
   pharmacist: 'PHARMACIST',
-  nurse: 'NURSE',
-  receptionist: 'RECEPTIONIST',
+  nurse: 'NURSE_RECEPTIONIST',
+  receptionist: 'NURSE_RECEPTIONIST',
   patient: 'PATIENT',
   labtech: 'LAB_TECHNICIAN'
 };
+
+// Role-specific roles that use shared credentials
+const ROLE_SPECIFIC_ROLES = ['NURSE_RECEPTIONIST', 'PHARMACIST'];
+
+// User-specific roles that have individual credentials
+const USER_SPECIFIC_ROLES = ['ADMIN', 'DOCTOR', 'LAB_TECHNICIAN'];
 
 const Login = () => {
   const { role } = useParams();
@@ -28,10 +34,13 @@ const Login = () => {
   // }
   
   // State for other roles
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(userRole);
+  const isUserSpecific = USER_SPECIFIC_ROLES.includes(userRole) || userRole === 'PATIENT';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,34 +48,41 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const result = await loginUserApi(email, password);
+      const result = await loginUserApi(username, password, userRole);
       console.log('Login API result:', result);
       login(result.user, result.token);
       console.log('Logged in user:', result.user);
+      console.log('User role:', result.user.role);
+      console.log('Role type:', typeof result.user.role);
+      
       switch (result.user.role) {
         case 'ADMIN':
+          console.log('Navigating to admin dashboard');
           navigate('/admin/dashboard');
           break;
         case 'DOCTOR':
+          console.log('Navigating to doctor dashboard');
           navigate('/doctor/dashboard');
           break;
-        case 'NURSE':
-          navigate('/nurse/dashboard');
-          break;
-        case 'RECEPTIONIST':
+        case 'NURSE_RECEPTIONIST':
+          console.log('Navigating to reception dashboard');
           navigate('/reception/dashboard');
           break;
         case 'PATIENT':
+          console.log('Navigating to patient dashboard');
           navigate('/patient/dashboard');
           break;
         case 'PHARMACIST':
+          console.log('Navigating to pharmacist dashboard');
           navigate('/pharmacist/dashboard');
           break;
         case 'LAB_TECHNICIAN':
+          console.log('Navigating to labtech dashboard');
           navigate('/labtech/dashboard');
           break;
-        // default:
-        //   navigate('/');
+        default:
+          console.log('Unknown role, redirecting to home');
+          navigate('/');
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please try again.');
@@ -100,15 +116,24 @@ const Login = () => {
               )}
 
               <div className={styles.formGroup}>
-                <label htmlFor="email">Official Email Address</label>
+                <label htmlFor="username">
+                  {isRoleSpecific ? 'Role Username' : 'Username'}
+                </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
+                  placeholder={isRoleSpecific ? 'Enter shared role username' : 'Enter your username'}
                   required
+                  autoComplete="username"
                 />
+                {isRoleSpecific && (
+                  <small className={styles.helpText}>
+                    Use shared {role === 'nurse' ? 'Nurse/Receptionist' : 'Pharmacist'} account credentials
+                  </small>
+                )}
               </div>
 
               <div className={styles.formGroup}>
@@ -119,7 +144,9 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
+                  placeholder="Enter your password"
                   required
+                  autoComplete="current-password"
                 />
               </div>
 

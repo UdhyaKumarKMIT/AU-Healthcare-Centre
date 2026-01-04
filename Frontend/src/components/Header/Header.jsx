@@ -22,15 +22,19 @@ const Header = () => {
     switch (path) {
       case 'home':
         switch (user.role) {
+          case 'DOCTOR':
           case 'doctor':
             navigate('/doctor/dashboard');
             break;
-          case 'receptionist':
+          case 'NURSE_RECEPTIONIST':
+          case 'nurse_receptionist':
             navigate('/reception/dashboard');
             break;
+          case 'ADMIN':
           case 'administrator':
             navigate('/admin/dashboard');
             break;
+          case 'PATIENT':
           case 'patient':
             navigate('/patient/dashboard');
             break;
@@ -78,10 +82,12 @@ const Header = () => {
             <>
               <div className={styles.userInfo}>
                 <div className={styles.userRole}>
-                  {user.role === 'doctor' ? 'Doctor' : 
-                   user.role === 'receptionist' ? 'Receptionist' : 
-                   user.role === 'administrator' ? 'Administrator' : 
-                   user.role === 'patient' ? 'Patient' : 'User'}
+                  {user.role === 'DOCTOR' || user.role === 'doctor' ? 'Doctor' : 
+                   user.role === 'NURSE_RECEPTIONIST' || user.role === 'receptionist' ? 'Nurse/Receptionist' : 
+                   user.role === 'ADMIN' || user.role === 'administrator' ? 'Administrator' :
+                   user.role === 'PHARMACIST' ? 'Pharmacist' :
+                   user.role === 'LAB_TECHNICIAN' ? 'Lab Technician' :
+                   user.role === 'PATIENT' || user.role === 'patient' ? 'Patient' : 'User'}
                 </div>
                 <div className={styles.userName}>{user.name}</div>
               </div>

@@ -63,7 +63,9 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
-        updateUser
+        updateUser,
+        isAuthenticated: !!user,
+        isRoleSpecific: user?.isRoleSpecific || false
       }}
     >
       {children}

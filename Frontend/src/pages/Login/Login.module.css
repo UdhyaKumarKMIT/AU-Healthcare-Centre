@@ -80,6 +80,13 @@
   border-color: #2563eb;
 }
 
+.helpText {
+  font-size: 12px;
+  color: #0ea5e9;
+  font-style: italic;
+  margin-top: 2px;
+}
+
 .loginButton {
   margin-top: 10px;
   padding: 12px;
