@@ -81,10 +81,11 @@ export const getPharmacistDetails = async (req, res) => {
   }
 
   try {
+    // Query staff_details table instead of pharmacist table
     const [rows] = await pool.query(
-      `SELECT pharmacist_id, name, email, phone
-       FROM pharmacist
-       WHERE pharmacist_id = ?`,
+      `SELECT staff_id as pharmacist_id, name, email, phone, code
+       FROM staff_details
+       WHERE staff_id = ? AND role = 'PHARMACIST'`,
       [pharmacist_id]
     );
 

@@ -103,7 +103,7 @@ function App() {
             </Route>
 
             {/* Receptionist Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['RECEPTIONIST']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['NURSE_RECEPTIONIST']} />}>
               <Route path="/reception/dashboard" element={<ReceptionistDashboard />} />
               <Route path="/reception/register-patient" element={<RegisterPatientPage />} />
             </Route>

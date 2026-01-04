@@ -73,6 +73,8 @@ CREATE TABLE `doctor` (
 
 LOCK TABLES `doctor` WRITE;
 /*!40000 ALTER TABLE `doctor` DISABLE KEYS */;
+INSERT INTO `doctor` VALUES ('d1a2b3c4-e92d-11fb-b270-00155d788f7a','72c9f4g3-e92d-11fb-b270-00155d788f6c','Dr. John Smith','General Medicine','1234567890','AVAILABLE'),
+('d2b3c4d5-e92d-11fb-b270-00155d788f7b','73dah5h4-e92d-11fb-b270-00155d788f6d','Dr. Sarah Jones','Pediatrics','0987654321','AVAILABLE');
 /*!40000 ALTER TABLE `doctor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -549,7 +551,7 @@ CREATE TABLE `staff_details` (
   `staff_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
-  `role` enum('NURSE','PHARMACIST','CLERICAL_ASSISTANT') NOT NULL,
+  `role` enum('NURSE_RECEPTIONIST','PHARMACIST','CLERICAL_ASSISTANT') NOT NULL,
   `code` varchar(50) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
@@ -583,6 +585,10 @@ CREATE TABLE `staff_details` (
 
 LOCK TABLES `staff_details` WRITE;
 /*!40000 ALTER TABLE `staff_details` DISABLE KEYS */;
+INSERT INTO `staff_details` VALUES
+('625d56b3-4288-4679-9fee-3e070fbcf727','a78db729-e92d-11fb-b270-00155d788f6a','P. Sundarammal','NURSE_RECEPTIONIST','1234','9876543210','staff@nursingcollege.edu','ACTIVE'),
+('7824b522-0146-41b2-957a-d9872b1dd5dc','a78db729-e92d-11fb-b270-00155d788f6a','G.Praba','NURSE_RECEPTIONIST','4567','9876543210','staff@nursingcollege1.edu','ACTIVE'),
+('bec3cdb4-f6e3-4e92-9c7e-248c4ee38efd','b89ec83a-e92d-11fb-b270-00155d788f6b','K.Jency','PHARMACIST','7890','9876543120','staff@pharmacy.edu','ACTIVE');
 /*!40000 ALTER TABLE `staff_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -662,10 +668,11 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `username` varchar(100) NOT NULL,
-  `role` enum('ADMIN','DOCTOR','NURSE','PHARMACIST','CLERICAL_ASSISTANT') NOT NULL,
+  `role` enum('ADMIN','DOCTOR','NURSE_RECEPTIONIST','PHARMACIST','CLERICAL_ASSISTANT','LAB_TECHNICIAN') NOT NULL,
   `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `created_at` datetime NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `is_role_specific` tinyint(1) DEFAULT '0' COMMENT 'True for role-specific accounts (NURSE, PHARMACIST), False for user-specific accounts',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `username_2` (`username`),
@@ -715,7 +722,13 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('5a944a7c-9f5e-4723-b429-96a87a8db95d','Doctor','DOCTOR','ACTIVE','2026-01-03 10:15:25','$2b$10$we4EEVIto4x.K7r8zczwROARVkadn8IrckRbygPe8da75gskZVvuC');
+INSERT INTO `users` VALUES ('5a944a7c-9f5e-4723-b429-96a87a8db95d','Doctor','DOCTOR','ACTIVE',NOW(),'$2b$10$we4EEVIto4x.K7r8zczwROARVkadn8IrckRbygPe8da75gskZVvuC',0),
+('71b8e3f2-e92d-11fb-b270-00155d788f6b','admin','ADMIN','ACTIVE',NOW(),'$2b$10$XITrgZBpvl9YCXj75RZe2eLFpXrzrSi0oQI1CVtjk6PCZESh1xmem',0),
+('72c9f4g3-e92d-11fb-b270-00155d788f6c','dr.smith','DOCTOR','ACTIVE',NOW(),'$2b$10$eXawjAXesnmwOMN4f5lsbeBfWWB9qi9yxiygm7zIL2FEKXkl6CtEK',0),
+('73dah5h4-e92d-11fb-b270-00155d788f6d','dr.jones','DOCTOR','ACTIVE',NOW(),'$2b$10$yQ2Kh9ko4DEBZX/nbGi00OljgM0/IMhrK.ggOun1MGxjfg3DtTJ0G',0),
+('74ebi6i5-e92d-11fb-b270-00155d788f6e','labtech','LAB_TECHNICIAN','ACTIVE',NOW(),'$2b$10$G/JORbldk5IiLuo9OhqIouCx5m4lVwLu5hn/yHVh4nzcCiMk9EUjq',0),
+('a78db729-e92d-11fb-b270-00155d788f6a','nurse_receptionist','NURSE_RECEPTIONIST','ACTIVE',NOW(),'$2b$10$SHLxU.5Qp9Zth1JcH1dDYexYoo01CCTXagYU40dfz23J9Ra6LeZQq',1),
+('b89ec83a-e92d-11fb-b270-00155d788f6b','pharmacist','PHARMACIST','ACTIVE',NOW(),'$2b$10$ThoCHDgmcmEtSwqMO2wZ1exB/J2.jph3tqA1eilxt762hl3JErfXy',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

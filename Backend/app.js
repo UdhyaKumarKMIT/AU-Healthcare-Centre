@@ -13,6 +13,7 @@ import doctorRoutes from './routes/doctor.route.js';
 import pharmacyRoutes from './routes/pharmacyRoutes.js';
 import studentRoutes from './routes/student.routes.js';
 import userRoutes from './routes/user.routes.js';
+import staffRoutes from './routes/staff.routes.js';
 // Middleware
 import errorHandler from './middlewares/error.middleware.js';
 import nurseRoutes from './routes/nurse.routes.js';
@@ -58,6 +59,7 @@ app.use('/api/students', studentRoutes); // student-specific routes
 app.use('/api/users', userRoutes); // user management (admin)
 app.use('/api/nurse', nurseRoutes);
 app.use('/api/labtech', labtechRoutes);
+app.use('/api/admin/staff', staffRoutes); // admin-only staff details CRUD
 // -------------------
 // Health check
 // -------------------

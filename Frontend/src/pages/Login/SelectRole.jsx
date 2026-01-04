@@ -17,9 +17,7 @@ const roles = [
   { label: 'Admin', path: '/login/admin', icon: faUserTie },
   { label: 'Doctor', path: '/login/doctor', icon: faUserMd },
   { label: 'Pharmacist', path: '/login/pharmacist', icon: faPills },
-  { label: 'Nurse', path: '/login/nurse', icon: faUserNurse },
-  { label: 'Receptionist', path: '/login/receptionist', icon: faClipboard },
-  { label: 'Patient', path: '/login/patient', icon: faUser },
+  { label: 'Nurse/Receptionist', path: '/login/nurse', icon: faUserNurse },
   { label: 'Lab Technician', path: '/login/labtech', icon: faVial }
 ];
 
