@@ -89,7 +89,11 @@ const Header = () => {
                    user.role === 'LAB_TECHNICIAN' ? 'Lab Technician' :
                    user.role === 'PATIENT' || user.role === 'patient' ? 'Patient' : 'User'}
                 </div>
-                <div className={styles.userName}>{user.name}</div>
+                {user.role === 'DOCTOR' || user.role === 'doctor' || user.role === 'ADMIN' || user.role === 'administrator' || user.role === 'LAB_TECHNICIAN' || user.role === 'lab_technician' || user.role === 'PATIENT' || user.role === 'patient' ? (
+                  <div className={styles.userName}>{user.name}</div>
+                ) : (
+                  <div className={styles.userEmail}>{user.email}</div>
+                )}
               </div>
               <button className={styles.logoutButton} onClick={handleLogout}>
                 Logout
