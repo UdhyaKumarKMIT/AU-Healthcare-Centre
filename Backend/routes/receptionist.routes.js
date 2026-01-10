@@ -9,63 +9,63 @@ const router = express.Router()
 router.post(
   '/register/patient',
   authenticate,
-  authorize(ROLES.RECEPTIONIST,ROLES.ADMIN),
+  authorize(ROLES.NURSE_RECEPTIONIST,ROLES.ADMIN),
   receptionistController.registerPatient
 )
 
 router.post(
   '/visit',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.createVisit
 )
 
 router.post(
   '/vitals',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.addVitals
 )
 
 router.patch(
   '/visit/:visit_id/assign-doctor',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.assignDoctor
 )
 
 router.get(
   '/patients',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.getPatients
 )
 
 router.get(
   '/doctors',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.getDoctors
 )
 
 router.get(
   '/visits',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.getVisits
 )
 
 router.patch(
   '/visit/:visit_id/start',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.startVisit
 )
 
 router.patch(
   '/visit/:visit_id/cancel',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.cancelVisit
 )
 
@@ -73,13 +73,13 @@ router.patch(
 router.patch(
   '/doctor/:doctor_id/availability',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.updateDoctorAvailability
 )
 router.get(
   '/doctors/available',
   authenticate,
-  authorize(ROLES.RECEPTIONIST),
+  authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.getAvailableDoctors
 )
 
