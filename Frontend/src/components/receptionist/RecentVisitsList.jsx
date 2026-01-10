@@ -1,21 +1,21 @@
-// src/components/receptionist/RecentVisitsList.jsx
 import React from 'react';
 import styles from './RecentVisitsList.module.css';
 
 const RecentVisitsList = ({ visits = [] }) => {
   const getStatusBadge = (status) => {
-    switch (status) {
-      case 'SCHEDULED':
-        return <span className={styles.statusScheduled}>Scheduled</span>;
-      case 'WAITING':
-        return <span className={styles.statusWaiting}>Waiting</span>;
-      case 'IN_PROGRESS':
-        return <span className={styles.statusInProgress}>In Progress</span>;
-      case 'COMPLETED':
-        return <span className={styles.statusCompleted}>Completed</span>;
-      default:
-        return <span className={styles.statusDefault}>{status}</span>;
-    }
+    const statusConfig = {
+      SCHEDULED: { className: styles.statusScheduled, label: 'Scheduled' },
+      ONGOING: { className: styles.statusOngoing, label: 'Ongoing' },
+      DIAGNOSED: { className: styles.statusDiagnosed, label: 'Diagnosed' },
+      PRESCRIBED: { className: styles.statusPrescribed, label: 'Prescribed' },
+      NURSING: { className: styles.statusNursing, label: 'Nursing' },
+      PHARMACY: { className: styles.statusPharmacy, label: 'Pharmacy' },
+      COMPLETED: { className: styles.statusCompleted, label: 'Completed' },
+      CANCELLED: { className: styles.statusCancelled, label: 'Cancelled' }
+    };
+
+    const config = statusConfig[status] || { className: styles.statusDefault, label: status };
+    return <span className={config.className}>{config.label}</span>;
   };
 
   const formatDate = (dateString) => {
