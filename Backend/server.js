@@ -10,6 +10,8 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     // Creates tables for all defined models if they do not exist
+    // Note: avoid `alter: true` to prevent unintended schema changes
+    // and issues like exceeding MySQL's max index/keys limit.
     await sequelize.sync({alter: true});
 
     app.listen(PORT, () => {

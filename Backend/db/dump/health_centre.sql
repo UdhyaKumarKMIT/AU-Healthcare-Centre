@@ -73,7 +73,8 @@ CREATE TABLE `doctor` (
 
 LOCK TABLES `doctor` WRITE;
 /*!40000 ALTER TABLE `doctor` DISABLE KEYS */;
-INSERT INTO `doctor` VALUES ('d1a2b3c4-e92d-11fb-b270-00155d788f7a','72c9f4g3-e92d-11fb-b270-00155d788f6c','Dr. John Smith','General Medicine','1234567890','AVAILABLE'),
+INSERT INTO `doctor` (`doctor_id`, `user_id`, `name`, `specialization`, `phone`, `availability_status`) VALUES
+('d1a2b3c4-e92d-11fb-b270-00155d788f7a','72c9f4g3-e92d-11fb-b270-00155d788f6c','Dr. John Smith','General Medicine','1234567890','AVAILABLE'),
 ('d2b3c4d5-e92d-11fb-b270-00155d788f7b','73dah5h4-e92d-11fb-b270-00155d788f6d','Dr. Sarah Jones','Pediatrics','0987654321','AVAILABLE');
 /*!40000 ALTER TABLE `doctor` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -289,22 +290,7 @@ CREATE TABLE `nurse_task_master` (
   `task_type_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `task_name` varchar(100) NOT NULL,
   PRIMARY KEY (`task_type_id`),
-  UNIQUE KEY `task_name` (`task_name`),
-  UNIQUE KEY `task_name_2` (`task_name`),
-  UNIQUE KEY `task_name_3` (`task_name`),
-  UNIQUE KEY `task_name_4` (`task_name`),
-  UNIQUE KEY `task_name_5` (`task_name`),
-  UNIQUE KEY `task_name_6` (`task_name`),
-  UNIQUE KEY `task_name_7` (`task_name`),
-  UNIQUE KEY `task_name_8` (`task_name`),
-  UNIQUE KEY `task_name_9` (`task_name`),
-  UNIQUE KEY `task_name_10` (`task_name`),
-  UNIQUE KEY `task_name_11` (`task_name`),
-  UNIQUE KEY `task_name_12` (`task_name`),
-  UNIQUE KEY `task_name_13` (`task_name`),
-  UNIQUE KEY `task_name_14` (`task_name`),
-  UNIQUE KEY `task_name_15` (`task_name`),
-  UNIQUE KEY `task_name_16` (`task_name`)
+  UNIQUE KEY `task_name` (`task_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -391,22 +377,6 @@ CREATE TABLE `patient_users` (
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`patient_user_id`),
   UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `username_2` (`username`),
-  UNIQUE KEY `username_3` (`username`),
-  UNIQUE KEY `username_4` (`username`),
-  UNIQUE KEY `username_5` (`username`),
-  UNIQUE KEY `username_6` (`username`),
-  UNIQUE KEY `username_7` (`username`),
-  UNIQUE KEY `username_8` (`username`),
-  UNIQUE KEY `username_9` (`username`),
-  UNIQUE KEY `username_10` (`username`),
-  UNIQUE KEY `username_11` (`username`),
-  UNIQUE KEY `username_12` (`username`),
-  UNIQUE KEY `username_13` (`username`),
-  UNIQUE KEY `username_14` (`username`),
-  UNIQUE KEY `username_15` (`username`),
-  UNIQUE KEY `username_16` (`username`),
-  UNIQUE KEY `username_17` (`username`),
   KEY `patient_id` (`patient_id`),
   CONSTRAINT `patient_users_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -558,22 +528,6 @@ CREATE TABLE `staff_details` (
   `status` enum('ACTIVE','INACTIVE') NOT NULL,
   PRIMARY KEY (`staff_id`),
   UNIQUE KEY `code` (`code`),
-  UNIQUE KEY `code_2` (`code`),
-  UNIQUE KEY `code_3` (`code`),
-  UNIQUE KEY `code_4` (`code`),
-  UNIQUE KEY `code_5` (`code`),
-  UNIQUE KEY `code_6` (`code`),
-  UNIQUE KEY `code_7` (`code`),
-  UNIQUE KEY `code_8` (`code`),
-  UNIQUE KEY `code_9` (`code`),
-  UNIQUE KEY `code_10` (`code`),
-  UNIQUE KEY `code_11` (`code`),
-  UNIQUE KEY `code_12` (`code`),
-  UNIQUE KEY `code_13` (`code`),
-  UNIQUE KEY `code_14` (`code`),
-  UNIQUE KEY `code_15` (`code`),
-  UNIQUE KEY `code_16` (`code`),
-  UNIQUE KEY `code_17` (`code`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `staff_details_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -585,7 +539,7 @@ CREATE TABLE `staff_details` (
 
 LOCK TABLES `staff_details` WRITE;
 /*!40000 ALTER TABLE `staff_details` DISABLE KEYS */;
-INSERT INTO `staff_details` VALUES
+INSERT INTO `staff_details` (`staff_id`, `user_id`, `name`, `role`, `code`, `phone`, `email`, `status`) VALUES
 ('625d56b3-4288-4679-9fee-3e070fbcf727','a78db729-e92d-11fb-b270-00155d788f6a','P. Sundarammal','NURSE_RECEPTIONIST','1234','9876543210','staff@nursingcollege.edu','ACTIVE'),
 ('7824b522-0146-41b2-957a-d9872b1dd5dc','a78db729-e92d-11fb-b270-00155d788f6a','G.Praba','NURSE_RECEPTIONIST','4567','9876543210','staff@nursingcollege1.edu','ACTIVE'),
 ('bec3cdb4-f6e3-4e92-9c7e-248c4ee38efd','b89ec83a-e92d-11fb-b270-00155d788f6b','K.Jency','PHARMACIST','7890','9876543120','staff@pharmacy.edu','ACTIVE');
@@ -674,45 +628,7 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `is_role_specific` tinyint(1) DEFAULT '0' COMMENT 'True for role-specific accounts (NURSE, PHARMACIST), False for user-specific accounts',
   PRIMARY KEY (`user_id`),
-  UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `username_2` (`username`),
-  UNIQUE KEY `username_3` (`username`),
-  UNIQUE KEY `username_4` (`username`),
-  UNIQUE KEY `username_5` (`username`),
-  UNIQUE KEY `username_6` (`username`),
-  UNIQUE KEY `username_7` (`username`),
-  UNIQUE KEY `username_8` (`username`),
-  UNIQUE KEY `username_9` (`username`),
-  UNIQUE KEY `username_10` (`username`),
-  UNIQUE KEY `username_11` (`username`),
-  UNIQUE KEY `username_12` (`username`),
-  UNIQUE KEY `username_13` (`username`),
-  UNIQUE KEY `username_14` (`username`),
-  UNIQUE KEY `username_15` (`username`),
-  UNIQUE KEY `username_16` (`username`),
-  UNIQUE KEY `username_17` (`username`),
-  UNIQUE KEY `username_18` (`username`),
-  UNIQUE KEY `username_19` (`username`),
-  UNIQUE KEY `username_20` (`username`),
-  UNIQUE KEY `username_21` (`username`),
-  UNIQUE KEY `username_22` (`username`),
-  UNIQUE KEY `username_23` (`username`),
-  UNIQUE KEY `username_24` (`username`),
-  UNIQUE KEY `username_25` (`username`),
-  UNIQUE KEY `username_26` (`username`),
-  UNIQUE KEY `username_27` (`username`),
-  UNIQUE KEY `username_28` (`username`),
-  UNIQUE KEY `username_29` (`username`),
-  UNIQUE KEY `username_30` (`username`),
-  UNIQUE KEY `username_31` (`username`),
-  UNIQUE KEY `username_32` (`username`),
-  UNIQUE KEY `username_33` (`username`),
-  UNIQUE KEY `username_34` (`username`),
-  UNIQUE KEY `username_35` (`username`),
-  UNIQUE KEY `username_36` (`username`),
-  UNIQUE KEY `username_37` (`username`),
-  UNIQUE KEY `username_38` (`username`),
-  UNIQUE KEY `username_39` (`username`)
+  UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -722,7 +638,8 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('5a944a7c-9f5e-4723-b429-96a87a8db95d','Doctor','DOCTOR','ACTIVE',NOW(),'$2b$10$we4EEVIto4x.K7r8zczwROARVkadn8IrckRbygPe8da75gskZVvuC',0),
+INSERT INTO `users` (`user_id`, `username`, `role`, `status`, `created_at`, `password_hash`, `is_role_specific`) VALUES
+('5a944a7c-9f5e-4723-b429-96a87a8db95d','Doctor','DOCTOR','ACTIVE',NOW(),'$2b$10$we4EEVIto4x.K7r8zczwROARVkadn8IrckRbygPe8da75gskZVvuC',0),
 ('71b8e3f2-e92d-11fb-b270-00155d788f6b','admin','ADMIN','ACTIVE',NOW(),'$2b$10$XITrgZBpvl9YCXj75RZe2eLFpXrzrSi0oQI1CVtjk6PCZESh1xmem',0),
 ('72c9f4g3-e92d-11fb-b270-00155d788f6c','dr.smith','DOCTOR','ACTIVE',NOW(),'$2b$10$eXawjAXesnmwOMN4f5lsbeBfWWB9qi9yxiygm7zIL2FEKXkl6CtEK',0),
 ('73dah5h4-e92d-11fb-b270-00155d788f6d','dr.jones','DOCTOR','ACTIVE',NOW(),'$2b$10$yQ2Kh9ko4DEBZX/nbGi00OljgM0/IMhrK.ggOun1MGxjfg3DtTJ0G',0),

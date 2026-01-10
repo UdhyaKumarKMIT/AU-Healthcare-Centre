@@ -27,8 +27,8 @@ import LabtechStock from './LabtechStock.js';
 User.hasOne(Doctor, { foreignKey: 'user_id' });
 Doctor.belongsTo(User, { foreignKey: 'user_id' });
 
-// User.hasMany(StaffDetails, { foreignKey: 'user_id' });
-// StaffDetails.belongsTo(User, { foreignKey: 'user_id' });
+User.hasMany(StaffDetails, { foreignKey: 'user_id' });
+StaffDetails.belongsTo(User, { foreignKey: 'user_id' });
 
 // Patient relations
 Patient.hasMany(PatientUser, { foreignKey: 'patient_id' });
