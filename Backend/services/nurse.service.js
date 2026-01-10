@@ -268,9 +268,10 @@ export const completeTask = async ({
 
     // Get task
     const task = await NurseTask.findByPk(task_id, {
-      include: [{ model: NurseTaskMaster }],
-      transaction: t
+    include: [{ model: NurseTaskMaster }, { model: Visit }],
+    transaction: t
     });
+
 
     if (!task) {
       throw new ApiError(404, 'Task not found');
@@ -338,9 +339,16 @@ export const completeTask = async ({
 
     // Update task status
     await task.update({ 
-      status: 'COMPLETED',
-      completed_at: new Date()
+        status: 'COMPLETED',
+        completed_at: new Date()
     }, { transaction: t });
+
+    if (task.Visit) {
+    await task.Visit.update(
+        { status: 'COMPLETED' },
+        { transaction: t }
+    );
+    }
 
     // Log in system audit
     await SystemAuditLog.create({
