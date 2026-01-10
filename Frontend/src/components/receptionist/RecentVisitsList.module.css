@@ -206,3 +206,26 @@
     padding-right: 0;
   }
 }
+.refreshButton{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#1a237e;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.refreshButton:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+

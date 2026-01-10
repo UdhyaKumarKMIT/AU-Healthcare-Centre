@@ -1,7 +1,10 @@
 import React from 'react'
 import styles from './RecentVisitsList.module.css'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSync } from '@fortawesome/free-solid-svg-icons'
 
-const RecentVisitsList = ({ visits = [] }) => {
+
+const RecentVisitsList = ({ visits = [], onRefresh, isLoading }) => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       SCHEDULED: { className: styles.statusScheduled, label: 'Scheduled' },
@@ -40,9 +43,22 @@ const RecentVisitsList = ({ visits = [] }) => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Recent Visits</h2>
-        <p className={styles.subtitle}>Monitor visit flow</p>
-      </div>
+  <div>
+    <h2 className={styles.title}>Recent Visits</h2>
+    <p className={styles.subtitle}>Monitor visit flow</p>
+  </div>
+
+  <button
+    onClick={onRefresh}
+    disabled={isLoading}
+    className={styles.refreshButton}
+  >
+    <FontAwesomeIcon icon={faSync} spin={isLoading} />
+    Refresh
+  </button>
+</div>
+
+
 
       <div className={styles.visitsList}>
         {visits.map((visit) => (
