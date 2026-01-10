@@ -2,64 +2,113 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faChevronDown, 
+  faChevronUp, 
+  faExchangeAlt
+} from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
 import DashboardStats from '../../components/receptionist/DashboardStats';
 import DoctorAvailabilityTable from '../../components/receptionist/DoctorAvailabilityTable';
 import RegisterPatientForm from '../../components/receptionist/RegisterPatientForm';
 import CreateVisitForm from '../../components/receptionist/CreateVisitForm';
 import RecentVisitsList from '../../components/receptionist/RecentVisitsList';
-import { fetchDoctors } from '../../store/slices/doctorsSlice';
-import { fetchPatients } from '../../store/slices/patientsSlice';
-import { fetchVisits } from '../../store/slices/visitsSlice';
+import { 
+  fetchDoctors, 
+  fetchPatients, 
+  fetchVisits,
+  selectDoctors,
+  selectPatients,
+  selectVisits
+} from '../../store/slices/receptionistSlice';
 import styles from './ReceptionistDashboard.module.css';
 
 const ReceptionistDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   
-  const { doctors = [] } = useSelector((state) => state.doctors || {});
-  const { patients = [] } = useSelector((state) => state.patients || {});
-  const { visits = [] } = useSelector((state) => state.visits || {});
+  const doctors = useSelector(selectDoctors);
+  const patients = useSelector(selectPatients);
+  const visits = useSelector(selectVisits);
 
   const [showDoctorAvailability, setShowDoctorAvailability] = useState(false);
   const [showRegisterPatient, setShowRegisterPatient] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchDoctors());
-    dispatch(fetchPatients());
-    dispatch(fetchVisits());
-  }, [dispatch]);
+    // Redirect to login if not authenticated
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
-  const totalPatients = patients.length;
-  const availableDoctors = doctors.filter(doc => doc.status === 'AVAILABLE').length;
-  const todayVisits = visits.filter(visit => {
-    const visitDate = new Date(visit.visitDate).toDateString();
-    const today = new Date().toDateString();
-    return visitDate === today;
-  }).length;
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      dispatch(fetchDoctors());
+      dispatch(fetchPatients());
+      dispatch(fetchVisits());
+    }
+  }, [dispatch, user, isAuthenticated]);
 
-  const handleToggleRegisterPatient = () => {
-    console.log('Toggle Register Patient:', !showRegisterPatient);
-    setShowRegisterPatient(!showRegisterPatient);
+  const totalPatients = patients?.length || 0;
+  const availableDoctors = doctors?.filter(doc => doc.status === 'AVAILABLE').length || 0;
+  const todayVisits = visits?.filter(visit => {
+    try {
+      const visitDate = new Date(visit.visitDate).toDateString();
+      const today = new Date().toDateString();
+      return visitDate === today;
+    } catch {
+      return false;
+    }
+  }).length || 0;
+
+  const handleRoleSwap = () => {
+    // Navigate to nurse dashboard
+    navigate('/nurse');
   };
 
-  const handleToggleDoctorAvailability = () => {
-    console.log('Toggle Doctor Availability:', !showDoctorAvailability);
-    setShowDoctorAvailability(!showDoctorAvailability);
-  };
+  if (authLoading) {
+    return (
+      <div className={styles.loading}>
+        <div className={styles.spinner}></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to login via useEffect
+  }
 
   return (
     <div className={styles.dashboard}>
       <Header />
       
+      {/* Role Swap Bar */}
+      <div className={styles.roleSwapBar}>
+        <div className={styles.roleSwapContainer}>
+          <span className={styles.roleSwapText}>Switch Role:</span>
+          <button 
+            className={styles.roleSwapButton}
+            onClick={handleRoleSwap}
+            title="Switch to Nurse Dashboard"
+          >
+            <FontAwesomeIcon icon={faExchangeAlt} />
+            <span>Nurse Dashboard</span>
+          </button>
+        </div>
+      </div>
+      
       <main className={styles.mainContent}>
         <div className={styles.container}>
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>Receptionist Dashboard</h1>
-            <p className={styles.pageSubtitle}>
-              Manage patients, doctors, and visits efficiently
-            </p>
+            <div>
+              <h1 className={styles.pageTitle}>Receptionist Dashboard</h1>
+              <p className={styles.pageSubtitle}>
+                Manage patients, doctors, and visits efficiently
+              </p>
+            </div>
           </div>
 
           <section className={styles.statsSection}>
@@ -73,19 +122,19 @@ const ReceptionistDashboard = () => {
           <div className={styles.gridLayout}>
             <section className={`${styles.section} ${styles.createVisit}`}>
               <CreateVisitForm 
-                patients={patients}
-                availableDoctors={doctors.filter(doc => doc.status === 'AVAILABLE')}
+                patients={patients || []}
+                availableDoctors={doctors?.filter(doc => doc.status === 'AVAILABLE') || []}
               />
             </section>
 
             <section className={`${styles.section} ${styles.recentVisits}`}>
-              <RecentVisitsList visits={visits.slice(0, 5)} />
+              <RecentVisitsList visits={visits?.slice(0, 5) || []} />
             </section>
 
             <div className={`${styles.collapsibleSection} ${styles.registerPatientSection}`}>
               <button 
                 className={styles.collapsibleHeader}
-                onClick={handleToggleRegisterPatient}
+                onClick={() => setShowRegisterPatient(!showRegisterPatient)}
                 type="button"
               >
                 <div className={styles.collapsibleTitle}>
@@ -108,7 +157,7 @@ const ReceptionistDashboard = () => {
             <div className={`${styles.collapsibleSection} ${styles.doctorAvailabilitySection}`}>
               <button 
                 className={styles.collapsibleHeader}
-                onClick={handleToggleDoctorAvailability}
+                onClick={() => setShowDoctorAvailability(!showDoctorAvailability)}
                 type="button"
               >
                 <div className={styles.collapsibleTitle}>
@@ -123,7 +172,7 @@ const ReceptionistDashboard = () => {
               
               {showDoctorAvailability && (
                 <div className={styles.collapsibleContent}>
-                  <DoctorAvailabilityTable doctors={doctors} />
+                  <DoctorAvailabilityTable doctors={doctors || []} />
                 </div>
               )}
             </div>
