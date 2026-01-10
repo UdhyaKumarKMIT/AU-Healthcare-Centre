@@ -31,7 +31,7 @@ const StockSelection = ({
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => onToggleSelection(stock, 1)}
+                    onChange={() => onToggleSelection(stock, selectedMed?.quantity || 1)}
                   />
                   <div className={styles.stockInfo}>
                     <strong>{stock.medicine_name}</strong>
@@ -41,19 +41,25 @@ const StockSelection = ({
                   </div>
                 </label>
                 {isSelected && (
-                  <input
-                    type="number"
-                    min="1"
-                    max={stock.quantity}
-                    value={selectedMed?.quantity || 1}
-                    onChange={(e) => onUpdateQuantity(
-                      stock.medicine_id,
-                      stock.batch_no,
-                      e.target.value
-                    )}
-                    className={styles.quantityInput}
-                  />
-                )}
+  <div className={styles.qtyBox}>
+    <span>Qty:</span>
+    <input
+      type="number"
+      min="1"
+      max={stock.quantity}
+      value={selectedMed?.quantity || 1}
+      onChange={(e) =>
+        onUpdateQuantity(
+          stock.medicine_id,
+          stock.batch_no,
+          e.target.value
+        )
+      }
+      className={styles.quantityInput}
+    />
+  </div>
+)}
+
               </div>
             );
           })}

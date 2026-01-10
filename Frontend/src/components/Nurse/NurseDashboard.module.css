@@ -148,21 +148,15 @@
   margin-bottom: 32px;
 }
 
-.actionCard {
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 16px;
-  font-weight: 500;
-  color: #1a237e;
+.actionCard{
+  border:none;
+  padding:8px 18px;
+  border-radius:10px;
+  background:transparent;
+  font-weight:600;
+  cursor:pointer;
 }
+
 
 .actionCard:hover {
   border-color: #3949ab;
@@ -171,11 +165,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.actionCard.active {
-  background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
-  color: white;
-  border-color: #1a237e;
+.actionCard.active{
+  background:#1a237e;
+  color:white;
 }
+
 
 .actionCard svg {
   font-size: 28px;
@@ -1279,4 +1273,65 @@
 
 .Toastify__toast--info {
   background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%) !important;
+}
+
+.qtyBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 28px;
+}
+
+.quantityInput {
+  width: 70px;
+  padding: 4px 6px;
+}
+
+.refreshButton{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#1a237e;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.refreshButton:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.viewToggle{
+  display:flex;
+  width:100%;
+  background:#f1f5f9;
+  padding:6px;
+  border-radius:14px;
+}
+.actionGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.actionCard{
+  width:100%;
+  justify-content:center;
+  padding:10px 0;
+}
+
+.toggleIcon{
+  font-size:14px;
+}
+.actionCard svg{
+  width:16px;
+  height:16px;
 }

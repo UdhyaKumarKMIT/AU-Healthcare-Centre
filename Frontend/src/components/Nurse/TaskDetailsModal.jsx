@@ -62,15 +62,24 @@ const TaskDetailsModal = ({
     });
   };
 
-  const updateMedicationQuantity = (medicine_id, batch_no, quantity) => {
-    setSelectedMedications(prev =>
-      prev.map(m =>
-        (m.medicine_id === medicine_id && m.batch_no === batch_no)
-          ? { ...m, quantity: parseInt(quantity) || 1 }
-          : m
-      )
-    );
-  };
+const updateMedicationQuantity = (medicine_id, batch_no, quantity) => {
+  const stock = availableStock.find(
+    s => s.medicine_id === medicine_id && s.batch_no === batch_no
+  );
+
+  let q = parseInt(quantity);
+  if (isNaN(q) || q < 1) q = 1;
+  if (stock && q > stock.quantity) q = stock.quantity;
+
+  setSelectedMedications(prev =>
+    prev.map(m =>
+      (m.medicine_id === medicine_id && m.batch_no === batch_no)
+        ? { ...m, quantity: q }
+        : m
+    )
+  );
+};
+
 
   const handleCompleteTask = async () => {
     if (!secretCode) {
