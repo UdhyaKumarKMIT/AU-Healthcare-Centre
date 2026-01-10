@@ -3,84 +3,144 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faUser, 
-  faIdCard, 
-  faCalendar, 
-  faVenusMars, 
-  faTint, 
-  faPhone, 
-  faPhoneSquare,
-  faEnvelope 
+  faUser, faIdCard, faCalendar, faVenusMars, 
+  faPhone, faEnvelope, faUserTie, faUsers
 } from '@fortawesome/free-solid-svg-icons';
-import { registerPatient, clearRegisterSuccess } from '../../store/slices/patientsSlice';
+import { useAuth } from '../../contexts/AuthContext';
+import { 
+  registerPatient, 
+  clearRegisterSuccess,
+  fetchPatients,
+  selectPatientsLoading,
+  selectPatientsError,
+  selectRegisterSuccess
+} from '../../store/slices/receptionistSlice';
 import styles from './RegisterPatientForm.module.css';
 
 const RegisterPatientForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, registerSuccess } = useSelector(state => state.patients);
+  const { user } = useAuth();
+  
+  const loading = useSelector(selectPatientsLoading);
+  const error = useSelector(selectPatientsError);
+  const registerSuccess = useSelector(selectRegisterSuccess);
   
   const [formData, setFormData] = useState({
+    // Basic Info
     name: '',
     email: '',
     rollNo: '',
     dob: '',
     gender: '',
-    bloodGroup: '',
     phone: '',
-    emergencyContact: '',
+    patientType: 'STUDENT',
+    allergicTo: '',
+    
+    // Student-specific
+    department: '',
+    year: '',
+    
+    // Staff-specific
+    employeeId: '',
+    designation: '',
+    staffCode: '',
+    
+    // Family Details (for Permanent Staff)
+    familyMembers: []
   });
   
   const [errors, setErrors] = useState({});
+  const [showFamilySection, setShowFamilySection] = useState(false);
 
   useEffect(() => {
     if (registerSuccess) {
-      alert('Patient registered successfully!');
-      setFormData({
-        name: '',
-        email: '',
-        rollNo: '',
-        dob: '',
-        gender: '',
-        bloodGroup: '',
-        phone: '',
-        emergencyContact: '',
-      });
-      dispatch(clearRegisterSuccess());
+      // Refresh patients list
+      dispatch(fetchPatients());
+      
+      // Reset form
+      resetForm();
+      
+      // Clear success flag
+      setTimeout(() => {
+        dispatch(clearRegisterSuccess());
+      }, 3000);
     }
   }, [registerSuccess, dispatch]);
 
   useEffect(() => {
-    if (error) {
-      alert('Error: ' + error);
-    }
-  }, [error]);
+    setShowFamilySection(formData.patientType === 'PERMANENT_STAFF');
+  }, [formData.patientType]);
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      rollNo: '',
+      dob: '',
+      gender: '',
+      phone: '',
+      patientType: 'STUDENT',
+      allergicTo: '',
+      department: '',
+      year: '',
+      employeeId: '',
+      designation: '',
+      familyMembers: []
+    });
+    setErrors({});
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const addFamilyMember = () => {
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      familyMembers: [...prev.familyMembers, { name: '', relation: '', dob: '', phone: '' }]
     }));
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+  };
+
+  const removeFamilyMember = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      familyMembers: prev.familyMembers.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateFamilyMember = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      familyMembers: prev.familyMembers.map((member, i) => 
+        i === index ? { ...member, [field]: value } : member
+      )
+    }));
   };
 
   const validateForm = () => {
     const newErrors = {};
     
+    // Basic validations
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.rollNo.trim()) newErrors.rollNo = 'Roll number is required';
     if (!formData.dob) newErrors.dob = 'Date of birth is required';
     if (!formData.gender) newErrors.gender = 'Gender is required';
-    if (!formData.bloodGroup) newErrors.bloodGroup = 'Blood group is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!formData.emergencyContact.trim()) newErrors.emergencyContact = 'Emergency contact is required';
+    
+    // Type-specific validations
+    if (formData.patientType === 'STUDENT') {
+      if (!formData.rollNo.trim()) newErrors.rollNo = 'Roll number is required';
+      if (!formData.department.trim()) newErrors.department = 'Department is required';
+      if (!formData.year) newErrors.year = 'Year is required';
+    } else {
+      if (!formData.employeeId.trim()) newErrors.employeeId = 'Employee ID is required';
+      if (!formData.designation.trim()) newErrors.designation = 'Designation is required';
+    }
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -93,10 +153,8 @@ const RegisterPatientForm = () => {
     if (formData.phone && !phoneRegex.test(formData.phone)) {
       newErrors.phone = 'Enter a valid 10-digit phone number';
     }
-    
-    if (formData.emergencyContact && !phoneRegex.test(formData.emergencyContact)) {
-      newErrors.emergencyContact = 'Enter a valid 10-digit number';
-    }
+    if (!formData.staffCode.trim()) newErrors.staffCode = 'Staff code is required';
+
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -105,181 +163,349 @@ const RegisterPatientForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    console.log('Register patient form submitted');
+    console.log('Form data:', formData);
+    console.log('User:', user);
+    
     if (!validateForm()) {
+      console.log('Validation failed:', errors);
       return;
     }
     
-    // Transform data to match database ENUM requirements
-    const transformedData = {
+    const payload = {
       ...formData,
-      gender: formData.gender.toUpperCase(), // Convert to MALE, FEMALE, OTHER
+      rollNo: formData.patientType === 'STUDENT' ? formData.rollNo : formData.employeeId,
+      staffCode: formData.staffCode
     };
     
-    dispatch(registerPatient(transformedData));
-  };
-
-  const handleNavigateToRegisterPage = () => {
-    navigate('/reception/register-patient');
+    console.log('Dispatching registerPatient with:', payload);
+    dispatch(registerPatient(payload));
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Register New Patient</h2>
-        <button 
-          className={styles.fullFormButton}
-          onClick={handleNavigateToRegisterPage}
-        >
-          Open Full Form →
-        </button>
       </div>
       
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGrid}>
+        {/* Patient Type Selection */}
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Patient Type</h3>
           <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faUser} /> Full Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.name ? styles.error : ''}`}
-              placeholder="Enter patient's full name"
-              disabled={loading}
-            />
-            {errors.name && <span className={styles.errorText}>{errors.name}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faEnvelope} /> Email *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.email ? styles.error : ''}`}
-              placeholder="student@annauniv.edu"
-              disabled={loading}
-            />
-            {errors.email && <span className={styles.errorText}>{errors.email}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faIdCard} /> Roll Number *
-            </label>
-            <input
-              type="text"
-              name="rollNo"
-              value={formData.rollNo}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.rollNo ? styles.error : ''}`}
-              placeholder="2024503011"
-              disabled={loading}
-            />
-            {errors.rollNo && <span className={styles.errorText}>{errors.rollNo}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faCalendar} /> Date of Birth *
-            </label>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.dob ? styles.error : ''}`}
-              disabled={loading}
-            />
-            {errors.dob && <span className={styles.errorText}>{errors.dob}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faVenusMars} /> Gender *
-            </label>
             <select
-              name="gender"
-              value={formData.gender}
+              name="patientType"
+              value={formData.patientType}
               onChange={handleChange}
-              className={`${styles.select} ${errors.gender ? styles.error : ''}`}
+              className={styles.select}
               disabled={loading}
             >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
+              <option value="STUDENT">Student</option>
+              <option value="TEMP_STAFF">Temporary Staff</option>
+              <option value="PERMANENT_STAFF">Permanent Staff</option>
             </select>
-            {errors.gender && <span className={styles.errorText}>{errors.gender}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faTint} /> Blood Group *
-            </label>
-            <select
-              name="bloodGroup"
-              value={formData.bloodGroup}
-              onChange={handleChange}
-              className={`${styles.select} ${errors.bloodGroup ? styles.error : ''}`}
-              disabled={loading}
-            >
-              <option value="">Select Blood Group</option>
-              <option value="A+">A+</option>
-              <option value="A-">A-</option>
-              <option value="B+">B+</option>
-              <option value="B-">B-</option>
-              <option value="AB+">AB+</option>
-              <option value="AB-">AB-</option>
-              <option value="O+">O+</option>
-              <option value="O-">O-</option>
-            </select>
-            {errors.bloodGroup && <span className={styles.errorText}>{errors.bloodGroup}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faPhone} /> Phone Number *
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.phone ? styles.error : ''}`}
-              placeholder="9876543210"
-              disabled={loading}
-            />
-            {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              <FontAwesomeIcon icon={faPhoneSquare} /> Emergency Contact *
-            </label>
-            <input
-              type="tel"
-              name="emergencyContact"
-              value={formData.emergencyContact}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.emergencyContact ? styles.error : ''}`}
-              placeholder="9876543211"
-              disabled={loading}
-            />
-            {errors.emergencyContact && <span className={styles.errorText}>{errors.emergencyContact}</span>}
           </div>
         </div>
 
-        <button
-          type="submit"
-          className={styles.submitButton}
-          disabled={loading}
-        >
+        {/* Basic Information */}
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Basic Information</h3>
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faUser} /> Full Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.name ? styles.error : ''}`}
+                placeholder="Enter full name"
+                disabled={loading}
+              />
+              {errors.name && <span className={styles.errorText}>{errors.name}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faEnvelope} /> Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.email ? styles.error : ''}`}
+                placeholder="email@annauniv.edu"
+                disabled={loading}
+              />
+              {errors.email && <span className={styles.errorText}>{errors.email}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faCalendar} /> Date of Birth
+              </label>
+              <input
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.dob ? styles.error : ''}`}
+                disabled={loading}
+              />
+              {errors.dob && <span className={styles.errorText}>{errors.dob}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faVenusMars} /> Gender
+              </label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className={`${styles.select} ${errors.gender ? styles.error : ''}`}
+                disabled={loading}
+              >
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+              {errors.gender && <span className={styles.errorText}>{errors.gender}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faPhone} /> Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.phone ? styles.error : ''}`}
+                placeholder="9876543210"
+                disabled={loading}
+              />
+              {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Allergies (Optional)</label>
+              <input
+                type="text"
+                name="allergicTo"
+                value={formData.allergicTo}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="List any known allergies"
+                disabled={loading}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Student-Specific Fields */}
+        {formData.patientType === 'STUDENT' && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Student Details</h3>
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  <FontAwesomeIcon icon={faIdCard} /> Roll Number
+                </label>
+                <input
+                  type="text"
+                  name="rollNo"
+                  value={formData.rollNo}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.rollNo ? styles.error : ''}`}
+                  placeholder="2024503011"
+                  disabled={loading}
+                />
+                {errors.rollNo && <span className={styles.errorText}>{errors.rollNo}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Department</label>
+                <input
+                  type="text"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.department ? styles.error : ''}`}
+                  placeholder="e.g., Computer Science"
+                  disabled={loading}
+                />
+                {errors.department && <span className={styles.errorText}>{errors.department}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Year</label>
+                <select
+                  name="year"
+                  value={formData.year}
+                  onChange={handleChange}
+                  className={`${styles.select} ${errors.year ? styles.error : ''}`}
+                  disabled={loading}
+                >
+                  <option value="">Select Year</option>
+                  <option value="1">First Year</option>
+                  <option value="2">Second Year</option>
+                  <option value="3">Third Year</option>
+                  <option value="4">Fourth Year</option>
+                </select>
+                {errors.year && <span className={styles.errorText}>{errors.year}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Staff-Specific Fields */}
+        {(formData.patientType === 'TEMP_STAFF' || formData.patientType === 'PERMANENT_STAFF') && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Staff Details</h3>
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  <FontAwesomeIcon icon={faIdCard} /> Employee ID
+                </label>
+                <input
+                  type="text"
+                  name="employeeId"
+                  value={formData.employeeId}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.employeeId ? styles.error : ''}`}
+                  placeholder="EMP001"
+                  disabled={loading}
+                />
+                {errors.employeeId && <span className={styles.errorText}>{errors.employeeId}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  <FontAwesomeIcon icon={faUserTie} /> Designation
+                </label>
+                <input
+                  type="text"
+                  name="designation"
+                  value={formData.designation}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.designation ? styles.error : ''}`}
+                  placeholder="e.g., Assistant Professor"
+                  disabled={loading}
+                />
+                {errors.designation && <span className={styles.errorText}>{errors.designation}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Family Details for Permanent Staff */}
+        {showFamilySection && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>
+                <FontAwesomeIcon icon={faUsers} /> Family Members (Optional)
+              </h3>
+              <button
+                type="button"
+                onClick={addFamilyMember}
+                className={styles.addButton}
+                disabled={loading}
+              >
+                + Add Family Member
+              </button>
+            </div>
+
+            {formData.familyMembers.map((member, index) => (
+              <div key={index} className={styles.familyMemberCard}>
+                <div className={styles.familyMemberHeader}>
+                  <h4>Family Member {index + 1}</h4>
+                  <button
+                    type="button"
+                    onClick={() => removeFamilyMember(index)}
+                    className={styles.removeButton}
+                    disabled={loading}
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Name</label>
+                    <input
+                      type="text"
+                      value={member.name}
+                      onChange={(e) => updateFamilyMember(index, 'name', e.target.value)}
+                      className={styles.input}
+                      placeholder="Family member name"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Relation</label>
+                    <select
+                      value={member.relation}
+                      onChange={(e) => updateFamilyMember(index, 'relation', e.target.value)}
+                      className={styles.select}
+                      disabled={loading}
+                    >
+                      <option value="">Select Relation</option>
+                      <option value="SPOUSE">Spouse</option>
+                      <option value="CHILD">Child</option>
+                      <option value="PARENT">Parent</option>
+                      <option value="SIBLING">Sibling</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Date of Birth</label>
+                    <input
+                      type="date"
+                      value={member.dob}
+                      onChange={(e) => updateFamilyMember(index, 'dob', e.target.value)}
+                      className={styles.input}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Phone (Optional)</label>
+                    <input
+                      type="tel"
+                      value={member.phone}
+                      onChange={(e) => updateFamilyMember(index, 'phone', e.target.value)}
+                      className={styles.input}
+                      placeholder="9876543210"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={styles.section}>
+  <h3 className={styles.sectionTitle}>Authentication</h3>
+  <input
+    type="text"
+    name="staffCode"
+    value={formData.staffCode}
+    onChange={handleChange}
+    className={`${styles.input} ${errors.staffCode ? styles.error : ''}`}
+    placeholder="Enter staff code"
+  />
+  {errors.staffCode && <span className={styles.errorText}>{errors.staffCode}</span>}
+</div>
+
+
+        <button type="submit" className={styles.submitButton} disabled={loading}>
           {loading ? 'Registering...' : '+ Register Patient'}
         </button>
       </form>
