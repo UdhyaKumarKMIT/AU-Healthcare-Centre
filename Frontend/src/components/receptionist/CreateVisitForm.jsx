@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { verifySecretCode } from '../../store/slices/nurseSlice';
-
+import { createVisit } from '../../store/slices/receptionistSlice';
 const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
   const dispatch = useDispatch();
   
@@ -165,33 +165,40 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error('Please fix all validation errors');
-      return;
+const handleSubmit = async (e) => {
+  e.preventDefault()
+
+  if (!validateForm()) {
+    toast.error('Please fix all validation errors')
+    return
+  }
+
+  const visitData = {
+    patientId: formData.patientId,
+    doctorId: formData.doctorId,
+    visitType: formData.visitType,
+    reason: formData.reason,
+    staffCode: formData.secretCode, 
+    vitals: {
+      temperature: parseFloat(formData.temperature),
+      bpSystolic: parseInt(formData.bpSystolic),
+      bpDiastolic: parseInt(formData.bpDiastolic),
+      heartRate: parseInt(formData.heartRate),
+      cbg: formData.cbg ? parseFloat(formData.cbg) : null,
+      spo2: formData.spo2 ? parseFloat(formData.spo2) : null
     }
-    
-    const visitData = {
-      patientId: formData.patientId,
-      doctorId: formData.doctorId,
-      visitType: formData.visitType,
-      reason: formData.reason,
-      secretCode: formData.secretCode,
-      vitals: {
-        temperature: parseFloat(formData.temperature),
-        bpSystolic: parseInt(formData.bpSystolic),
-        bpDiastolic: parseInt(formData.bpDiastolic),
-        heartRate: parseInt(formData.heartRate),
-        cbg: formData.cbg ? parseFloat(formData.cbg) : null,
-        spo2: formData.spo2 ? parseFloat(formData.spo2) : null,
-      }
-    };
-    
-    console.log('Creating visit with:', visitData);
-    toast.success('Visit created successfully!');
-  };
+  }
+
+
+  const result = await dispatch(createVisit(visitData))
+
+  if (result.meta.requestStatus === 'fulfilled') {
+    toast.success('Visit created successfully')
+  } else {
+    toast.error(result.payload || 'Failed to create visit')
+  }
+}
+
 
   return (
     <div style={styles.container}>

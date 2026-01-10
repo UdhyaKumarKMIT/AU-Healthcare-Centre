@@ -8,35 +8,29 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { verifySecretCode } from '../../store/slices/nurseSlice';
+import { registerPatient } from '../../store/slices/receptionistSlice';
+const initialFormState = {
+  name: '',
+  email: '',
+  rollNo: '',
+  dob: '',
+  gender: '',
+  phone: '',
+  patientType: 'STUDENT',
+  allergicTo: '',
+  department: '',
+  year: '',
+  employeeId: '',
+  designation: '',
+  secretCode: '',
+  familyMembers: []
+}
 
 const RegisterPatientForm = () => {
   const dispatch = useDispatch();
   
-  const [formData, setFormData] = useState({
-    // Basic Info
-    name: '',
-    email: '',
-    rollNo: '',
-    dob: '',
-    gender: '',
-    phone: '',
-    patientType: 'STUDENT',
-    allergicTo: '',
-    
-    // Student-specific
-    department: '',
-    year: '',
-    
-    // Staff-specific
-    employeeId: '',
-    designation: '',
-    
-    // Secret Code
-    secretCode: '',
-    
-    // Family Details (for Permanent Staff)
-    familyMembers: []
-  });
+  const [formData, setFormData] = useState(initialFormState);
+
   
   const [errors, setErrors] = useState({});
   const [showFamilySection, setShowFamilySection] = useState(false);
@@ -141,27 +135,73 @@ const RegisterPatientForm = () => {
     if (formData.phone && !phoneRegex.test(formData.phone)) {
       newErrors.phone = 'Enter a valid 10-digit phone number';
     }
+    // DOB must be in the past
+if (formData.dob) {
+  const dobDate = new Date(formData.dob)
+  const today = new Date()
+
+  if (dobDate >= today) {
+    newErrors.dob = 'Date of birth must be in the past'
+  } else {
+    const age = today.getFullYear() - dobDate.getFullYear()
+    const m = today.getMonth() - dobDate.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+      age--
+    }
+
+    if (age > 120) newErrors.dob = 'Invalid age'
+  }
+}
+
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error('Please fix all validation errors');
-      return;
-    }
-    
-    const payload = {
-      ...formData,
-      rollNo: formData.patientType === 'STUDENT' ? formData.rollNo : formData.employeeId,
-    };
-    
-    console.log('Registering patient:', payload);
-    toast.success('Patient registered successfully!');
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault()
+
+  if (!validateForm()) {
+    toast.error('Please fix all validation errors')
+    return
+  }
+
+  setLoading(true)
+
+  const payload = {
+    email: formData.email,
+    rollNo: formData.rollNo,
+    employeeId: formData.employeeId,
+    name: formData.name,
+    dob: formData.dob,
+    gender: formData.gender,
+    phone: formData.phone,
+    patientType: formData.patientType,
+    allergicTo: formData.allergicTo,
+    department: formData.department,
+    year: formData.year,
+    designation: formData.designation,
+    familyMembers: formData.familyMembers,
+    staffCode: formData.secretCode
+  }
+
+  const result = await dispatch(registerPatient(payload))
+
+  setLoading(false)
+
+  if (result.meta.requestStatus === 'fulfilled') {
+  toast.success('Patient registered successfully')
+
+  setFormData(initialFormState)
+  setErrors({})
+  setIsCodeValid(null)
+  setShowFamilySection(false)
+}
+ else {
+    toast.error(result.payload || 'Failed to register patient')
+  }
+}
+
 
   return (
     <div style={styles.container}>
