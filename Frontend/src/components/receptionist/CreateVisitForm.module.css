@@ -1,8 +1,16 @@
-/* src/components/receptionist/CreateVisitForm.module.css */
+/* ============================================================================
+   CreateVisitForm.module.css - Complete Styles
+   ============================================================================ */
+
+/* Container */
 .container {
   padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Title */
 .title {
   font-size: 20px;
   font-weight: 600;
@@ -10,27 +18,87 @@
   margin: 0 0 24px 0;
 }
 
+/* Success/Error Messages */
+.successMessage {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.successMessage::before {
+  content: "✓";
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.errorMessage {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.errorMessage::before {
+  content: "⚠";
+  font-size: 18px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form */
 .form {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* Section */
 .section {
-  background: #f8fafc;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
   padding: 24px;
+  border: 1px solid #e2e8f0;
 }
 
 .sectionTitle {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  color: #334155;
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #e2e8f0;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* Form Grid */
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -39,38 +107,48 @@
 
 .vitalsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
+/* Form Group */
 .formGroup {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+/* Label */
 .label {
   font-size: 14px;
   font-weight: 600;
   color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.label::after {
-  content: ' *';
-  color: #ef4444;
-}
-
+/* Inputs */
 .select,
 .input,
 .textarea {
   padding: 12px 16px;
   border: 2px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 15px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   font-family: inherit;
   background: white;
   color: #1e293b;
+}
+
+.select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
 }
 
 .select::placeholder,
@@ -92,6 +170,7 @@
 .input.error,
 .textarea.error {
   border-color: #f56565;
+  background-color: #fff5f5;
 }
 
 .textarea {
@@ -99,6 +178,7 @@
   min-height: 80px;
 }
 
+/* Input With Unit */
 .inputWithUnit {
   position: relative;
   display: flex;
@@ -107,7 +187,7 @@
 
 .inputWithUnit .input {
   width: 100%;
-  padding-right: 40px;
+  padding-right: 60px;
 }
 
 .unit {
@@ -116,123 +196,167 @@
   color: #64748b;
   font-size: 14px;
   font-weight: 500;
+  pointer-events: none;
 }
 
+/* Error Text */
 .errorText {
   font-size: 13px;
   color: #f56565;
   font-weight: 500;
+  margin-top: -4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* Patient Search Dropdown Styles */
+.errorText::before {
+  content: "⚠";
+  font-size: 14px;
+}
+
+/* Patient Search Styles */
 .searchContainer {
   position: relative;
   width: 100%;
 }
 
-.searchContainer .input {
-  width: 100%;
+.searchInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.dropdown {
+.searchIcon {
   position: absolute;
-  top: 100%;
+  left: 12px;
+  color: #64748b;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px 12px 40px !important;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: white;
+  color: #1e293b;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.searchInput.error {
+  border-color: #f56565;
+  background-color: #fff5f5;
+}
+
+.patientDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: white;
   border: 2px solid #e2e8f0;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
+  border-radius: 8px;
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-top: -2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.dropdownItem {
+.patientOption {
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.15s;
   border-bottom: 1px solid #f1f5f9;
 }
 
-.dropdownItem:last-child {
+.patientOption:last-child {
   border-bottom: none;
 }
 
-.dropdownItem:hover {
+.patientOption:hover {
   background-color: #f8fafc;
 }
 
-.dropdownItem.highlighted {
+.patientOption:active {
   background-color: #e0f2fe;
-  border-left: 3px solid #0284c7;
-}
-
-.patientInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .patientName {
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
+  margin-bottom: 4px;
 }
 
-.patientRoll {
+.patientMeta {
   font-size: 13px;
   color: #64748b;
 }
 
-.dropdownInfo {
-  padding: 10px 16px;
-  background-color: #fff7ed;
-  color: #c2410c;
-  font-size: 13px;
-  text-align: center;
-  border-top: 1px solid #fed7aa;
-}
-
-.dropdownEmpty {
-  padding: 16px;
-  text-align: center;
-  color: #64748b;
+.selectedPatient {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #e0f2fe;
+  border: 1px solid #0ea5e9;
+  border-radius: 6px;
   font-size: 14px;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
+/* Submit Section */
 .submitSection {
   display: flex;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 2px solid #e2e8f0;
+  margin-top: 8px;
 }
 
-.createButton {
+.submitButton {
   background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
   color: white;
   border: none;
-  padding: 14px 32px;
-  border-radius: 8px;
+  padding: 16px 40px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
 }
 
-.createButton:hover:not(:disabled) {
+.submitButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(26, 35, 126, 0.25);
+  box-shadow: 0 6px 20px rgba(26, 35, 126, 0.3);
 }
 
-.createButton:disabled {
-  background: #cbd5e1;
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+  opacity: 0.7;
 }
 
+/* Responsive Design */
 @media (max-width: 1024px) {
   .vitalsGrid {
     grid-template-columns: repeat(2, 1fr);
@@ -252,4 +376,39 @@
   .section {
     padding: 16px;
   }
+  
+  .container {
+    padding: 16px;
+  }
+
+  .submitButton {
+    width: 100%;
+  }
+}
+
+/* Loading States */
+.select:disabled,
+.input:disabled,
+.textarea:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Accessibility */
+.select:focus-visible,
+.input:focus-visible,
+.textarea:focus-visible,
+.submitButton:focus-visible {
+  outline: 3px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* Help Text */
+.helpText {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.4;
 }

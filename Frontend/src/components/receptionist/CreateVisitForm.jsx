@@ -2,20 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faUser, 
-  faUserMd, 
-  faCalendarPlus, 
-  faThermometerHalf, 
-  faHeartbeat, 
-  faTint,
-  faAsterisk 
+  faUser, faUserMd, faCalendarPlus, faThermometerHalf, 
+  faHeartbeat, faTint, faLungs, faTint as faGlucose, faSearch
 } from '@fortawesome/free-solid-svg-icons';
-import { createVisit, clearCreateSuccess } from '../../store/slices/visitsSlice';
+import { useAuth } from '../../contexts/AuthContext';
+import { 
+  createVisit, 
+  clearCreateVisitSuccess,
+  fetchVisits,
+  selectVisitsLoading,
+  selectVisitsError,
+  selectCreateVisitSuccess
+} from '../../store/slices/receptionistSlice';
 import styles from './CreateVisitForm.module.css';
 
 const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
   const dispatch = useDispatch();
-  const { loading, error, createSuccess } = useSelector(state => state.visits);
+  const { user } = useAuth();
+  
+  const loading = useSelector(selectVisitsLoading);
+  const error = useSelector(selectVisitsError);
+  const createSuccess = useSelector(selectCreateVisitSuccess);
+  
+  console.log('CreateVisitForm - patients:', patients);
+  console.log('CreateVisitForm - availableDoctors:', availableDoctors);
+  console.log('CreateVisitForm - user:', user);
   
   const [formData, setFormData] = useState({
     patientId: '',
@@ -26,20 +37,42 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     bpSystolic: '',
     bpDiastolic: '',
     heartRate: '',
+    cbg: '',
+    spo2: '',
+    staffCode: ''  // ADDED
   });
   
   const [errors, setErrors] = useState({});
-  
-  // Patient search states
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
+  // Filter patients based on search query
+  useEffect(() => {
+    if (patientSearchQuery.trim()) {
+      const filtered = patients.filter(patient => {
+        const name = patient.name?.toLowerCase() || '';
+        const phone = patient.phone || '';
+        const studentId = patient.student_id?.toLowerCase() || patient.rollNo?.toLowerCase() || '';
+        const query = patientSearchQuery.toLowerCase();
+        
+        return name.includes(query) || phone.includes(query) || studentId.includes(query);
+      });
+      setFilteredPatients(filtered);
+      console.log('Filtered patients:', filtered);
+    } else {
+      setFilteredPatients(patients);
+    }
+  }, [patientSearchQuery, patients]);
+
+  // Handle success
   useEffect(() => {
     if (createSuccess) {
-      alert('Visit created successfully! Patient added to doctor queue.');
+      // Refresh visits list
+      dispatch(fetchVisits());
+      
+      // Reset form
       setFormData({
         patientId: '',
         doctorId: '',
@@ -49,126 +82,56 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
         bpSystolic: '',
         bpDiastolic: '',
         heartRate: '',
+        cbg: '',
+        spo2: ''
       });
-      setPatientSearchQuery('');
       setSelectedPatient(null);
-      setShowPatientDropdown(false);
-      dispatch(clearCreateSuccess());
+      setPatientSearchQuery('');
+      setErrors({});
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        dispatch(clearCreateVisitSuccess());
+      }, 3000);
     }
   }, [createSuccess, dispatch]);
-
-  useEffect(() => {
-    if (error) {
-      alert('Error: ' + error);
-    }
-  }, [error]);
-
-  // Filter patients based on search query
-  useEffect(() => {
-    // Don't show dropdown if patient is already selected
-    if (selectedPatient) {
-      setShowPatientDropdown(false);
-      return;
-    }
-
-    if (patientSearchQuery.trim() === '') {
-      setFilteredPatients([]);
-      setShowPatientDropdown(false);
-      setHighlightedIndex(-1);
-      return;
-    }
-
-    const query = patientSearchQuery.toLowerCase();
-    const filtered = patients.filter(patient => 
-      patient.name.toLowerCase().includes(query) || 
-      patient.rollNo.toLowerCase().includes(query)
-    );
-    
-    setFilteredPatients(filtered);
-    setShowPatientDropdown(true);
-    setHighlightedIndex(-1);
-  }, [patientSearchQuery, patients, selectedPatient]);
-
-  const handlePatientSelect = (patient) => {
-    setSelectedPatient(patient);
-    setFormData(prev => ({
-      ...prev,
-      patientId: patient.id,
-    }));
-    setPatientSearchQuery(`${patient.name} (Roll: ${patient.rollNo})`);
-    setShowPatientDropdown(false);
-    
-    if (errors.patientId) {
-      setErrors(prev => ({
-        ...prev,
-        patientId: '',
-      }));
-    }
-  };
-
-  const handlePatientSearchChange = (e) => {
-    const value = e.target.value;
-    setPatientSearchQuery(value);
-    
-    // Clear selected patient if user is typing
-    if (selectedPatient) {
-      setSelectedPatient(null);
-      setFormData(prev => ({
-        ...prev,
-        patientId: '',
-      }));
-    }
-  };
-
-  const handlePatientKeyDown = (e) => {
-    if (!showPatientDropdown || filteredPatients.length === 0) return;
-
-    const maxIndex = Math.min(filteredPatients.length - 1, 9); // Limit to 10 items
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev < maxIndex ? prev + 1 : prev
-        );
-        break;
-      
-      case 'ArrowUp':
-        e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev > 0 ? prev - 1 : 0
-        );
-        break;
-      
-      case 'Enter':
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex <= maxIndex) {
-          handlePatientSelect(filteredPatients[highlightedIndex]);
-        }
-        break;
-      
-      case 'Escape':
-        e.preventDefault();
-        setShowPatientDropdown(false);
-        setHighlightedIndex(-1);
-        break;
-      
-      default:
-        break;
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
     
+    // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
-        [name]: '',
+        [name]: ''
+      }));
+    }
+  };
+
+  const handlePatientSearch = (e) => {
+    setPatientSearchQuery(e.target.value);
+    setShowPatientDropdown(true);
+  };
+
+  const handlePatientSelect = (patient) => {
+    console.log('Patient selected:', patient);
+    setSelectedPatient(patient);
+    setFormData(prev => ({
+      ...prev,
+      patientId: patient.patient_id || patient.id
+    }));
+    setPatientSearchQuery(patient.name);
+    setShowPatientDropdown(false);
+    
+    // Clear patient error
+    if (errors.patientId) {
+      setErrors(prev => ({
+        ...prev,
+        patientId: ''
       }));
     }
   };
@@ -179,15 +142,18 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     if (!formData.patientId) newErrors.patientId = 'Select a patient';
     if (!formData.doctorId) newErrors.doctorId = 'Select a doctor';
     if (!formData.reason.trim()) newErrors.reason = 'Reason is required';
+    if (!formData.staffCode.trim()) newErrors.staffCode = 'Staff code is required';
     
-    if (!formData.temperature) newErrors.temperature = 'Temperature is required';
-    else if (formData.temperature < 90 || formData.temperature > 110)
+    // Temperature validation
+    if (!formData.temperature) {
+      newErrors.temperature = 'Temperature is required';
+    } else if (formData.temperature < 90 || formData.temperature > 110) {
       newErrors.temperature = 'Temperature must be between 90°F and 110°F';
+    }
 
+    // Blood Pressure validation
     if (!formData.bpSystolic) newErrors.bpSystolic = 'Systolic BP is required';
     if (!formData.bpDiastolic) newErrors.bpDiastolic = 'Diastolic BP is required';
-    if (!formData.heartRate) newErrors.heartRate = 'Heart rate is required';
-
     
     if (formData.bpSystolic && (formData.bpSystolic < 70 || formData.bpSystolic > 200)) {
       newErrors.bpSystolic = 'Systolic BP must be between 70-200 mmHg';
@@ -197,8 +163,21 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
       newErrors.bpDiastolic = 'Diastolic BP must be between 40-130 mmHg';
     }
     
-    if (formData.heartRate && (formData.heartRate < 40 || formData.heartRate > 200)) {
+    // Heart Rate validation
+    if (!formData.heartRate) {
+      newErrors.heartRate = 'Heart rate is required';
+    } else if (formData.heartRate < 40 || formData.heartRate > 200) {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
+    }
+    
+    // Optional: CBG validation
+    if (formData.cbg && (formData.cbg < 40 || formData.cbg > 600)) {
+      newErrors.cbg = 'CBG must be between 40-600 mg/dL';
+    }
+    
+    // Optional: SpO2 validation
+    if (formData.spo2 && (formData.spo2 < 70 || formData.spo2 > 100)) {
+      newErrors.spo2 = 'SpO2 must be between 70-100%';
     }
     
     setErrors(newErrors);
@@ -208,36 +187,32 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    console.log('Form submitted!');
+    console.log('Form data:', formData);
+    console.log('Errors:', errors);
+    
     if (!validateForm()) {
-      return;
-    }
-    
-    const patient = patients.find(p => p.id === formData.patientId);
-    const doctor = availableDoctors.find(d => d.id === formData.doctorId);
-    
-    if (!patient || !doctor) {
-      alert('Invalid patient or doctor selection');
+      console.log('Validation failed:', errors);
       return;
     }
     
     const visitData = {
       patientId: formData.patientId,
-      patientName: patient.name,
       doctorId: formData.doctorId,
-      doctorName: doctor.name,
       visitType: formData.visitType,
       reason: formData.reason,
+      staffCode: formData.staffCode,  // ADDED
+      vitals: {
+        temperature: parseFloat(formData.temperature),
+        bpSystolic: parseInt(formData.bpSystolic),
+        bpDiastolic: parseInt(formData.bpDiastolic),
+        heartRate: parseInt(formData.heartRate),
+        cbg: formData.cbg ? parseFloat(formData.cbg) : null,
+        spo2: formData.spo2 ? parseFloat(formData.spo2) : null,
+      }
     };
     
-    if (formData.temperature || formData.bpSystolic || formData.bpDiastolic || formData.heartRate) {
-      visitData.vitals = {
-        temperature: formData.temperature ? parseFloat(formData.temperature) : null,
-        bpSystolic: formData.bpSystolic ? parseInt(formData.bpSystolic) : null,
-        bpDiastolic: formData.bpDiastolic ? parseInt(formData.bpDiastolic) : null,
-        heartRate: formData.heartRate ? parseInt(formData.heartRate) : null,
-      };
-    }
-    
+    console.log('Dispatching createVisit with:', visitData);
     dispatch(createVisit(visitData));
   };
 
@@ -245,64 +220,72 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     <div className={styles.container}>
       <h2 className={styles.title}>Create New Visit</h2>
       
+      {createSuccess && (
+        <div className={styles.successMessage}>
+          Visit created successfully!
+        </div>
+      )}
+      
+      {error && (
+        <div className={styles.errorMessage}>
+          {error}
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className={styles.form}>
+        {/* Visit Details Section */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Visit Details</h3>
           
           <div className={styles.formGrid}>
+            {/* Patient Search */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                <FontAwesomeIcon icon={faUser} /> Select Patient 
+                <FontAwesomeIcon icon={faUser} /> Search Patient
               </label>
               <div className={styles.searchContainer}>
-                <input
-                  type="text"
-                  name="patientSearch"
-                  value={patientSearchQuery}
-                  onChange={handlePatientSearchChange}
-                  onKeyDown={handlePatientKeyDown}
-                  onFocus={() => patientSearchQuery && setShowPatientDropdown(true)}
-                  className={`${styles.input} ${errors.patientId ? styles.error : ''}`}
-                  placeholder="Search by name or roll number"
-                  disabled={loading}
-                  autoComplete="off"
-                />
+                <div className={styles.searchInputWrapper}>
+                  <FontAwesomeIcon icon={faSearch} className={styles.searchIcon} />
+                  <input
+                    type="text"
+                    value={patientSearchQuery}
+                    onChange={handlePatientSearch}
+                    onFocus={() => setShowPatientDropdown(true)}
+                    className={`${styles.searchInput} ${errors.patientId ? styles.error : ''}`}
+                    placeholder="Search by name, phone, or student ID..."
+                    disabled={loading}
+                  />
+                </div>
+                
                 {showPatientDropdown && filteredPatients.length > 0 && (
-                  <div className={styles.dropdown}>
-                    {filteredPatients.slice(0, 10).map((patient, index) => (
+                  <div className={styles.patientDropdown}>
+                    {filteredPatients.slice(0, 10).map(patient => (
                       <div
-                        key={patient.id}
-                        className={`${styles.dropdownItem} ${index === highlightedIndex ? styles.highlighted : ''}`}
+                        key={patient.patient_id || patient.id}
+                        className={styles.patientOption}
                         onClick={() => handlePatientSelect(patient)}
-                        onMouseEnter={() => setHighlightedIndex(index)}
                       >
-                        <div className={styles.patientInfo}>
-                          <span className={styles.patientName}>{patient.name}</span>
-                          <span className={styles.patientRoll}>Roll: {patient.rollNo}</span>
+                        <div className={styles.patientName}>{patient.name}</div>
+                        <div className={styles.patientMeta}>
+                          {patient.phone} • {patient.student_id || patient.rollNo || 'N/A'}
                         </div>
                       </div>
                     ))}
-                    {filteredPatients.length > 10 && (
-                      <div className={styles.dropdownInfo}>
-                        Showing 10 of {filteredPatients.length} results. Refine your search.
-                      </div>
-                    )}
                   </div>
                 )}
-                {showPatientDropdown && filteredPatients.length === 0 && patientSearchQuery && (
-                  <div className={styles.dropdown}>
-                    <div className={styles.dropdownEmpty}>
-                      No patients found matching "{patientSearchQuery}"
-                    </div>
+                
+                {selectedPatient && (
+                  <div className={styles.selectedPatient}>
+                    <strong>Selected:</strong> {selectedPatient.name} ({selectedPatient.phone})
                   </div>
                 )}
               </div>
               {errors.patientId && <span className={styles.errorText}>{errors.patientId}</span>}
             </div>
-
+            
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                <FontAwesomeIcon icon={faUserMd} /> Select Doctor 
+                <FontAwesomeIcon icon={faUserMd} /> Select Doctor
               </label>
               <select
                 name="doctorId"
@@ -332,17 +315,14 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
                 className={styles.select}
                 disabled={loading}
               >
-                <option value="OPD">OPD</option>
-                <option value="Emergency">Emergency</option>
-                <option value="Follow-up">Follow-up</option>
-                <option value="Checkup">Routine Checkup</option>
+                <option value="OPD">OPD (Out-Patient Department)</option>
+                <option value="IPD">IPD (In-Patient Department)</option>
+                <option value="EMERGENCY">Emergency</option>
               </select>
             </div>
 
             <div className={styles.formGroup} style={{ gridColumn: 'span 2' }}>
-              <label className={styles.label}>
-                Reason for Visit 
-              </label>
+              <label className={styles.label}>Reason for Visit</label>
               <textarea
                 name="reason"
                 value={formData.reason}
@@ -357,10 +337,12 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
           </div>
         </div>
 
+        {/* Vitals Section */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Vitals *</h3>
+          <h3 className={styles.sectionTitle}>Vital Signs</h3>
           
           <div className={styles.vitalsGrid}>
+            {/* Temperature */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
                 <FontAwesomeIcon icon={faThermometerHalf} /> Temperature (°F)
@@ -383,6 +365,7 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
               {errors.temperature && <span className={styles.errorText}>{errors.temperature}</span>}
             </div>
 
+            {/* BP Systolic */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
                 <FontAwesomeIcon icon={faTint} /> BP Systolic (mmHg)
@@ -404,6 +387,7 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
               {errors.bpSystolic && <span className={styles.errorText}>{errors.bpSystolic}</span>}
             </div>
 
+            {/* BP Diastolic */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
                 <FontAwesomeIcon icon={faTint} /> BP Diastolic (mmHg)
@@ -425,6 +409,7 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
               {errors.bpDiastolic && <span className={styles.errorText}>{errors.bpDiastolic}</span>}
             </div>
 
+            {/* Heart Rate */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
                 <FontAwesomeIcon icon={faHeartbeat} /> Heart Rate (bpm)
@@ -445,14 +430,89 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
               </div>
               {errors.heartRate && <span className={styles.errorText}>{errors.heartRate}</span>}
             </div>
+
+            {/* CBG (Optional) */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL) <span style={{fontSize: '12px', color: '#64748b'}}>Optional</span>
+              </label>
+              <div className={styles.inputWithUnit}>
+                <input
+                  type="number"
+                  name="cbg"
+                  value={formData.cbg}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.cbg ? styles.error : ''}`}
+                  placeholder="100"
+                  min="40"
+                  max="600"
+                  step="0.1"
+                  disabled={loading}
+                />
+                <span className={styles.unit}>mg/dL</span>
+              </div>
+              {errors.cbg && <span className={styles.errorText}>{errors.cbg}</span>}
+            </div>
+
+            {/* SpO2 (Optional) */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <FontAwesomeIcon icon={faLungs} /> SpO2 (%) <span style={{fontSize: '12px', color: '#64748b'}}>Optional</span>
+              </label>
+              <div className={styles.inputWithUnit}>
+                <input
+                  type="number"
+                  name="spo2"
+                  value={formData.spo2}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.spo2 ? styles.error : ''}`}
+                  placeholder="98"
+                  min="70"
+                  max="100"
+                  step="0.1"
+                  disabled={loading}
+                />
+                <span className={styles.unit}>%</span>
+              </div>
+              {errors.spo2 && <span className={styles.errorText}>{errors.spo2}</span>}
+            </div>
           </div>
         </div>
 
+        {/* Staff Code Authentication */}
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Authentication</h3>
+          
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Your Staff Code
+            </label>
+            <input
+              type="text"
+              name="staffCode"
+              value={formData.staffCode}
+              onChange={handleChange}
+              className={`${styles.input} ${errors.staffCode ? styles.error : ''}`}
+              placeholder="Enter your staff code (e.g., R001)"
+              disabled={loading}
+              autoComplete="off"
+            />
+            {errors.staffCode && <span className={styles.errorText}>{errors.staffCode}</span>}
+            <p className={styles.helpText}>
+              Enter your unique staff code to authenticate this action
+            </p>
+          </div>
+        </div>
+
+        {/* Submit Button */}
         <div className={styles.submitSection}>
-          <button
-            type="submit"
-            className={styles.createButton}
+          <button 
+            type="submit" 
+            className={styles.submitButton}
             disabled={loading}
+            onClick={(e) => {
+              console.log('Submit button clicked');
+            }}
           >
             {loading ? 'Creating Visit...' : 'Create Visit'}
           </button>
