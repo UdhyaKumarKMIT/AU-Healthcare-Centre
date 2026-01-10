@@ -103,26 +103,32 @@ export const login = async (username, password, role) => {
 
   // If role-specific, fetch staff details from staff_details table
   if (isRoleSpecificLogin) {
-    const staffDetails = await StaffDetails.findOne({
-      where: { user_id: user.user_id },
-      attributes: ['staff_id', 'name', 'code', 'phone', 'email']
-    });
-    
-    if (staffDetails) {
-      response.user.staff_id = staffDetails.staff_id;
-      response.user.name = staffDetails.name;
-      response.user.code = staffDetails.code;
-      response.user.phone = staffDetails.phone;
-      response.user.email = staffDetails.email;
-      
-      // For backward compatibility
-      response.user.nurse_id = staffDetails.staff_id;
-      response.user.pharmacist_id = staffDetails.staff_id;
-    }
-    
-    console.log('✅ Role-specific login successful for:', role);
-    return response;
-  }
+  user = await User.findOne({
+    where: { role, is_role_specific: true, status: 'ACTIVE' }
+  });
+
+  if (!user || user.username !== username)
+    throw new ApiError(401, 'Invalid credentials');
+
+  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+  if (!isPasswordValid) throw new ApiError(401, 'Invalid credentials');
+
+  const staffList = await StaffDetails.findAll({
+    where: { role, status: 'ACTIVE' },
+    attributes: ['staff_id', 'name', 'code', 'phone', 'email']
+  });
+
+  return {
+    token: jwt.sign(
+      { userId: user.user_id, role: user.role, isRoleSpecific: true },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    ),
+    user: { id: user.user_id, username: user.username, role, isRoleSpecific: true },
+    staffList
+  };
+}
+
 
   // For user-specific accounts, fetch role-specific profile data
 
