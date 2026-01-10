@@ -1,9 +1,5 @@
-// ============================================================================
-// receptionistSlice.js - WITH TOAST NOTIFICATIONS & recorded_by_code
-// ============================================================================
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -44,7 +40,7 @@ export const registerPatient = createAsyncThunk(
       const staffCode = patientData.staffCode || getStaffCode();
       
       if (!staffCode) {
-        toast.error('Staff code not found. Please login again.');
+        
         return rejectWithValue('Staff code not found');
       }
       
@@ -71,11 +67,11 @@ export const registerPatient = createAsyncThunk(
         { headers: getAuthHeaders() }
       );
       
-      toast.success('Patient registered successfully!');
+      
       return response.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to register patient';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -91,7 +87,7 @@ export const fetchPatients = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch patients';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -111,7 +107,7 @@ export const fetchDoctors = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch doctors';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -127,7 +123,7 @@ export const fetchAvailableDoctors = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch available doctors';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -148,11 +144,11 @@ export const updateDoctorAvailability = createAsyncThunk(
         { headers: getAuthHeaders() }
       );
       
-      toast.success('Doctor availability updated successfully!');
+      
       return { doctorId, status };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to update doctor availability';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -172,7 +168,7 @@ export const fetchVisits = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch visits';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -185,7 +181,7 @@ export const createVisit = createAsyncThunk(
       const staffCode = visitData.staffCode || getStaffCode();
       
       if (!staffCode) {
-        toast.error('Staff code not found. Please login again.');
+        
         return rejectWithValue('Staff code not found');
       }
       
@@ -233,12 +229,12 @@ export const createVisit = createAsyncThunk(
         );
       }
 
-      toast.success('Visit created successfully!');
+      
       return visitResponse.data;
     } catch (error) {
       console.error('Create visit error:', error);
       const errorMsg = error.response?.data?.message || 'Failed to create visit';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -256,11 +252,11 @@ export const startVisit = createAsyncThunk(
         { headers: getAuthHeaders() }
       );
       
-      toast.success('Visit started successfully!');
+      
       return { visitId, status: 'ONGOING' };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to start visit';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -278,11 +274,11 @@ export const cancelVisit = createAsyncThunk(
         { headers: getAuthHeaders() }
       );
       
-      toast.success('Visit cancelled successfully!');
+      
       return { visitId, status: 'CANCELLED' };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to cancel visit';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
@@ -303,11 +299,11 @@ export const assignDoctor = createAsyncThunk(
         { headers: getAuthHeaders() }
       );
       
-      toast.success('Doctor assigned successfully!');
+      
       return { visitId, doctorId };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to assign doctor';
-      toast.error(errorMsg);
+      
       return rejectWithValue(errorMsg);
     }
   }
