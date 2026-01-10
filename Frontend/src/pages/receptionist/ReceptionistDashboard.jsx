@@ -67,6 +67,10 @@ const ReceptionistDashboard = () => {
     // Navigate to nurse dashboard
     navigate('/nurse');
   };
+  const handleRefreshVisits = () => {
+  dispatch(fetchVisits())
+}
+
 
   if (authLoading) {
     return (
@@ -128,7 +132,11 @@ const ReceptionistDashboard = () => {
             </section>
 
             <section className={`${styles.section} ${styles.recentVisits}`}>
-              <RecentVisitsList visits={visits?.slice(0, 5) || []} />
+              <RecentVisitsList
+  visits={visits?.slice(0, 5) || []}
+  onRefresh={handleRefreshVisits}
+/>
+
             </section>
 
             <div className={`${styles.collapsibleSection} ${styles.registerPatientSection}`}>

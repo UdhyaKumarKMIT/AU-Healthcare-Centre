@@ -175,13 +175,13 @@ function NurseDashboard() {
           </div>
         </div>
 
-        <div className={styles.actionGrid}>
+        <div className={styles.viewToggle}>
           <button 
             className={`${styles.actionCard} ${activeView === 'tasks' ? styles.active : ''}`} 
             onClick={() => setActiveView('tasks')}
           >
-            <FontAwesomeIcon icon={faTasks} />
-            <span>My Tasks</span>
+            <FontAwesomeIcon icon={faTasks} className={styles.toggleIcon} />
+            <span> My Tasks</span>
           </button>
           <button 
             className={`${styles.actionCard} ${activeView === 'stock' ? styles.active : ''}`} 
@@ -192,7 +192,7 @@ function NurseDashboard() {
             }}
           >
             <FontAwesomeIcon icon={faBoxes} />
-            <span>View Stock</span>
+            <span> View Stock</span>
           </button>
         </div>
 
