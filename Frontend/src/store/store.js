@@ -10,6 +10,8 @@ import vitalsReducer from './slices/vitalsSlice';
 import adminReducer from './slices/adminSlice';
 import studentsReducer from './slices/studentsSlice';
 import labtechReducer from './slices/labTechSlice';
+import receptionistReducer from './slices/receptionistSlice';
+import nurseReducer from './slices/nurseSlice';
 export const store = configureStore({
   reducer: {
     queue: queueReducer,
@@ -21,6 +23,8 @@ export const store = configureStore({
     vitals: vitalsReducer,
     admin: adminReducer,
     students: studentsReducer,
-    labTech: labtechReducer
+    labTech: labtechReducer,
+    receptionist: receptionistReducer,
+    nurse: nurseReducer
   },
 });
