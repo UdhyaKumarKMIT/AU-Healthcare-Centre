@@ -1,28 +1,28 @@
-// src/components/receptionist/DoctorAvailabilityTable.jsx
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { updateDoctorStatus } from '../../store/slices/doctorsSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  updateDoctorAvailability,
+  selectDoctorsLoading
+} from '../../store/slices/receptionistSlice';
 import styles from './DoctorAvailabilityTable.module.css';
-import { updateDoctorAvailability } from '../../store/slices/doctorsSlice';
+
 const DoctorAvailabilityTable = ({ doctors = [] }) => {
   const dispatch = useDispatch();
+  const loading = useSelector(selectDoctorsLoading);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
 
-  // Filter doctors based on search query
   const filteredDoctors = doctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleStatusChange = async (doctorId, newStatus) => {
-  setUpdatingId(doctorId);
-  
-  // Dispatch the API call
-  await dispatch(updateDoctorAvailability({ doctorId, status: newStatus }));
-  
-  setUpdatingId(null);
-};
+    setUpdatingId(doctorId);
+    await dispatch(updateDoctorAvailability({ doctorId, status: newStatus }));
+    setUpdatingId(null);
+  };
 
   const getStatusBadge = (status) => {
     if (status === 'AVAILABLE') {
@@ -39,7 +39,6 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
           <p className={styles.sectionSubtitle}>Update doctor availability status</p>
         </div>
         
-        {/* Search Input */}
         <div className={styles.searchContainer}>
           <input
             type="text"
@@ -92,19 +91,12 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
                     <select
                       value={doctor.status}
                       onChange={(e) => handleStatusChange(doctor.id, e.target.value)}
-                      disabled={updatingId === doctor.id}
+                      disabled={updatingId === doctor.id || loading}
                       className={styles.statusSelect}
                     >
                       <option value="AVAILABLE">Available</option>
                       <option value="UNAVAILABLE">Unavailable</option>
                     </select>
-                    <button
-                      className={styles.updateButton}
-                      onClick={() => handleStatusChange(doctor.id, doctor.status)}
-                      disabled={updatingId === doctor.id}
-                    >
-                      {updatingId === doctor.id ? 'Updating...' : 'Update'}
-                    </button>
                   </div>
                 </td>
               </tr>

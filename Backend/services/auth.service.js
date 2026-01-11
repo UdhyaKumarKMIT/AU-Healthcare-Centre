@@ -22,55 +22,21 @@ export const login = async (username, password, role) => {
   }
 
   // Determine login type based on role
-  const isRoleSpecificLogin = ROLE_SPECIFIC_ROLES.includes(role);
-  const isUserSpecificLogin = USER_SPECIFIC_ROLES.includes(role) || role === ROLES.PATIENT;
+const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(role)
+const isUserSpecific = USER_SPECIFIC_ROLES.includes(role) || role === ROLES.PATIENT
 
-  let user;
+if (!isRoleSpecific && !isUserSpecific)
+  throw new ApiError(400,'Invalid role')
 
-  if (isRoleSpecificLogin) {
-    // Role-specific login: Find shared account for this role using Sequelize
-    console.log('🔍 Looking for role-specific account:', { role, username });
-    user = await User.findOne({
-      where: {
-        role: role,
-        is_role_specific: true,
-        status: 'ACTIVE'
-      }
-    });
+const user = await User.findOne({
+  where: isRoleSpecific
+    ? { role, is_role_specific:true, status:'ACTIVE' }
+    : { username, role, status:'ACTIVE', is_role_specific:false }
+})
 
-    console.log('📝 Found user:', user ? { username: user.username, role: user.role, is_role_specific: user.is_role_specific } : 'null');
+if (!user || (isRoleSpecific && user.username !== username))
+  throw new ApiError(401,'Invalid credentials')
 
-    if (!user) {
-      throw new ApiError(404, `No role-specific account found for ${role}`);
-    }
-
-    // Verify username matches the role-specific username
-    console.log('🔐 Checking username match:', { provided: username, expected: user.username });
-    if (user.username !== username) {
-      throw new ApiError(401, 'Invalid credentials');
-    }
-
-  } else if (isUserSpecificLogin) {
-    // User-specific login: Find user by username and role using Sequelize
-    user = await User.findOne({
-      where: {
-        username: username,
-        role: role,
-        status: 'ACTIVE'
-      }
-    });
-
-    if (!user) {
-      throw new ApiError(401, 'Invalid credentials');
-    }
-
-    // Ensure it's not a role-specific account
-    if (user.is_role_specific) {
-      throw new ApiError(401, 'Invalid credentials');
-    }
-  } else {
-    throw new ApiError(400, 'Invalid role configuration');
-  }
 
   // Verify password using bcrypt
   console.log('🔑 Verifying password...');
@@ -102,29 +68,23 @@ export const login = async (username, password, role) => {
   }
 
   // If role-specific, fetch staff details from staff_details table
-  if (isRoleSpecificLogin) {
-    const staffDetails = await StaffDetails.findOne({
-      where: { user_id: user.user_id },
-      attributes: ['staff_id', 'name', 'code', 'phone', 'email']
-    });
-    
-    if (staffDetails) {
-      response.user.staff_id = staffDetails.staff_id;
-      response.user.name = staffDetails.name;
-      response.user.code = staffDetails.code;
-      response.user.phone = staffDetails.phone;
-      response.user.email = staffDetails.email;
-      
-      // For backward compatibility
-      response.user.nurse_id = staffDetails.staff_id;
-      response.user.pharmacist_id = staffDetails.staff_id;
-    }
-    
-    console.log('✅ Role-specific login successful for:', role);
-    return response;
-  }
+  if (isRoleSpecific) {
 
-  // For user-specific accounts, fetch role-specific profile data
+  const staffList = await StaffDetails.findAll({
+    where: { role, status: 'ACTIVE' },
+    attributes: ['staff_id', 'name', 'code', 'phone', 'email']
+  });
+
+  return {
+    token: jwt.sign(
+      { userId: user.user_id, role: user.role, isRoleSpecific: true },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    ),
+    user: { id: user.user_id, username: user.username, role, isRoleSpecific: true },
+    staffList
+  };
+}
 
   // If doctor, fetch doctor_id and profile using Sequelize
   if (user.role === ROLES.DOCTOR) {
@@ -138,53 +98,6 @@ export const login = async (username, password, role) => {
       response.user.name = doctor.name;
       response.user.specialization = doctor.specialization;
       response.user.phone = doctor.phone;
-    }
-  }
-
-  // If receptionist (user-specific), fetch receptionist_id from receptionist table
-  if (user.role === ROLES.RECEPTIONIST && !isRoleSpecificLogin) {
-    const [receptionistRows] = await pool.execute(
-      'SELECT receptionist_id FROM receptionist WHERE user_id = ?',
-      [user.user_id]
-    )
-    
-    if (receptionistRows.length > 0) {
-      response.user.receptionist_id = receptionistRows[0].receptionist_id
-    }
-  }
-
-  // If nurse (user-specific), fetch nurse_id and name from nurse table
-  if (user.role === ROLES.NURSE && !isRoleSpecificLogin) {
-    const [nurseRows] = await pool.execute(
-      'SELECT nurse_id, name, register_number, qualification, phone FROM nurse WHERE user_id = ?',
-      [user.user_id]
-    )
-    
-    if (nurseRows.length > 0) {
-      response.user.nurse_id = nurseRows[0].nurse_id
-      response.user.name = nurseRows[0].name
-      response.user.register_number = nurseRows[0].register_number
-      response.user.qualification = nurseRows[0].qualification
-      response.user.phone = nurseRows[0].phone
-    } else {
-      console.warn('⚠️ Nurse user found but no nurse profile exists for user_id:', user.user_id)
-    }
-  }
-
-  // If pharmacist (user-specific), fetch pharmacist_id and profile from pharmacist table
-  if (user.role === ROLES.PHARMACIST && !isRoleSpecificLogin) {
-    const [pharmacistRows] = await pool.execute(
-      'SELECT pharmacist_id, name, email, phone FROM pharmacist WHERE user_id = ?',
-      [user.user_id]
-    )
-    
-    if (pharmacistRows.length > 0) {
-      response.user.pharmacist_id = pharmacistRows[0].pharmacist_id
-      response.user.name = pharmacistRows[0].name
-      response.user.pharmacist_email = pharmacistRows[0].email
-      response.user.phone = pharmacistRows[0].phone
-    } else {
-      console.warn('⚠️ Pharmacist user found but no pharmacist profile exists for user_id:', user.user_id)
     }
   }
 
@@ -211,7 +124,7 @@ export const login = async (username, password, role) => {
   }
 
   console.log('✅ Login successful for:', username, '- Role:', user.role);
-  if (user.role === ROLES.NURSE && !isRoleSpecificLogin) {
+  if (user.role === ROLES.NURSE && !isRoleSpecific) {
     console.log('✅ Nurse profile loaded:', response.user.nurse_id, response.user.name);
   }
 

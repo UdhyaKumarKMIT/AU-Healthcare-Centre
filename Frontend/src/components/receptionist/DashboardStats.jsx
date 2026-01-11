@@ -1,4 +1,3 @@
-// src/components/receptionist/DashboardStats.jsx
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faUserMd, faClipboardList } from '@fortawesome/free-solid-svg-icons';

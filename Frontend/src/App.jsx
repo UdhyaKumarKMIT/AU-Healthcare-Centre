@@ -34,6 +34,7 @@ import ScheduleVisit from './pages/admin/ScheduleVisit.jsx';
 import LogsManagement from './pages/admin/LogsManagement.jsx';
 import SettingsManagement from './pages/admin/SettingsManagement.jsx';
 import PharmacistsManagement from './pages/admin/PharmacistsManagement.jsx';
+
 // Doctor Pages
 import DoctorDashboard from './pages/doctor/DoctorDashboard.jsx';
 import VisitDetails from './pages/doctor/VisitDetails.jsx';
@@ -43,20 +44,27 @@ import PrescriptionForm from './pages/doctor/PrescriptionForm.jsx';
 import ReceptionistDashboard from './pages/receptionist/ReceptionistDashboard.jsx';
 import RegisterPatientPage from './pages/receptionist/RegisterPatientPage.jsx';
 
-// Student/Patient Pages (New Mobile-Responsive Dashboard)
+// Student/Patient Pages
 import StudentDashboard from './pages/student/StudentDashboard.jsx';
 
+// Lab Tech Pages
 import LabTechDashboard from './pages/labtech/LabTechDashboard';
 import LabTestsManagement from './pages/labtech/LabTestsManagement';
 import LabTestReport from './pages/labtech/LabTestReport';
 
-
+// Nurse Pages
 import NurseDashboard from './pages/Nurse/NurseDashboard.jsx';
+
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+
 function App() {
   return (
     <Provider store={store}>
       <AuthProvider>
         <BrowserRouter>
+          <ToastContainer position="top-right" autoClose={3000} />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<SelectRole />} />
@@ -104,28 +112,35 @@ function App() {
 
             {/* Receptionist Routes */}
             <Route element={<ProtectedRoute allowedRoles={['NURSE_RECEPTIONIST']} />}>
+              <Route path="/reception" element={<ReceptionistDashboard />} />
               <Route path="/reception/dashboard" element={<ReceptionistDashboard />} />
               <Route path="/reception/register-patient" element={<RegisterPatientPage />} />
             </Route>
 
-            {/* Patient/Student Routes - Using NEW Mobile-Responsive Dashboard */}
+            {/* Nurse Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['NURSE_RECEPTIONIST']} />}>
+              <Route path="/nurse" element={<NurseDashboard />} />
+              <Route path="/nurse/dashboard" element={<NurseDashboard />} />
+            </Route>
+
+            {/* Patient/Student Routes */}
             <Route element={<ProtectedRoute allowedRoles={['PATIENT']} />}>
               <Route path="/patient/dashboard" element={<StudentDashboard />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
             </Route>
-            {/* Nurse Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['NURSE']} />}>
-              <Route path="/nurse/dashboard" element={<NurseDashboard />} />
-            </Route>
+
+            {/* Lab Technician Routes */}
             <Route element={<ProtectedRoute allowedRoles={['LAB_TECHNICIAN']} />}>
               <Route path="/labtech/dashboard" element={<LabTechDashboard />} />
               <Route path="/labtech/tests" element={<LabTestsManagement />} />
               <Route path="/labtech/tests/:testId" element={<LabTestReport />} />
             </Route>
+
             {/* Catch-all Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
+
       </AuthProvider>
     </Provider>
   );

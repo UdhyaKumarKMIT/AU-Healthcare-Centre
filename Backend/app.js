@@ -14,10 +14,12 @@ import pharmacyRoutes from './routes/pharmacyRoutes.js';
 import studentRoutes from './routes/student.routes.js';
 import userRoutes from './routes/user.routes.js';
 import staffRoutes from './routes/staff.routes.js';
-// Middleware
-import errorHandler from './middlewares/error.middleware.js';
 import nurseRoutes from './routes/nurse.routes.js';
 import labtechRoutes from './routes/labtech.routes.js';
+
+// Middleware
+import errorHandler from './middlewares/error.middleware.js';
+
 const app = express();
 
 // -------------------
@@ -45,7 +47,10 @@ app.use(cors({
   origin: 'http://localhost:5173', // adjust frontend URL
   credentials: true
 }));
-app.use(express.json());
+
+// CRITICAL: Body parsers
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // -------------------
 // Routes
@@ -54,12 +59,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/receptionist', receptionistRoutes);
 app.use('/api/doctor', doctorRoutes);
-app.use('/api/pharmacy', pharmacyRoutes); // pharmacist-specific routes
-app.use('/api/students', studentRoutes); // student-specific routes
-app.use('/api/users', userRoutes); // user management (admin)
+app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/nurse', nurseRoutes);
 app.use('/api/labtech', labtechRoutes);
-app.use('/api/admin/staff', staffRoutes); // admin-only staff details CRUD
+app.use('/api/admin/staff', staffRoutes);
+
 // -------------------
 // Health check
 // -------------------
@@ -70,6 +76,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Healthca
 // 404 Handler
 // -------------------
 app.use((req, res, next) => {
+  console.log('❌ 404 - Route not found:', req.method, req.url);
   res.status(404).json({
     success: false,
     message: 'Route not found'
