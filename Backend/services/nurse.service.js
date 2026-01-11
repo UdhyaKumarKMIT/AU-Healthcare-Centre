@@ -190,8 +190,10 @@ export const getCompletedTaskDetails = async (task_id) => {
     // Parse JSON fields safely
     let medicationsUsed = [];
     let ecgReportData = null;
-    
+    let resultObservation = null;
+
     if (transaction) {
+      let resultObservation = null
       try {
         if (transaction.medications_used) {
           medicationsUsed = typeof transaction.medications_used === 'string' 
@@ -203,10 +205,12 @@ export const getCompletedTaskDetails = async (task_id) => {
       }
       
       try {
-        if (transaction.ecg_report) {
-          ecgReportData = typeof transaction.ecg_report === 'string'
-            ? JSON.parse(transaction.ecg_report)
-            : transaction.ecg_report;
+        if (task.NurseTaskMaster?.task_name?.toUpperCase().includes('ECG')) {
+          try {
+            const parsed = JSON.parse(transaction.remarks || '{}')
+            ecgReportData = parsed.ecg_report || null
+            resultObservation = null
+          } catch {}
         }
       } catch (e) {
         console.error('❌ [GET COMPLETED DETAILS] Error parsing ecg_report:', e);
@@ -224,7 +228,9 @@ export const getCompletedTaskDetails = async (task_id) => {
         phone: task.Visit?.Patient?.phone,
         allergies: task.Visit?.Patient?.allergic_to
       },
-      observation: transaction?.remarks || null,
+      observation: task.NurseTaskMaster?.task_name?.toUpperCase().includes('ECG')
+        ? null
+        : (transaction?.remarks || null),
       remarks: transaction?.additional_remarks || null,
       medications_used: medicationsUsed,
       ecg_report: ecgReportData,
@@ -333,8 +339,11 @@ export const completeTask = async ({
       task_id,
       performed_by_code: staff_code,
       performed_at: new Date(),
-      remarks: observation || 'Task completed',
-      additional_remarks: remarks,
+      remarks: isECG
+        ? JSON.stringify({ observation, ecg_report })
+        : (observation || 'Task completed'),
+      additional_remarks: isECG ? null : remarks,
+
       medications_used: isECG ? null : (medications_used?.length ? JSON.stringify(medications_used) : null),
       ecg_report: isECG ? (ecg_report ? JSON.stringify(ecg_report) : null) : null,
       status: 'COMPLETED'
