@@ -52,40 +52,6 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logger - ADDED FOR DEBUGGING
-app.use((req, res, next) => {
-  console.log(`\n📥 [${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('📋 Headers:', {
-    'content-type': req.headers['content-type'],
-    'authorization': req.headers['authorization'] ? 'Bearer ***' : 'None'
-  });
-  
-  // Only log body for POST/PUT/PATCH
-  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-    console.log('📦 Body:', JSON.stringify(req.body, null, 2));
-    console.log('📦 Body keys:', Object.keys(req.body || {}));
-  }
-  next();
-});
-
-// Specific debug middleware for nurse routes
-app.use('/api/nurse', (req, res, next) => {
-  console.log('🏥 [NURSE ROUTE] Intercepted');
-  console.log('🏥 [NURSE ROUTE] Method:', req.method);
-  console.log('🏥 [NURSE ROUTE] Path:', req.path);
-  console.log('🏥 [NURSE ROUTE] Full URL:', req.originalUrl);
-  
-  if (req.method === 'POST' && req.path.includes('/complete')) {
-    console.log('🏥 [COMPLETE TASK ROUTE] Body received:', req.body);
-    console.log('🏥 [COMPLETE TASK ROUTE] secret_code:', req.body?.secret_code);
-    console.log('🏥 [COMPLETE TASK ROUTE] observation:', req.body?.observation);
-    console.log('🏥 [COMPLETE TASK ROUTE] remarks:', req.body?.remarks);
-    console.log('🏥 [COMPLETE TASK ROUTE] medications_used:', req.body?.medications_used);
-  }
-  
-  next();
-});
-
 // -------------------
 // Routes
 // -------------------
