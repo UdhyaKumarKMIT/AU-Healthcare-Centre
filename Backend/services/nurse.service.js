@@ -6,7 +6,6 @@ import {
   Visit, 
   Patient, 
   Doctor,
-  Medicine,
   NurseTaskMaster,
   StaffDetails,
   SystemAuditLog,
@@ -256,6 +255,9 @@ export const completeTask = async ({
   ecg_report
 }) => {
   return await sequelize.transaction(async (t) => {
+
+    let StockModel = null
+
     // Verify staff member exists
     const staff = await StaffDetails.findOne({
       where: { code: staff_code, role: 'NURSE_RECEPTIONIST', status: 'ACTIVE' },
@@ -282,12 +284,22 @@ export const completeTask = async ({
     }
 
     // Determine stock type based on task type
-    const taskName = task.NurseTaskMaster?.task_name?.toLowerCase() || '';
-    const isDressingTask = taskName.includes('dressing') || taskName.includes('wound');
-    const StockModel = isDressingTask ? DressingStock : NurseStock;
+    const taskName = task.NurseTaskMaster.task_name.toUpperCase()
+    const isECG = taskName.includes('ECG')
+    const isDressing = taskName.includes('DRESSING') || taskName.includes('WOUND')
+
+    if (isECG && medications_used?.length)
+      throw new ApiError(400,'ECG task cannot use medicines')
+
+    if (!isECG && ecg_report)
+      throw new ApiError(400,'ECG report allowed only for ECG task')
+
+    if (isECG) StockModel = null
+    else StockModel = isDressing ? DressingStock : NurseStock
+
 
     // Reduce stock for each medication used
-    if (medications_used && Array.isArray(medications_used) && medications_used.length > 0) {
+    if (!isECG && medications_used?.length && medications_used && Array.isArray(medications_used) && medications_used.length > 0) {
       for (const med of medications_used) {
         const { medicine_id, batch_no, quantity } = med;
 
@@ -296,27 +308,18 @@ export const completeTask = async ({
         }
 
         // Find stock entry
-        const stock = await StockModel.findOne({
-          where: { medicine_id, batch_no },
-          transaction: t,
-          lock: t.LOCK.UPDATE
-        });
+      const stock = await StockModel.findOne({
+        where: { medicine_id, batch_no },
+        transaction: t,
+        lock: t.LOCK.UPDATE
+      })
 
-        if (!stock) {
-          const medicine = await Medicine.findByPk(medicine_id);
-          throw new ApiError(404, `Stock not found for ${medicine?.name || 'medicine'} (Batch: ${batch_no})`);
-        }
+      if (!stock) throw new ApiError(404,'Stock not found for selected item')
+      if (stock.quantity < quantity) throw new ApiError(400,'Insufficient stock for selected item')
 
-        if (stock.quantity < quantity) {
-          const medicine = await Medicine.findByPk(medicine_id);
-          throw new ApiError(400, `Insufficient stock for ${medicine?.name || 'medicine'}. Available: ${stock.quantity}`);
-        }
+      await stock.update({ quantity: stock.quantity - quantity }, { transaction: t })
 
-        // Reduce stock
-        await stock.update(
-          { quantity: stock.quantity - quantity },
-          { transaction: t }
-        );
+
 
         // Delete if stock is 0
         if (stock.quantity === quantity) {
@@ -332,8 +335,8 @@ export const completeTask = async ({
       performed_at: new Date(),
       remarks: observation || 'Task completed',
       additional_remarks: remarks,
-      medications_used: medications_used && medications_used.length > 0 ? JSON.stringify(medications_used) : null,
-      ecg_report: ecg_report ? JSON.stringify(ecg_report) : null,
+      medications_used: isECG ? null : (medications_used?.length ? JSON.stringify(medications_used) : null),
+      ecg_report: isECG ? (ecg_report ? JSON.stringify(ecg_report) : null) : null,
       status: 'COMPLETED'
     }, { transaction: t });
 
@@ -343,12 +346,6 @@ export const completeTask = async ({
         completed_at: new Date()
     }, { transaction: t });
 
-    if (task.Visit) {
-    await task.Visit.update(
-        { status: 'COMPLETED' },
-        { transaction: t }
-    );
-    }
 
     // Log in system audit
     await SystemAuditLog.create({
@@ -373,18 +370,8 @@ export const completeTask = async ({
 export const getAvailableStock = async (stock_type = 'NURSE') => {
   const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
 
-  const stock = await StockModel.findAll({
-    where: {
-      quantity: { [Op.gt]: 0 }
-    },
-    include: [
-      {
-        model: Medicine,
-        attributes: ['medicine_id', 'name', 'type']
-      }
-    ],
-    order: [['expiry', 'ASC']]
-  });
+  const stock = await StockModel.findAll({ where:{ quantity:{[Op.gt]:0}}, order:[['expiry','ASC']] })
+
 
   return stock.map(s => ({
     sub_stock_id: s.sub_stock_id,
