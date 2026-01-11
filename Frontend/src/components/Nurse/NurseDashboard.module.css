@@ -1335,3 +1335,8 @@
   width:16px;
   height:16px;
 }
+.textarea {
+  width: 100%;
+  resize: vertical;
+}
+
