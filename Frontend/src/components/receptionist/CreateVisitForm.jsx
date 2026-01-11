@@ -151,16 +151,18 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
     
-    // Optional: CBG validation
-    if (formData.cbg && (formData.cbg < 40 || formData.cbg > 600)) {
+    if (!formData.cbg) {
+      newErrors.cbg = 'CBG is required';
+    } else if (formData.cbg < 40 || formData.cbg > 600) {
       newErrors.cbg = 'CBG must be between 40-600 mg/dL';
     }
-    
-    // Optional: SpO2 validation
-    if (formData.spo2 && (formData.spo2 < 70 || formData.spo2 > 100)) {
+
+    if (!formData.spo2) {
+      newErrors.spo2 = 'SpO2 is required';
+    } else if (formData.spo2 < 70 || formData.spo2 > 100) {
       newErrors.spo2 = 'SpO2 must be between 70-100%';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
