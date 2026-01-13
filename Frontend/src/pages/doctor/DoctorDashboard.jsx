@@ -1140,6 +1140,92 @@ const DoctorDashboard = () => {
                     fetchNurseTaskTypes();
                   }}
                 />
+
+                {/* Refer to Other Hospital */}
+                {selectedPatient && diagnosisSaved && diagnoses.length > 0 && (
+                  <div style={{ padding: "24px", borderTop: "1px solid #e2e8f0" }}>
+                    <button
+                      onClick={async () => {
+                        const referralReason = prompt("Enter referral reason (e.g., specialized treatment required, advanced care needed):");
+                        
+                        if (!referralReason) {
+                          return;
+                        }
+
+                        const confirmed = window.confirm(
+                          `Are you sure you want to refer ${selectedPatient.patientName} to another hospital?\n\nThis will complete the visit without prescription.`
+                        );
+
+                        if (!confirmed) return;
+
+                        try {
+                          // Complete visit with referral note
+                          const response = await fetch(
+                            `${API_BASE}/api/doctor/visit/${selectedPatient.visitId}/complete`,
+                            {
+                              method: "PATCH",
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                status: "COMPLETED",
+                                remarks: `REFERRED TO OTHER HOSPITAL: ${referralReason}`,
+                              }),
+                            }
+                          );
+
+                          if (!response.ok) throw new Error("Failed to complete referral");
+
+                          alert(`Patient referred successfully.\n\nReason: ${referralReason}`);
+
+                          // Reset and refresh
+                          setSelectedPatient(null);
+                          setDiagnoses([]);
+                          setDiagnosisSaved(false);
+                          setCurrentDiagnosis({
+                            diagnosis_name: '',
+                            diagnosis_code: '',
+                            diagnosis_notes: ''
+                          });
+                          setEditingId(null);
+                          dispatch(fetchPatientQueue(doctorId));
+                          await fetchTodayVisitsCount();
+                        } catch (error) {
+                          console.error("Error referring patient:", error);
+                          alert("Failed to complete referral. Please try again.");
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "14px",
+                        background: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px"
+                      }}
+                    >
+                      <span style={{ fontSize: "18px" }}>🏥</span>
+                      Refer to Other Hospital (Can't Handle)
+                    </button>
+                    <p style={{ 
+                      fontSize: "12px", 
+                      color: "#64748b", 
+                      marginTop: "8px", 
+                      textAlign: "center",
+                      fontStyle: "italic" 
+                    }}>
+                      Use this when patient requires specialized treatment not available here
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

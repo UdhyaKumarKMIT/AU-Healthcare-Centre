@@ -278,12 +278,38 @@ export const updateVisitStatus = async (req, res, next) => {
 
 export const completeVisit = async (req, res, next) => {
   try {
+    const { remarks } = req.body;
+    
     await doctorService.updateVisitStatus({
       visit_id: req.params.visit_id,
       newStatus: 'COMPLETED'
     });
-    res.json({ success: true, message: 'Visit completed' });
+
+    // Log referral if remarks provided
+    if (remarks) {
+      const { SystemAuditLog } = await import('../models/sequelize/index.js');
+      const { randomUUID } = await import('crypto');
+      
+      await SystemAuditLog.create({
+        log_id: randomUUID(),
+        actor_user_id: req.user?.user_id || null,
+        actor_role: req.user?.role || 'DOCTOR',
+        action: 'COMPLETE_VISIT',
+        entity_type: 'VISIT',
+        entity_id: req.params.visit_id,
+        remarks: remarks,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        created_at: new Date()
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: remarks ? 'Visit completed with referral' : 'Visit completed' 
+    });
   } catch (e) {
+    console.error('Error completing visit:', e);
     next(e);
   }
 };
