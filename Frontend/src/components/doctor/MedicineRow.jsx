@@ -85,8 +85,22 @@ const MedicineRow = ({
                     className={styles.suggestionItem}
                     onClick={() => handleSelectSuggestion(s)}
                   >
-                    <span className={styles.suggestionName}>{s.name}</span>
-                    <span className={styles.suggestionType}>{s.type}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div>
+                        <span className={styles.suggestionName}>{s.name}</span>
+                        <span className={styles.suggestionType}>{s.type}</span>
+                      </div>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: s.available_stock > 0 ? (s.available_stock < 10 ? '#fef3c7' : '#dcfce7') : '#fee2e2',
+                        color: s.available_stock > 0 ? (s.available_stock < 10 ? '#92400e' : '#14532d') : '#991b1b'
+                      }}>
+                        Stock: {s.available_stock || 0}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -99,6 +113,23 @@ const MedicineRow = ({
           <label className={styles.fieldLabel}>Medicine Type</label>
           <div className={styles.typeDisplay}>
             {medicine.type || 'Select medicine'}
+            {medicine.type && medicine.available_stock !== undefined && (
+              <span style={{
+                marginLeft: '12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: medicine.available_stock > 0 
+                  ? (medicine.available_stock < 10 ? '#fef3c7' : '#dcfce7') 
+                  : '#fee2e2',
+                color: medicine.available_stock > 0 
+                  ? (medicine.available_stock < 10 ? '#92400e' : '#14532d') 
+                  : '#991b1b'
+              }}>
+                Stock: {medicine.available_stock}
+              </span>
+            )}
           </div>
         </div>
 

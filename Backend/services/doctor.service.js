@@ -12,6 +12,7 @@ import {
   StaffDetails,
   User,
   SystemAuditLog,
+  PharmacyStock,
   sequelize 
 } from '../models/sequelize/index.js';
 import { Op } from 'sequelize';
@@ -564,15 +565,33 @@ export const searchMedicines = async (searchQuery) => {
   const medicines = await Medicine.findAll({
     where: whereClause,
     attributes: ['medicine_id', 'name', 'type'],
+    include: [
+      {
+        model: PharmacyStock,
+        attributes: ['quantity', 'batch_no', 'expiry'],
+        required: false
+      }
+    ],
     order: [['name', 'ASC']],
     limit: 50
   });
 
-  return medicines.map(m => ({
-    id: m.medicine_id,
-    name: m.name,
-    type: m.type
-  }));
+  return medicines.map(m => {
+    // Calculate total available stock across all batches
+    const totalStock = m.PharmacyStocks?.reduce((sum, stock) => sum + stock.quantity, 0) || 0;
+    
+    return {
+      id: m.medicine_id,
+      name: m.name,
+      type: m.type,
+      available_stock: totalStock,
+      stock_details: m.PharmacyStocks?.map(s => ({
+        batch_no: s.batch_no,
+        quantity: s.quantity,
+        expiry: s.expiry
+      })) || []
+    };
+  });
 };
 
 // ============================================================================

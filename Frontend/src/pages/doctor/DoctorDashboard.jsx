@@ -631,6 +631,8 @@ const DoctorDashboard = () => {
       medicineId: medicine.id,
       name: medicine.name,
       type: medicine.type,
+      available_stock: medicine.available_stock,
+      stock_details: medicine.stock_details
     };
     setMedicines(newMeds);
     setMedicineSearchResults([]);
