@@ -328,3 +328,41 @@ export const getTodayVisitsCount = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getNurseTaskTypes = async (req, res, next) => {
+  try {
+    const taskTypes = await doctorService.getNurseTaskTypes();
+    
+    res.json({
+      success: true,
+      data: taskTypes
+    });
+  } catch (error) {
+    console.error('Error fetching nurse task types:', error);
+    next(error);
+  }
+};
+
+export const createNurseTask = async (req, res, next) => {
+  try {
+    const { visit_id, doctor_id, task_type_id, instructions } = req.body;
+    
+    if (!visit_id || !doctor_id || !task_type_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id, doctor_id, and task_type_id are required'
+      });
+    }
+    
+    const task = await doctorService.createNurseTask(visit_id, doctor_id, task_type_id, instructions);
+    
+    res.json({
+      success: true,
+      data: task,
+      message: 'Nurse task created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating nurse task:', error);
+    next(error);
+  }
+};

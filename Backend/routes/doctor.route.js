@@ -22,6 +22,10 @@ router.get('/medicines', authenticate, authorize(ROLES.DOCTOR), doctorController
 // ==================== NURSES ====================
 router.get('/nurses', authenticate, authorize(ROLES.DOCTOR), doctorController.getAvailableNurses);
 
+// ==================== NURSE TASKS ====================
+router.get('/nurse-task-types', authenticate, authorize(ROLES.DOCTOR), doctorController.getNurseTaskTypes);
+router.post('/nurse-task', authenticate, authorize(ROLES.DOCTOR), doctorController.createNurseTask);
+
 // ==================== DIAGNOSIS ====================
 router.get('/visit/:visit_id/diagnoses', authenticate, authorize(ROLES.DOCTOR), doctorController.getVisitDiagnoses);
 router.post('/diagnosis', authenticate, authorize(ROLES.DOCTOR), doctorController.addDiagnosis);

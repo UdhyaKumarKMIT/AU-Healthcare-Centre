@@ -49,6 +49,8 @@ const DoctorDashboard = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [nurses, setNurses] = useState([]); // For nurse assignments
   const [todayVisitsCount, setTodayVisitsCount] = useState(0); // Today's visits count
+  const [nurseTaskTypes, setNurseTaskTypes] = useState([]); // Available nurse task types
+  const [nurseTasks, setNurseTasks] = useState([]); // Nurse tasks to be created
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
@@ -174,6 +176,30 @@ const DoctorDashboard = () => {
       console.error("❌ DEBUG: Error fetching nurses:", error);
       console.error("❌ DEBUG: Error stack:", error.stack);
       setNurses([]);
+    }
+  };
+
+  const fetchNurseTaskTypes = async () => {
+    try {
+      console.log("📋 Fetching nurse task types...");
+      const response = await fetch(`${API_BASE}/api/doctor/nurse-task-types`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Fetched nurse task types:", data);
+        setNurseTaskTypes(data.data || []);
+      } else {
+        console.error("❌ Failed to fetch nurse task types");
+        setNurseTaskTypes([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching nurse task types:", error);
+      setNurseTaskTypes([]);
     }
   };
 
@@ -521,10 +547,41 @@ const DoctorDashboard = () => {
       const result = await prescriptionResponse.json();
       console.log("✅ Prescription saved:", result);
 
+      // Save nurse tasks if any
+      if (nurseTasks.length > 0) {
+        console.log("📋 Saving nurse tasks:", nurseTasks);
+        
+        for (const task of nurseTasks) {
+          try {
+            const taskResponse = await fetch(`${API_BASE}/api/doctor/nurse-task`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                visit_id: selectedPatient.visitId,
+                doctor_id: doctorId,
+                task_type_id: task.task_type_id,
+                instructions: task.instructions || ""
+              }),
+            });
+
+            if (!taskResponse.ok) {
+              console.error("❌ Failed to create nurse task");
+            } else {
+              console.log("✅ Nurse task created successfully");
+            }
+          } catch (error) {
+            console.error("❌ Error creating nurse task:", error);
+          }
+        }
+      }
+
       // Show success message with nurse task info
       const nurseTaskMsg =
-        result.data.nurse_tasks_created > 0
-          ? `\n${result.data.nurse_tasks_created} nurse task(s) created for injectable medicines.`
+        result.data.nurse_tasks_created > 0 || nurseTasks.length > 0
+          ? `\n${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
           : "";
 
       alert(`Visit completed successfully!${nurseTaskMsg}`);
@@ -543,6 +600,7 @@ const DoctorDashboard = () => {
         diagnosis_notes: ''
       });
       setEditingId(null);
+      setNurseTasks([]); // Clear nurse tasks
       setMedicines([
         {
           medicineId: null,
@@ -1075,7 +1133,10 @@ const DoctorDashboard = () => {
                 <DiagnosisSummary
                   patient={selectedPatient}
                   diagnoses={diagnoses}
-                  onProceedToPrescription={() => setShowPrescriptionModal(true)}
+                  onProceedToPrescription={() => {
+                    setShowPrescriptionModal(true);
+                    fetchNurseTaskTypes();
+                  }}
                 />
               </div>
             </div>
@@ -1238,6 +1299,139 @@ const DoctorDashboard = () => {
               >
                 + Add Medicine
               </button>
+
+              {/* Nurse Tasks Section */}
+              <div style={{ marginTop: "32px", padding: "24px", background: "#f1f5f9", borderRadius: "8px" }}>
+                <h3 style={{ color: "#1a237e", marginBottom: "16px", fontSize: "16px", fontWeight: 600 }}>
+                  Nurse Tasks
+                </h3>
+                
+                {nurseTasks.map((task, idx) => (
+                  <div key={idx} style={{ 
+                    background: "white", 
+                    padding: "16px", 
+                    borderRadius: "8px", 
+                    marginBottom: "12px",
+                    border: "1px solid #e2e8f0"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "8px" }}>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ color: "#1a237e" }}>
+                          {nurseTaskTypes.find(t => t.task_type_id === task.task_type_id)?.task_name || 'Unknown Task'}
+                        </strong>
+                        {task.instructions && (
+                          <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>
+                            {task.instructions}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setNurseTasks(nurseTasks.filter((_, i) => i !== idx))}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          marginLeft: "12px"
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ 
+                  background: "white", 
+                  padding: "16px", 
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0"
+                }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                        Task Type
+                      </label>
+                      <select
+                        id="nurseTaskType"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          color: "#1e293b"
+                        }}
+                      >
+                        <option value="">Select a task...</option>
+                        {nurseTaskTypes.map(taskType => (
+                          <option key={taskType.task_type_id} value={taskType.task_type_id}>
+                            {taskType.task_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                        Instructions
+                      </label>
+                      <input
+                        type="text"
+                        id="nurseTaskInstructions"
+                        placeholder="Enter instructions..."
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          color: "#1e293b"
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const taskTypeSelect = document.getElementById('nurseTaskType');
+                        const instructionsInput = document.getElementById('nurseTaskInstructions');
+                        const task_type_id = taskTypeSelect.value;
+                        const instructions = instructionsInput.value;
+
+                        if (!task_type_id) {
+                          alert('Please select a task type');
+                          return;
+                        }
+
+                        setNurseTasks([...nurseTasks, { task_type_id, instructions }]);
+                        taskTypeSelect.value = '';
+                        instructionsInput.value = '';
+                      }}
+                      style={{
+                        marginTop: "28px",
+                        padding: "10px 20px",
+                        background: "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      Add Task
+                    </button>
+                  </div>
+                </div>
+                
+                {nurseTaskTypes.length === 0 && (
+                  <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                    No task types available. Please populate the nurse_task_master table.
+                  </p>
+                )}
+              </div>
 
               <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
                 <button

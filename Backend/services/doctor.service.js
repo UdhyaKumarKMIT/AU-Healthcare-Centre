@@ -596,3 +596,39 @@ export const getAvailableNurses = async () => {
     email: n.email
   }));
 };
+
+// ============================================================================
+// NURSE TASKS
+// ============================================================================
+export const getNurseTaskTypes = async () => {
+  const taskTypes = await NurseTaskMaster.findAll({
+    attributes: ['task_type_id', 'task_name'],
+    order: [['task_name', 'ASC']]
+  });
+
+  return taskTypes.map(t => ({
+    task_type_id: t.task_type_id,
+    task_name: t.task_name
+  }));
+};
+
+export const createNurseTask = async (visit_id, doctor_id, task_type_id, instructions) => {
+  const task = await NurseTask.create({
+    visit_id,
+    doctor_id,
+    task_type_id,
+    instructions,
+    status: 'PENDING',
+    assigned_at: new Date()
+  });
+
+  return {
+    task_id: task.task_id,
+    visit_id: task.visit_id,
+    task_type_id: task.task_type_id,
+    instructions: task.instructions,
+    status: task.status,
+    assigned_at: task.assigned_at
+  };
+};
+
