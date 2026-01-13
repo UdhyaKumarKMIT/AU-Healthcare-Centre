@@ -43,7 +43,8 @@ const DoctorDashboard = () => {
   const [currentDiagnosis, setCurrentDiagnosis] = useState({
     diagnosis_name: '',
     diagnosis_code: '',
-    diagnosis_notes: ''
+    complaints: '',
+    remarks: ''
   });
   const [editingId, setEditingId] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -326,7 +327,8 @@ const DoctorDashboard = () => {
     setCurrentDiagnosis({
       diagnosis_name: '',
       diagnosis_code: '',
-      diagnosis_notes: ''
+      complaints: '',
+      remarks: ''
     });
   };
 
@@ -338,7 +340,8 @@ const DoctorDashboard = () => {
       setCurrentDiagnosis({
         diagnosis_name: '',
         diagnosis_code: '',
-        diagnosis_notes: ''
+        complaints: '',
+        remarks: ''
       });
     }
   };
@@ -349,7 +352,8 @@ const DoctorDashboard = () => {
       setCurrentDiagnosis({
         diagnosis_name: diagnosis.diagnosis_name,
         diagnosis_code: diagnosis.diagnosis_code,
-        diagnosis_notes: diagnosis.diagnosis_notes
+        complaints: diagnosis.complaints,
+        remarks: diagnosis.remarks
       });
       setEditingId(id);
       console.log('✏️ Editing diagnosis:', id);
@@ -361,7 +365,8 @@ const DoctorDashboard = () => {
     setCurrentDiagnosis({
       diagnosis_name: '',
       diagnosis_code: '',
-      diagnosis_notes: ''
+      complaints: '',
+      remarks: ''
     });
   };
 
@@ -384,7 +389,8 @@ const DoctorDashboard = () => {
           diagnoses: diagnoses.map(d => ({
             diagnosis_code: d.diagnosis_code || null,
             diagnosis_name: d.diagnosis_name,
-            diagnosis_notes: d.diagnosis_notes || null,
+            complaints: d.complaints || null,
+            remarks: d.remarks || null,
           }))
         }),
       });
@@ -404,7 +410,8 @@ const DoctorDashboard = () => {
       setCurrentDiagnosis({
         diagnosis_name: '',
         diagnosis_code: '',
-        diagnosis_notes: ''
+        complaints: '',
+        remarks: ''
       });
       setEditingId(null);
     } catch (error) {
@@ -598,7 +605,8 @@ const DoctorDashboard = () => {
       setCurrentDiagnosis({
         diagnosis_name: '',
         diagnosis_code: '',
-        diagnosis_notes: ''
+        complaints: '',
+        remarks: ''
       });
       setEditingId(null);
       setNurseTasks([]); // Clear nurse tasks
@@ -943,6 +951,33 @@ const DoctorDashboard = () => {
                           marginBottom: "6px",
                         }}
                       >
+                        Patient Complaints *
+                      </label>
+                      <textarea
+                        value={currentDiagnosis.complaints}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, complaints: e.target.value})}
+                        placeholder="What symptoms/complaints did the patient report?"
+                        rows="3"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          resize: "vertical",
+                          fontFamily: "inherit",
+                        }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: "16px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          marginBottom: "6px",
+                        }}
+                      >
                         Diagnosis Name *
                       </label>
                       <input
@@ -993,12 +1028,12 @@ const DoctorDashboard = () => {
                           marginBottom: "6px",
                         }}
                       >
-                        Diagnosis Notes
+                        Doctor's Remarks
                       </label>
                       <textarea
-                        value={currentDiagnosis.diagnosis_notes}
-                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, diagnosis_notes: e.target.value})}
-                        placeholder="Additional notes..."
+                        value={currentDiagnosis.remarks}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, remarks: e.target.value})}
+                        placeholder="Additional notes, observations, treatment plan..."
                         rows="4"
                         style={{
                           width: "100%",
@@ -1121,9 +1156,14 @@ const DoctorDashboard = () => {
                               <strong>#{index + 1}: {diag.diagnosis_name}</strong>
                               {diag.diagnosis_code && <span style={{ marginLeft: "8px", color: "#64748b" }}>({diag.diagnosis_code})</span>}
                             </div>
-                            {diag.diagnosis_notes && (
+                            {diag.complaints && (
                               <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
-                                {diag.diagnosis_notes}
+                                <strong>Complaints:</strong> {diag.complaints}
+                              </div>
+                            )}
+                            {diag.remarks && (
+                              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                                <strong>Remarks:</strong> {diag.remarks}
                               </div>
                             )}
                           </div>
@@ -1187,7 +1227,8 @@ const DoctorDashboard = () => {
                           setCurrentDiagnosis({
                             diagnosis_name: '',
                             diagnosis_code: '',
-                            diagnosis_notes: ''
+                            complaints: '',
+                            remarks: ''
                           });
                           setEditingId(null);
                           dispatch(fetchPatientQueue(doctorId));

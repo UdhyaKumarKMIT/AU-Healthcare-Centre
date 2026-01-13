@@ -249,10 +249,22 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                                         background: 'white',
                                         borderRadius: '4px',
                                         fontSize: '13px',
+                                        color: '#475569'
+                                      }}>
+                                        <strong>Patient Complaints:</strong> {diag.complaints}
+                                      </p>
+                                    )}
+                                    {diag.remarks && (
+                                      <p className={styles.diagnosisNotes} style={{ 
+                                        marginTop: '8px',
+                                        padding: '8px',
+                                        background: 'white',
+                                        borderRadius: '4px',
+                                        fontSize: '13px',
                                         color: '#475569',
                                         fontStyle: 'italic'
                                       }}>
-                                        <strong>Notes:</strong> {diag.complaints}
+                                        <strong>Doctor's Remarks:</strong> {diag.remarks}
                                       </p>
                                     )}
                                   </div>

@@ -118,7 +118,7 @@ export const addMultipleDiagnoses = async ({ visit_id, doctor_id, diagnoses }) =
     const createdDiagnoses = [];
 
     for (const diag of diagnoses) {
-      const { diagnosis_name, diagnosis_code, diagnosis_notes } = diag;
+      const { diagnosis_name, diagnosis_code, complaints, remarks } = diag;
 
       if (!diagnosis_name) {
         throw new ApiError(400, 'Diagnosis name is required for each diagnosis');
@@ -127,9 +127,9 @@ export const addMultipleDiagnoses = async ({ visit_id, doctor_id, diagnoses }) =
       const diagnosis = await Diagnosis.create({
         visit_id,
         doctor_id,
-        complaints: diagnosis_notes || null,
+        complaints: complaints || null,
         diagnosis_name,
-        remarks: diagnosis_code ? `Code: ${diagnosis_code}` : null,
+        remarks: remarks || null,
         created_at: new Date()
       }, { transaction: t });
       createdDiagnoses.push(diagnosis);
@@ -168,8 +168,9 @@ export const getVisitDiagnoses = async (visit_id) => {
   return diagnoses.map(d => ({
     id: d.diagnosis_id,
     diagnosis_name: d.diagnosis_name,
-    diagnosis_code: d.remarks?.replace('Code: ', '') || null,
-    diagnosis_notes: d.complaints,
+    diagnosis_code: null,
+    complaints: d.complaints,
+    remarks: d.remarks,
     createdAt: d.created_at
   }));
 };
