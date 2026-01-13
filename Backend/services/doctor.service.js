@@ -490,6 +490,7 @@ export const getPatientHistory = async (patient_id) => {
         include: [
           {
             model: PrescriptionItem,
+            attributes: ['duration_days', 'dosage_per_day', 'quantity'],
             include: [
               {
                 model: Medicine,
@@ -514,29 +515,41 @@ export const getPatientHistory = async (patient_id) => {
       patient_type: patient.patient_type,
       allergies: patient.allergic_to
     },
-    visits: pastVisits.map(v => ({
-      visit_id: v.visit_id,
-      visit_date: v.visit_date,
-      reason: v.reason,
-      status: v.status,
-      doctor_name: v.Doctor?.name,
-      doctor_specialization: v.Doctor?.specialization,
-      diagnoses: v.Diagnoses?.map(d => ({
-        diagnosis_name: d.diagnosis_name,
-        complaints: d.complaints,
-        remarks: d.remarks
-      })) || [],
-      prescriptions: v.Prescriptions?.map(p => ({
-        prescription_id: p.prescription_id,
-        created_at: p.created_at,
-        medicines: p.PrescriptionItems?.map(pi => ({
-          medicine_name: pi.Medicine?.name,
-          medicine_type: pi.Medicine?.type,
-          duration_days: pi.duration_days,
-          dosage_per_day: pi.dosage_per_day
+    pastVisits: pastVisits.map(v => {
+      // Get the first diagnosis for main display (for backwards compatibility)
+      const firstDiagnosis = v.Diagnoses?.[0];
+      
+      return {
+        visit_id: v.visit_id,
+        visit_date: v.visit_date,
+        visit_type: v.visit_type,
+        reason: v.reason,
+        status: v.status,
+        doctor_name: v.Doctor?.name,
+        specialization: v.Doctor?.specialization,
+        // Main diagnosis fields (first diagnosis)
+        diagnosis_name: firstDiagnosis?.diagnosis_name,
+        diagnosis_notes: firstDiagnosis?.remarks,
+        // All diagnoses
+        diagnoses: v.Diagnoses?.map(d => ({
+          diagnosis_name: d.diagnosis_name,
+          complaints: d.complaints,
+          remarks: d.remarks
+        })) || [],
+        // Prescriptions
+        prescriptions: v.Prescriptions?.map(p => ({
+          prescription_id: p.prescription_id,
+          created_at: p.created_at,
+          medicines: p.PrescriptionItems?.map(pi => ({
+            medicine_name: pi.Medicine?.name,
+            medicine_type: pi.Medicine?.type,
+            duration_days: pi.duration_days,
+            dosage_per_day: pi.dosage_per_day,
+            quantity: pi.quantity
+          })) || []
         })) || []
-      })) || []
-    }))
+      };
+    })
   };
 };
 
