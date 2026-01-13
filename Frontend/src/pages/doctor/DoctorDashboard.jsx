@@ -14,6 +14,7 @@ import DiagnosisSummary from "../../components/doctor/DiagnosisSummary";
 import MedicineRow from "../../components/doctor/MedicineRow";
 import PatientHistoryModal from "../../components/doctor/PatientHistoryModal";
 import Header from "../../components/Header/Header";
+import { toast } from 'react-toastify';
 import styles from "./DoctorDashboard.module.css";
 
 const API_BASE = "http://localhost:5000";
@@ -227,7 +228,7 @@ const DoctorDashboard = () => {
       console.log(`✅ Status updated to ${newStatus}`);
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert("Failed to update visit status");
+      toast.error('Failed to update visit status');
     }
   };
 
@@ -298,7 +299,7 @@ const DoctorDashboard = () => {
 
   const addDiagnosis = () => {
     if (!currentDiagnosis.diagnosis_name.trim()) {
-      alert('Please enter diagnosis name');
+      toast.error('Please enter diagnosis name');
       return;
     }
     
@@ -366,7 +367,7 @@ const DoctorDashboard = () => {
 
   const saveDiagnoses = async () => {
     if (diagnoses.length === 0) {
-      alert('Please add at least one diagnosis');
+      toast.error('Please add at least one diagnosis');
       return;
     }
 
@@ -396,7 +397,7 @@ const DoctorDashboard = () => {
       // Update status to DIAGNOSED
       await handleStatusUpdate(selectedPatient.visitId, "DIAGNOSED");
 
-      alert(`${diagnoses.length} diagnosis(es) saved successfully!`);
+      toast.success(`${diagnoses.length} diagnosis(es) saved successfully!`);
       
       // Mark as saved and clear form (keep diagnoses for display in summary)
       setDiagnosisSaved(true);
@@ -408,7 +409,7 @@ const DoctorDashboard = () => {
       setEditingId(null);
     } catch (error) {
       console.error("Error saving diagnoses:", error);
-      alert("Failed to save diagnoses: " + error.message);
+      toast.error("Failed to save diagnoses: " + error.message);
     }
   };
 
@@ -446,22 +447,22 @@ const DoctorDashboard = () => {
       });
 
       if (hasEmptyMedicine) {
-        alert("Please fill all required medicine fields");
+        toast.error('Please fill all required medicine fields');
         return;
       }
 
       if (hasInvalidInjectable) {
-        alert("Please assign nurse and route for all injections/drips");
+        toast.error('Please assign nurse and route for all injections/drips');
         return;
       }
 
       if (hasInvalidDrip) {
-        alert("Please set infusion duration (minimum 5 mins) for all drips");
+        toast.error('Please set infusion duration (minimum 5 mins) for all drips');
         return;
       }
 
       if (hasNoTiming) {
-        alert("Please select at least one timing for non-injectable medicines");
+        toast.error('Please select at least one timing for non-injectable medicines');
         return;
       }
 
@@ -581,10 +582,10 @@ const DoctorDashboard = () => {
       // Show success message with nurse task info
       const nurseTaskMsg =
         result.data.nurse_tasks_created > 0 || nurseTasks.length > 0
-          ? `\n${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
+          ? ` ${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
           : "";
 
-      alert(`Visit completed successfully!${nurseTaskMsg}`);
+      toast.success(`Visit completed successfully!${nurseTaskMsg}`);
 
       // Update status to COMPLETED
       await handleStatusUpdate(selectedPatient.visitId, "COMPLETED");
@@ -620,7 +621,7 @@ const DoctorDashboard = () => {
       await fetchTodayVisitsCount();
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to save prescription: " + error.message);
+      toast.error('Failed to save prescription: ' + error.message);
     }
   };
 
@@ -1177,7 +1178,7 @@ const DoctorDashboard = () => {
 
                           if (!response.ok) throw new Error("Failed to complete referral");
 
-                          alert(`Patient referred successfully.\n\nReason: ${referralReason}`);
+                          toast.success(`Patient referred successfully. Reason: ${referralReason}`);
 
                           // Reset and refresh
                           setSelectedPatient(null);
@@ -1193,7 +1194,7 @@ const DoctorDashboard = () => {
                           await fetchTodayVisitsCount();
                         } catch (error) {
                           console.error("Error referring patient:", error);
-                          alert("Failed to complete referral. Please try again.");
+                          toast.error('Failed to complete referral. Please try again.');
                         }
                       }}
                       style={{
@@ -1340,7 +1341,7 @@ const DoctorDashboard = () => {
                       if (medicines.length > 1) {
                         setMedicines(medicines.filter((_, idx) => idx !== i));
                       } else {
-                        alert("At least one medicine is required");
+                        toast.error('At least one medicine is required');
                       }
                     }}
                     onFocus={() => setActiveMedicineIndex(i)}
@@ -1488,7 +1489,7 @@ const DoctorDashboard = () => {
                         const instructions = instructionsInput.value;
 
                         if (!task_type_id) {
-                          alert('Please select a task type');
+                          toast.error('Please select a task type');
                           return;
                         }
 
