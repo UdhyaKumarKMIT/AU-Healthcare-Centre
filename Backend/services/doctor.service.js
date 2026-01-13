@@ -385,7 +385,7 @@ export const getActiveDoctorVisits = async (doctor_id) => {
     include: [
       {
         model: Patient,
-        attributes: ['patient_id', 'name', 'dob', 'gender', 'phone', 'patient_type', 'allergic_to']
+        attributes: ['patient_id', 'name', 'dob', 'gender', 'phone', 'patient_type', 'allergic_to', 'created_at']
       },
       {
         model: Doctor,
@@ -400,6 +400,9 @@ export const getActiveDoctorVisits = async (doctor_id) => {
     order: [['visit_date', 'ASC']]
   });
 
+  console.log('🔍 Raw visits data (first visit):', JSON.stringify(visits[0], null, 2));
+  console.log('🔍 Visit keys:', visits[0] ? Object.keys(visits[0].dataValues) : 'No visits');
+
   // Helper function to calculate age from date of birth
   const calculateAge = (dob) => {
     if (!dob) return null;
@@ -413,36 +416,41 @@ export const getActiveDoctorVisits = async (doctor_id) => {
     return age;
   };
 
-  return visits.map((v, index) => ({
-    visit_id: v.visit_id,
-    patient_id: v.patient_id,
-    doctor_id: v.doctor_id,
-    visit_date: v.visit_date,
-    reason: v.reason,
-    status: v.status,
-    token_number: String(index + 1).padStart(3, '0'), // Generate token number
-    patient_name: v.Patient?.name,
-    patient_dob: v.Patient?.dob,
-    age: calculateAge(v.Patient?.dob),
-    gender: v.Patient?.gender,
-    patient_gender: v.Patient?.gender,
-    patient_phone: v.Patient?.phone,
-    patient_type: v.Patient?.patient_type,
-    patient_allergies: v.Patient?.allergic_to,
-    blood_group: null, // Not in current schema
-    chief_complaint: v.reason, // Alias for reason
-    visit_type: 'OPD', // Default visit type
-    doctor_name: v.Doctor?.name,
-    doctor_specialization: v.Doctor?.specialization,
-    vitals: v.Vital ? {
-      temperature: v.Vital.temperature,
-      bp_systolic: v.Vital.bp_systolic,
-      bp_diastolic: v.Vital.bp_diastolic,
-      heart_rate: v.Vital.heart_rate,
-      cbg: v.Vital.cbg,
-      spo2: v.Vital.spo2
-    } : null
-  }));
+  return visits.map((v, index) => {
+    console.log(`🔍 Visit ${v.visit_id} - Vitals object:`, v.Vital);
+    
+    return {
+      visit_id: v.visit_id,
+      patient_id: v.patient_id,
+      doctor_id: v.doctor_id,
+      visit_date: v.visit_date,
+      reason: v.reason,
+      status: v.status,
+      token_number: String(index + 1).padStart(3, '0'), // Generate token number
+      patient_name: v.Patient?.name,
+      patient_dob: v.Patient?.dob,
+      age: calculateAge(v.Patient?.dob),
+      gender: v.Patient?.gender,
+      patient_gender: v.Patient?.gender,
+      patient_phone: v.Patient?.phone,
+      patient_type: v.Patient?.patient_type,
+      patient_allergies: v.Patient?.allergic_to,
+      patient_created_at: v.Patient?.created_at,
+      blood_group: null, // Not in current schema
+      chief_complaint: v.reason, // Alias for reason
+      visit_type: 'OPD', // Default visit type
+      doctor_name: v.Doctor?.name,
+      doctor_specialization: v.Doctor?.specialization,
+      vitals: v.Vital ? {
+        temperature: v.Vital.temperature,
+        bp_systolic: v.Vital.bp_systolic,
+        bp_diastolic: v.Vital.bp_diastolic,
+        heart_rate: v.Vital.heart_rate,
+        cbg: v.Vital.cbg,
+        spo2: v.Vital.spo2
+      } : null
+    };
+  });
 };
 
 // ============================================================================

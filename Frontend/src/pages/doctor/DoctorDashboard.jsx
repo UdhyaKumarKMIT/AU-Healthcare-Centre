@@ -212,6 +212,8 @@ const DoctorDashboard = () => {
       "Status:",
       patient.status
     );
+    console.log("📊 Full patient data:", patient);
+    console.log("🩺 Patient vitals:", patient.vitals);
     setSelectedPatient(patient);
 
     // Check if patient is already diagnosed - fetch existing diagnoses
@@ -710,6 +712,116 @@ const DoctorDashboard = () => {
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>Diagnosis & Treatment</h2>
                 </div>
+
+                {/* Patient Information - Moved to top */}
+                {selectedPatient && (
+                  <div style={{ padding: "24px", borderBottom: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                      <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#1a237e", margin: 0 }}>
+                        Patient Information
+                      </h3>
+                      <span style={{
+                        background: selectedPatient.patientType === 'STUDENT' ? '#dbeafe' : selectedPatient.patientType === 'PERMANENT_STAFF' ? '#dcfce7' : '#fef3c7',
+                        color: selectedPatient.patientType === 'STUDENT' ? '#1e3a8a' : selectedPatient.patientType === 'PERMANENT_STAFF' ? '#14532d' : '#78350f',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 600
+                      }}>
+                        {selectedPatient.patientType?.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>FULL NAME</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.patientName}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>AGE / DOB</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>
+                          {selectedPatient.age} years
+                          {selectedPatient.patientDob && (
+                            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 400, marginLeft: "6px" }}>
+                              ({new Date(selectedPatient.patientDob).toLocaleDateString()})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>GENDER</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.gender}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>BLOOD GROUP</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.bloodGroup || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>VISIT TYPE</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.visitType}</div>
+                      </div>
+                      {selectedPatient.patientAllergies && (
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>⚠️ ALLERGIES</span>
+                          <div style={{ 
+                            fontSize: "14px", 
+                            color: "#ef4444", 
+                            fontWeight: 600,
+                            background: "#fef2f2",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid #fecaca"
+                          }}>
+                            {selectedPatient.patientAllergies}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vitals Section */}
+                    {selectedPatient.vitals && (
+                      <div style={{ marginTop: "20px" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#1a237e", marginBottom: "12px" }}>
+                          Vital Signs
+                        </h4>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+                          {selectedPatient.vitals.temperature && (
+                            <div style={{ background: "#fef3c7", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a" }}>
+                              <div style={{ fontSize: "11px", color: "#92400e", fontWeight: 600, marginBottom: "4px" }}>TEMPERATURE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#78350f" }}>{selectedPatient.vitals.temperature}°F</div>
+                            </div>
+                          )}
+                          {(selectedPatient.vitals.bp_systolic || selectedPatient.vitals.bp_diastolic) && (
+                            <div style={{ background: "#fecaca", padding: "12px", borderRadius: "8px", border: "1px solid #fca5a5" }}>
+                              <div style={{ fontSize: "11px", color: "#7f1d1d", fontWeight: 600, marginBottom: "4px" }}>BLOOD PRESSURE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#7f1d1d" }}>{selectedPatient.vitals.bp_systolic}/{selectedPatient.vitals.bp_diastolic}</div>
+                              <div style={{ fontSize: "10px", color: "#991b1b" }}>mmHg</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.heart_rate && (
+                            <div style={{ background: "#fecdd3", padding: "12px", borderRadius: "8px", border: "1px solid #fda4af" }}>
+                              <div style={{ fontSize: "11px", color: "#881337", fontWeight: 600, marginBottom: "4px" }}>HEART RATE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#881337" }}>{selectedPatient.vitals.heart_rate}</div>
+                              <div style={{ fontSize: "10px", color: "#9f1239" }}>bpm</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.spo2 && (
+                            <div style={{ background: "#dbeafe", padding: "12px", borderRadius: "8px", border: "1px solid #bfdbfe" }}>
+                              <div style={{ fontSize: "11px", color: "#1e3a8a", fontWeight: 600, marginBottom: "4px" }}>SpO2</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#1e3a8a" }}>{selectedPatient.vitals.spo2}%</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.cbg && (
+                            <div style={{ background: "#e0e7ff", padding: "12px", borderRadius: "8px", border: "1px solid #c7d2fe" }}>
+                              <div style={{ fontSize: "11px", color: "#3730a3", fontWeight: 600, marginBottom: "4px" }}>BLOOD SUGAR</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#3730a3" }}>{selectedPatient.vitals.cbg}</div>
+                              <div style={{ fontSize: "10px", color: "#4338ca" }}>mg/dL</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {selectedPatient && !diagnosisSaved && (
                   <div

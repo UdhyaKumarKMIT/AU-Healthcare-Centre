@@ -18,33 +18,6 @@ const DiagnosisSummary = ({ patient, diagnoses = [], onProceedToPrescription }) 
   return (
     <>
       <div className={styles.summaryContainer}>
-        {/* Patient Information */}
-        <div className={styles.patientSection}>
-          <h3 className={styles.sectionTitle}>Patient Information</h3>
-          <div className={styles.patientDetails}>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Name:</span>
-              <span className={styles.detailValue}>{patient.patientName}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Age:</span>
-              <span className={styles.detailValue}>{patient.age} years</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Gender:</span>
-              <span className={styles.detailValue}>{patient.gender}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Blood Group:</span>
-              <span className={styles.detailValue}>{patient.bloodGroup}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Visit Type:</span>
-              <span className={styles.detailValue}>{patient.visitType}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Diagnosis Information */}
         <div className={styles.diagnosisSection}>
           <h3 className={styles.sectionTitle}>
