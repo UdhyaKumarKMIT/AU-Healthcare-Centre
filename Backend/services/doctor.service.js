@@ -92,6 +92,88 @@ export const addDiagnosis = async ({
 };
 
 // ============================================================================
+// ADD MULTIPLE DIAGNOSES (Batch)
+// ============================================================================
+export const addMultipleDiagnoses = async ({ visit_id, doctor_id, diagnoses }) => {
+  return await sequelize.transaction(async (t) => {
+    // Validate visit exists
+    const visit = await Visit.findByPk(visit_id, { transaction: t });
+    if (!visit) {
+      throw new ApiError(404, 'Visit not found');
+    }
+
+    // Validate doctor exists
+    const doctor = await Doctor.findByPk(doctor_id, { transaction: t });
+    if (!doctor) {
+      throw new ApiError(404, 'Doctor not found');
+    }
+
+    if (!Array.isArray(diagnoses) || diagnoses.length === 0) {
+      throw new ApiError(400, 'Diagnoses array is required and must not be empty');
+    }
+
+    console.log(`🏥 Adding ${diagnoses.length} diagnoses for visit ${visit_id}`);
+
+    const createdDiagnoses = [];
+
+    for (const diag of diagnoses) {
+      const { diagnosis_name, diagnosis_code, diagnosis_notes } = diag;
+
+      if (!diagnosis_name) {
+        throw new ApiError(400, 'Diagnosis name is required for each diagnosis');
+      }
+
+      const diagnosis = await Diagnosis.create({
+        visit_id,
+        doctor_id,
+        complaints: diagnosis_notes || null,
+        diagnosis_name,
+        remarks: diagnosis_code ? `Code: ${diagnosis_code}` : null,
+        created_at: new Date()
+      }, { transaction: t });
+      createdDiagnoses.push(diagnosis);
+    }
+
+    // Log in system audit
+    await SystemAuditLog.create({
+      actor_user_id: doctor.user_id,
+      actor_role: 'DOCTOR',
+      action: 'ADD_MULTIPLE_DIAGNOSES',
+      entity_type: 'DIAGNOSIS',
+      entity_id: createdDiagnoses[0].diagnosis_id,
+      new_value: { count: diagnoses.length, diagnoses },
+      remarks: `${diagnoses.length} diagnoses added for visit ${visit_id}`
+    }, { transaction: t });
+
+    console.log(`✅ Successfully created ${createdDiagnoses.length} diagnoses`);
+
+    return {
+      count: createdDiagnoses.length,
+      diagnoses: createdDiagnoses
+    };
+  });
+};
+
+// ============================================================================
+// GET DIAGNOSES FOR A VISIT
+// ============================================================================
+export const getVisitDiagnoses = async (visit_id) => {
+  const diagnoses = await Diagnosis.findAll({
+    where: { visit_id },
+    attributes: ['diagnosis_id', 'diagnosis_name', 'complaints', 'remarks', 'created_at'],
+    order: [['created_at', 'ASC']]
+  });
+
+  return diagnoses.map(d => ({
+    id: d.diagnosis_id,
+    diagnosis_name: d.diagnosis_name,
+    diagnosis_code: d.remarks?.replace('Code: ', '') || null,
+    diagnosis_notes: d.complaints,
+    createdAt: d.created_at
+  }));
+};
+
+// ============================================================================
 // PRESCRIPTION
 // ============================================================================
 export const createPrescription = async ({ visit_id, doctor_id, meds }) => {

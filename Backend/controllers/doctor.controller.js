@@ -146,6 +146,62 @@ export const addDiagnosis = async (req, res, next) => {
   }
 };
 
+export const addMultipleDiagnoses = async (req, res, next) => {
+  try {
+    const { visit_id, doctor_id, diagnoses } = req.body;
+
+    if (!visit_id || !doctor_id || !diagnoses) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id, doctor_id, and diagnoses are required'
+      });
+    }
+
+    if (!Array.isArray(diagnoses) || diagnoses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'diagnoses must be a non-empty array'
+      });
+    }
+
+    console.log(`🏥 Adding ${diagnoses.length} diagnoses for visit ${visit_id}`);
+
+    const result = await doctorService.addMultipleDiagnoses({
+      visit_id,
+      doctor_id,
+      diagnoses
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `${result.count} diagnosis(es) added successfully`,
+      data: result
+    });
+  } catch (e) {
+    console.error('❌ Error adding multiple diagnoses:', e);
+    next(e);
+  }
+};
+
+export const getVisitDiagnoses = async (req, res, next) => {
+  try {
+    const { visit_id } = req.params;
+
+    console.log(`🔍 Fetching diagnoses for visit ${visit_id}`);
+
+    const diagnoses = await doctorService.getVisitDiagnoses(visit_id);
+
+    res.json({
+      success: true,
+      count: diagnoses.length,
+      diagnoses
+    });
+  } catch (e) {
+    console.error('❌ Error fetching visit diagnoses:', e);
+    next(e);
+  }
+};
+
 export const addPrescription = async (req, res, next) => {
   try {
     console.log("🔥 prescription controller hit");

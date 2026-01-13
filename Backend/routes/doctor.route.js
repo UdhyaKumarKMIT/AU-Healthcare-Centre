@@ -23,7 +23,9 @@ router.get('/medicines', authenticate, authorize(ROLES.DOCTOR), doctorController
 router.get('/nurses', authenticate, authorize(ROLES.DOCTOR), doctorController.getAvailableNurses);
 
 // ==================== DIAGNOSIS ====================
+router.get('/visit/:visit_id/diagnoses', authenticate, authorize(ROLES.DOCTOR), doctorController.getVisitDiagnoses);
 router.post('/diagnosis', authenticate, authorize(ROLES.DOCTOR), doctorController.addDiagnosis);
+router.post('/diagnoses', authenticate, authorize(ROLES.DOCTOR), doctorController.addMultipleDiagnoses);
 
 // ==================== PRESCRIPTION ====================
 router.post('/prescription', authenticate, authorize(ROLES.DOCTOR), doctorController.addPrescription);
