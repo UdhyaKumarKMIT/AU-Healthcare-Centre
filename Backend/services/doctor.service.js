@@ -113,8 +113,6 @@ export const addMultipleDiagnoses = async ({ visit_id, doctor_id, diagnoses }) =
       throw new ApiError(400, 'Diagnoses array is required and must not be empty');
     }
 
-    console.log(`🏥 Adding ${diagnoses.length} diagnoses for visit ${visit_id}`);
-
     const createdDiagnoses = [];
 
     for (const diag of diagnoses) {
@@ -145,8 +143,6 @@ export const addMultipleDiagnoses = async ({ visit_id, doctor_id, diagnoses }) =
       new_value: { count: diagnoses.length, diagnoses },
       remarks: `${diagnoses.length} diagnoses added for visit ${visit_id}`
     }, { transaction: t });
-
-    console.log(`✅ Successfully created ${createdDiagnoses.length} diagnoses`);
 
     return {
       count: createdDiagnoses.length,
@@ -192,8 +188,6 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
       throw new ApiError(404, 'Doctor not found');
     }
 
-    console.log('💊 Creating prescription with', meds.length, 'medicines');
-
     // Create prescription
     const prescription = await Prescription.create({
       visit_id,
@@ -232,8 +226,6 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
       remarks: `Prescription created for visit ${visit_id}`
     }, { transaction: t });
 
-    console.log('✅ Prescription created:', prescription.prescription_id);
-
     return { prescription_id: prescription.prescription_id };
   });
 };
@@ -269,7 +261,6 @@ export const createPrescriptionWithTasks = async ({ visit_id, doctor_id, medicin
       }
     }
 
-    console.log(`\ud83d\udc8a Processing ${regularMeds.length} regular meds, ${injectableMeds.length} injectable meds`);
 
     // Create regular prescription if there are non-injectable medicines
     if (regularMeds.length > 0) {
@@ -402,9 +393,6 @@ export const getActiveDoctorVisits = async (doctor_id) => {
     order: [['visit_date', 'ASC']]
   });
 
-  console.log('🔍 Raw visits data (first visit):', JSON.stringify(visits[0], null, 2));
-  console.log('🔍 Visit keys:', visits[0] ? Object.keys(visits[0].dataValues) : 'No visits');
-
   // Helper function to calculate age from date of birth
   const calculateAge = (dob) => {
     if (!dob) return null;
@@ -419,8 +407,6 @@ export const getActiveDoctorVisits = async (doctor_id) => {
   };
 
   return visits.map((v, index) => {
-    console.log(`🔍 Visit ${v.visit_id} - Vitals object:`, v.Vital);
-    
     return {
       visit_id: v.visit_id,
       patient_id: v.patient_id,

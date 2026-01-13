@@ -4,8 +4,6 @@ export const getDoctorQueue = async (req, res, next) => {
   try {
     const { doctorId } = req.params;
     
-    console.log('👨‍⚕️ Doctor ID from params:', doctorId);
-    
     if (!doctorId) {
       return res.status(400).json({
         success: false,
@@ -14,8 +12,6 @@ export const getDoctorQueue = async (req, res, next) => {
     }
     
     const visits = await doctorService.getActiveDoctorVisits(doctorId);
-    
-    console.log('✅ Queue visits found:', visits.length);
     
     res.json({
       success: true,
@@ -31,8 +27,6 @@ export const getDoctorVisits = async (req, res, next) => {
   try {
     const doctor_id = req.query.doctor_id;
     
-    console.log('👨‍⚕️ Doctor ID from query:', doctor_id);
-    
     if (!doctor_id) {
       return res.status(400).json({
         success: false,
@@ -41,8 +35,6 @@ export const getDoctorVisits = async (req, res, next) => {
     }
     
     const visits = await doctorService.getActiveDoctorVisits(doctor_id);
-    
-    console.log('✅ Visits found:', visits.length);
     
     res.json({
       success: true,
@@ -57,8 +49,6 @@ export const getDoctorVisits = async (req, res, next) => {
 export const getPatientHistory = async (req, res, next) => {
   try {
     const { patient_id } = req.params;
-    
-    console.log('📜 Fetching history for patient:', patient_id);
     
     const history = await doctorService.getPatientHistory(patient_id);
     
@@ -92,8 +82,6 @@ export const getAvailableNurses = async (req, res, next) => {
   try {
     const nurses = await doctorService.getAvailableNurses();
     
-    console.log('✅ Found', nurses.length, 'nurses');
-    
     res.json({
       success: true,
       nurses: nurses,
@@ -107,9 +95,6 @@ export const getAvailableNurses = async (req, res, next) => {
 
 export const createPrescriptionWithTasks = async (req, res, next) => {
   try {
-    console.log('🔥 prescription-with-tasks controller hit');
-    console.log('📥 body:', req.body);
-
     const { visit_id, doctor_id, medicines } = req.body;
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
@@ -164,8 +149,6 @@ export const addMultipleDiagnoses = async (req, res, next) => {
       });
     }
 
-    console.log(`🏥 Adding ${diagnoses.length} diagnoses for visit ${visit_id}`);
-
     const result = await doctorService.addMultipleDiagnoses({
       visit_id,
       doctor_id,
@@ -187,8 +170,6 @@ export const getVisitDiagnoses = async (req, res, next) => {
   try {
     const { visit_id } = req.params;
 
-    console.log(`🔍 Fetching diagnoses for visit ${visit_id}`);
-
     const diagnoses = await doctorService.getVisitDiagnoses(visit_id);
 
     res.json({
@@ -204,15 +185,11 @@ export const getVisitDiagnoses = async (req, res, next) => {
 
 export const addPrescription = async (req, res, next) => {
   try {
-    console.log("🔥 prescription controller hit");
-    console.log("📥 body:", req.body);
-
     const { visit_id, doctor_id, medicines } = req.body;
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ message: "No medicines sent" });
     }
-    console.log("📥 Prescription received:", req.body);
 
     const result = await doctorService.createPrescription({
       visit_id,
@@ -235,8 +212,6 @@ export const updateVisitStatus = async (req, res, next) => {
   try {
     const { visit_id } = req.params;
     const { status } = req.body;
-
-    console.log('🔄 Updating visit status:', { visit_id, status });
 
     if (!status) {
       return res.status(400).json({

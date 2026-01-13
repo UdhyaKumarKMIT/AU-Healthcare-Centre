@@ -55,7 +55,6 @@ const PrescriptionForm = () => {
 
   useEffect(() => {
     if (!patient || !diagnosis) {
-      console.log('Missing data:', { patient, diagnosis, patients, diagnoses });
       navigate('/doctor/dashboard');
       return;
     }
@@ -76,7 +75,6 @@ const PrescriptionForm = () => {
   const handleStatusUpdate = async (newStatus) => {
     try {
       await dispatch(updateVisitStatus({ visitId, status: newStatus })).unwrap();
-      console.log(`✅ Visit status updated to ${newStatus}`);
     } catch (error) {
       console.error('Failed to update status:', error);
       toast.error('Failed to update visit status');

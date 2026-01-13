@@ -69,16 +69,9 @@ const DoctorDashboard = () => {
   const [medicineSearchResults, setMedicineSearchResults] = useState([]);
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
 
-  // Debug nurses state changes
-  useEffect(() => {
-    console.log("🔧 DEBUG: nurses state changed:", nurses);
-    console.log("🔧 DEBUG: nurses length:", nurses.length);
-  }, [nurses]);
-
   // Load patients from Redux on mount
   useEffect(() => {
     if (doctorId) {
-      console.log("📡 Loading queue for doctor:", doctorId);
       dispatch(fetchPatientQueue(doctorId));
 
       // Fetch today's visits count
@@ -91,8 +84,6 @@ const DoctorDashboard = () => {
       }, 30000);
 
       return () => clearInterval(interval);
-    } else {
-      console.error("No doctor_id found. Please login again.");
     }
   }, [dispatch, doctorId]);
 
@@ -101,7 +92,6 @@ const DoctorDashboard = () => {
   const fetchTodayVisitsCount = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      console.log("📡 Fetching today's visits count for:", today);
 
       const response = await fetch(
         `${API_BASE}/api/doctor/visits/today?doctor_id=${doctorId}&date=${today}`,
@@ -114,7 +104,6 @@ const DoctorDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Today's visits count:", data.count);
         setTodayVisitsCount(data.count || 0);
       } else {
         console.error("Failed to fetch today's visits count");
@@ -128,18 +117,13 @@ const DoctorDashboard = () => {
 
   // Fetch nurses on mount
   useEffect(() => {
-    console.log("🔧 DEBUG: useEffect triggered for fetchNurses");
     fetchNurses();
   }, []);
 
   const fetchNurses = async () => {
-    console.log("🔧 DEBUG: fetchNurses called");
-    console.log("🔧 DEBUG: API_BASE:", API_BASE);
-    console.log("🔧 DEBUG: token:", token ? "Token exists" : "No token");
 
     try {
       const url = `${API_BASE}/api/doctor/nurses`;
-      console.log("🔧 DEBUG: Fetching from URL:", url);
 
       const response = await fetch(url, {
         headers: {
@@ -147,27 +131,10 @@ const DoctorDashboard = () => {
         },
       });
 
-      console.log("🔧 DEBUG: Response status:", response.status);
-      console.log("🔧 DEBUG: Response ok:", response.ok);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ DEBUG: Fetched nurses data:", data);
-        console.log("✅ DEBUG: Nurses array:", data.nurses);
-        console.log("✅ DEBUG: Number of nurses:", data.nurses?.length || 0);
-
-        // Debug each nurse object structure
-        if (data.nurses && data.nurses.length > 0) {
-          console.log("✅ DEBUG: First nurse structure:", data.nurses[0]);
-          console.log(
-            "✅ DEBUG: First nurse has nurse_id?",
-            !!data.nurses[0].nurse_id
-          );
-          console.log("✅ DEBUG: First nurse has name?", !!data.nurses[0].name);
-        }
 
         setNurses(data.nurses || []);
-        console.log("✅ DEBUG: setNurses called with:", data.nurses || []);
       } else {
         const errorText = await response.text();
         console.error("❌ DEBUG: Failed to fetch nurses");
@@ -183,7 +150,6 @@ const DoctorDashboard = () => {
 
   const fetchNurseTaskTypes = async () => {
     try {
-      console.log("📋 Fetching nurse task types...");
       const response = await fetch(`${API_BASE}/api/doctor/nurse-task-types`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -193,7 +159,6 @@ const DoctorDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Fetched nurse task types:", data);
         setNurseTaskTypes(data.data || []);
       } else {
         console.error("❌ Failed to fetch nurse task types");
@@ -212,10 +177,6 @@ const DoctorDashboard = () => {
         (p) => p.visitId === selectedPatient.visitId
       );
       if (updatedPatient && updatedPatient.status !== selectedPatient.status) {
-        console.log(
-          "🔄 Syncing selected patient with updated status:",
-          updatedPatient.status
-        );  
         setSelectedPatient(updatedPatient);
       }
     }
@@ -226,7 +187,6 @@ const DoctorDashboard = () => {
       await dispatch(
         updateVisitStatus({ visitId, status: newStatus })
       ).unwrap();
-      console.log(`✅ Status updated to ${newStatus}`);
     } catch (error) {
       console.error("Failed to update status:", error);
       toast.error('Failed to update visit status');
@@ -234,14 +194,6 @@ const DoctorDashboard = () => {
   };
 
   const handlePatientSelect = async (patient) => {
-    console.log(
-      "👤 Patient selected:",
-      patient.patientName,
-      "Status:",
-      patient.status
-    );
-    console.log("📊 Full patient data:", patient);
-    console.log("🩺 Patient vitals:", patient.vitals);
     setSelectedPatient(patient);
 
     // Check if patient is already diagnosed - fetch existing diagnoses
@@ -261,7 +213,6 @@ const DoctorDashboard = () => {
 
   const fetchExistingDiagnoses = async (visitId) => {
     try {
-      console.log(`🔍 Fetching existing diagnoses for visit ${visitId}`);
       const response = await fetch(`${API_BASE}/api/doctor/visit/${visitId}/diagnoses`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -271,7 +222,6 @@ const DoctorDashboard = () => {
       if (!response.ok) throw new Error("Failed to fetch diagnoses");
 
       const result = await response.json();
-      console.log("✅ Existing diagnoses loaded:", result);
 
       if (result.diagnoses && result.diagnoses.length > 0) {
         setDiagnoses(result.diagnoses);
@@ -288,7 +238,6 @@ const DoctorDashboard = () => {
   };
 
   const handleViewHistory = async (patientId) => {
-    console.log("📜 Opening history for patient:", patientId);
     setShowHistoryModal(true);
     await dispatch(fetchPatientHistory(patientId));
   };
@@ -311,7 +260,6 @@ const DoctorDashboard = () => {
           ? { ...currentDiagnosis, id: editingId, createdAt: d.createdAt }
           : d
       ));
-      console.log('✅ Diagnosis updated:', editingId);
       setEditingId(null);
     } else {
       // Add new diagnosis
@@ -321,7 +269,6 @@ const DoctorDashboard = () => {
         createdAt: new Date().toISOString()
       };
       setDiagnoses([...diagnoses, newDiagnosis]);
-      console.log('✅ Diagnosis added to list:', newDiagnosis);
     }
     
     setCurrentDiagnosis({
@@ -356,7 +303,6 @@ const DoctorDashboard = () => {
         remarks: diagnosis.remarks
       });
       setEditingId(id);
-      console.log('✏️ Editing diagnosis:', id);
     }
   };
 
@@ -398,7 +344,6 @@ const DoctorDashboard = () => {
       if (!response.ok) throw new Error("Failed to save diagnoses");
 
       const result = await response.json();
-      console.log("✅ Diagnoses saved:", result);
 
       // Update status to DIAGNOSED
       await handleStatusUpdate(selectedPatient.visitId, "DIAGNOSED");
@@ -508,13 +453,6 @@ const DoctorDashboard = () => {
         }
       });
 
-      console.log("🔧 DEBUG: Transformed medicines:", transformed);
-      console.log("🔧 DEBUG: Request payload:", {
-        visit_id: selectedPatient.visitId,
-        doctor_id: doctorId,
-        medicines: transformed,
-      });
-
       // Use the new endpoint that handles both prescriptions and nurse tasks
       const prescriptionResponse = await fetch(
         `${API_BASE}/api/doctor/prescription-with-tasks`,
@@ -532,19 +470,8 @@ const DoctorDashboard = () => {
         }
       );
 
-      console.log(
-        "🔧 DEBUG: Prescription response status:",
-        prescriptionResponse.status
-      );
-
       if (!prescriptionResponse.ok) {
         const errorData = await prescriptionResponse.json().catch(() => null);
-        console.error("❌ DEBUG: Error response:", errorData);
-        console.error("❌ DEBUG: Request body was:", {
-          visit_id: selectedPatient.visitId,
-          doctor_id: doctorId,
-          medicines: transformed,
-        });
         throw new Error(
           errorData?.message ||
             errorData?.error ||
@@ -553,12 +480,9 @@ const DoctorDashboard = () => {
       }
 
       const result = await prescriptionResponse.json();
-      console.log("✅ Prescription saved:", result);
 
       // Save nurse tasks if any
       if (nurseTasks.length > 0) {
-        console.log("📋 Saving nurse tasks:", nurseTasks);
-        
         for (const task of nurseTasks) {
           try {
             const taskResponse = await fetch(`${API_BASE}/api/doctor/nurse-task`, {
@@ -574,14 +498,8 @@ const DoctorDashboard = () => {
                 instructions: task.instructions || ""
               }),
             });
-
-            if (!taskResponse.ok) {
-              console.error("❌ Failed to create nurse task");
-            } else {
-              console.log("✅ Nurse task created successfully");
-            }
           } catch (error) {
-            console.error("❌ Error creating nurse task:", error);
+            // Nurse task creation failed
           }
         }
       }
@@ -1302,63 +1220,7 @@ const DoctorDashboard = () => {
               </h2>
 
               {/* MANUAL DEBUG BUTTON */}
-              <button
-                onClick={() => {
-                  console.log("🔧 Manual fetch nurses triggered");
-                  fetchNurses();
-                }}
-                style={{
-                  padding: "8px 16px",
-                  background: "#f59e0b",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  marginBottom: "16px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
-              >
-                🔄 Manually Fetch Nurses (Debug)
-              </button>
-
-              {/* DEBUG PANEL */}
-              <div
-                style={{
-                  background: "#fff3cd",
-                  border: "1px solid #ffc107",
-                  padding: "12px",
-                  borderRadius: "6px",
-                  marginBottom: "16px",
-                  fontSize: "12px",
-                  fontFamily: "monospace",
-                }}
-              >
-                <strong>🔧 DEBUG INFO:</strong>
-                <div>Nurses loaded: {nurses.length}</div>
-                <div>
-                  Nurse names:{" "}
-                  {nurses.map((n) => n.name).join(", ") || "No nurses found"}
-                </div>
-                <div>
-                  Nurse IDs:{" "}
-                  {nurses.map((n) => n.nurse_id).join(", ") || "No IDs"}
-                </div>
-                <div style={{ marginTop: "8px", color: "#856404" }}>
-                  <strong>Nurses state variable:</strong>{" "}
-                  {JSON.stringify(nurses)}
-                </div>
-              </div>
-
               {medicines.map((med, i) => {
-                console.log(
-                  `🔧 DoctorDashboard: Rendering MedicineRow ${i + 1}`
-                );
-                console.log(`🔧 DoctorDashboard: Passing nurses prop:`, nurses);
-                console.log(
-                  `🔧 DoctorDashboard: nurses.length:`,
-                  nurses.length
-                );
-
                 return (
                   <MedicineRow
                     key={i}

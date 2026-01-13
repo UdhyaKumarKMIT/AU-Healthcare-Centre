@@ -52,7 +52,6 @@ useEffect(() => {
   const handleStatusUpdate = async (newStatus) => {
     try {
       await dispatch(updateVisitStatus({ visitId, status: newStatus })).unwrap();
-      console.log(`✅ Visit status updated to ${newStatus}`);
     } catch (error) {
       console.error('Failed to update status:', error);
     }
@@ -84,12 +83,8 @@ const handleSaveDiagnosis = async () => {
       },
     })).unwrap();
 
-    console.log('✅ Diagnosis saved, now updating status...');
-
     // 2. Then update status to DIAGNOSED
     await dispatch(updateVisitStatus({ visitId, status: 'DIAGNOSED' })).unwrap();
-    
-    console.log('✅ Status updated to DIAGNOSED');
     
     setIsSaving(false);
     alert('Diagnosis saved successfully!');
