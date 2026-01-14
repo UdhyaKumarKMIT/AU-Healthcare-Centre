@@ -32,11 +32,11 @@ router.post('/diagnosis', authenticate, authorize(ROLES.DOCTOR), doctorControlle
 router.post('/diagnoses', authenticate, authorize(ROLES.DOCTOR), doctorController.addMultipleDiagnoses);
 
 // ==================== PRESCRIPTION ====================
-router.post('/prescription', authenticate, authorize(ROLES.DOCTOR), doctorController.addPrescription);
+router.post('/prescription', authenticate, authorize(ROLES.DOCTOR), doctorController.createPrescription);
 router.post('/prescription-with-tasks', authenticate, authorize(ROLES.DOCTOR), doctorController.createPrescriptionWithTasks);
 
 // ==================== VISIT STATUS ====================
 router.patch('/visit/:visit_id/status', authenticate, authorize(ROLES.DOCTOR), doctorController.updateVisitStatus);
-router.patch('/visit/:visit_id/complete', authenticate, authorize(ROLES.DOCTOR), doctorController.completeVisit);
+router.patch('/visit/:visit_id/complete', authenticate, authorize(ROLES.DOCTOR), doctorController.markVisitAsCompleted);
 
 export default router;

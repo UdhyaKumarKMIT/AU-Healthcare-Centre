@@ -1,5 +1,9 @@
 import * as doctorService from '../services/doctor.service.js';
 
+/**
+ * Retrieves the active visit queue for a specific doctor
+ * Returns patients currently assigned to the doctor with status CHECKED_IN or IN_CONSULTATION
+ */
 export const getDoctorQueue = async (req, res, next) => {
   try {
     const { doctorId } = req.params;
@@ -15,10 +19,11 @@ export const getDoctorQueue = async (req, res, next) => {
     
     res.json({
       success: true,
+      count: visits.length,
       data: visits
     });
   } catch (e) {
-    console.error('❌ Error fetching queue:', e);
+    console.error('❌ Error fetching doctor queue:', e);
     next(e);
   }
 };
@@ -46,9 +51,20 @@ export const getDoctorVisits = async (req, res, next) => {
   }
 };
 
+/**
+ * Retrieves complete medical history for a patient
+ * Includes past visits, diagnoses, prescriptions, and vitals
+ */
 export const getPatientHistory = async (req, res, next) => {
   try {
     const { patient_id } = req.params;
+    
+    if (!patient_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'patient_id parameter is required'
+      });
+    }
     
     const history = await doctorService.getPatientHistory(patient_id);
     
@@ -93,9 +109,23 @@ export const getAvailableNurses = async (req, res, next) => {
   }
 };
 
+/**
+ * Creates prescription with nurse tasks for injectable medicines (injections/drips)
+ * This handles both regular medicines and injectable medicines that require nurse administration
+ * - Regular medicines → prescription items only
+ * - External medicines → prescription items with "Others" medicine reference
+ * - Injectable medicines → prescription items + nurse task assignments
+ */
 export const createPrescriptionWithTasks = async (req, res, next) => {
   try {
     const { visit_id, doctor_id, medicines } = req.body;
+
+    if (!visit_id || !doctor_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id and doctor_id are required'
+      });
+    }
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ 
@@ -112,7 +142,7 @@ export const createPrescriptionWithTasks = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Prescription saved successfully',
+      message: 'Prescription and nurse tasks created successfully',
       data: result
     });
 
@@ -122,15 +152,36 @@ export const createPrescriptionWithTasks = async (req, res, next) => {
   }
 };
 
+/**
+ * Adds a single diagnosis to a visit
+ * Requires visit_id, doctor_id, diagnosis_name, and optionally complaints/remarks
+ */
 export const addDiagnosis = async (req, res, next) => {
   try {
+    const { visit_id, doctor_id, diagnosis_name } = req.body;
+
+    if (!visit_id || !doctor_id || !diagnosis_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id, doctor_id, and diagnosis_name are required'
+      });
+    }
+
     await doctorService.addDiagnosis(req.body);
-    res.status(201).json({ success: true, message: 'Diagnosis added' });
+    res.status(201).json({ 
+      success: true, 
+      message: 'Diagnosis added successfully' 
+    });
   } catch (e) {
+    console.error('❌ Error adding diagnosis:', e);
     next(e);
   }
 };
 
+/**
+ * Adds multiple diagnoses to a visit in a single transaction
+ * More efficient than calling addDiagnosis multiple times
+ */
 export const addMultipleDiagnoses = async (req, res, next) => {
   try {
     const { visit_id, doctor_id, diagnoses } = req.body;
@@ -183,12 +234,26 @@ export const getVisitDiagnoses = async (req, res, next) => {
   }
 };
 
-export const addPrescription = async (req, res, next) => {
+/**
+ * Creates a basic prescription without nurse tasks (for tablets, syrups, ointments, drops)
+ * For injections/drips that require nurse tasks, use createPrescriptionWithTasks instead
+ */
+export const createPrescription = async (req, res, next) => {
   try {
     const { visit_id, doctor_id, medicines } = req.body;
 
+    if (!visit_id || !doctor_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id and doctor_id are required'
+      });
+    }
+
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
-      return res.status(400).json({ message: "No medicines sent" });
+      return res.status(400).json({
+        success: false,
+        message: 'No medicines provided'
+      });
     }
 
     const result = await doctorService.createPrescription({
@@ -199,15 +264,23 @@ export const addPrescription = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Prescription saved",
-      prescriptionId: result.prescription_id
+      message: 'Prescription created successfully',
+      data: {
+        prescription_id: result.prescription_id
+      }
     });
 
   } catch (err) {
+    console.error('❌ Error creating prescription:', err);
     next(err);
   }
 };
 
+/**
+ * Updates the status of a visit
+ * Valid statuses: CHECKED_IN, IN_CONSULTATION, COMPLETED, CANCELLED
+ * Used for workflow management (e.g., starting consultation, cancelling visit)
+ */
 export const updateVisitStatus = async (req, res, next) => {
   try {
     const { visit_id } = req.params;
@@ -251,16 +324,28 @@ export const updateVisitStatus = async (req, res, next) => {
   }
 };
 
-export const completeVisit = async (req, res, next) => {
+/**
+ * Marks a visit as completed and optionally logs referral remarks
+ * This updates the visit status to COMPLETED and creates an audit log entry
+ */
+export const markVisitAsCompleted = async (req, res, next) => {
   try {
+    const { visit_id } = req.params;
     const { remarks } = req.body;
+
+    if (!visit_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id parameter is required'
+      });
+    }
     
     await doctorService.updateVisitStatus({
-      visit_id: req.params.visit_id,
+      visit_id,
       newStatus: 'COMPLETED'
     });
 
-    // Log referral if remarks provided
+    // Log referral or completion remarks if provided
     if (remarks) {
       const { SystemAuditLog } = await import('../models/sequelize/index.js');
       const { randomUUID } = await import('crypto');
@@ -271,7 +356,7 @@ export const completeVisit = async (req, res, next) => {
         actor_role: req.user?.role || 'DOCTOR',
         action: 'COMPLETE_VISIT',
         entity_type: 'VISIT',
-        entity_id: req.params.visit_id,
+        entity_id: visit_id,
         remarks: remarks,
         ip_address: req.ip,
         user_agent: req.headers['user-agent'],
@@ -281,10 +366,10 @@ export const completeVisit = async (req, res, next) => {
 
     res.json({ 
       success: true, 
-      message: remarks ? 'Visit completed with referral' : 'Visit completed' 
+      message: remarks ? 'Visit completed with referral remarks' : 'Visit marked as completed' 
     });
   } catch (e) {
-    console.error('Error completing visit:', e);
+    console.error('❌ Error marking visit as completed:', e);
     next(e);
   }
 };
