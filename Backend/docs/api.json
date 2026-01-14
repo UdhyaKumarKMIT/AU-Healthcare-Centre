@@ -3741,6 +3741,455 @@
       }
     }
   },
+  "/api/doctor/diagnoses": {
+    "post": {
+      "summary": "Add multiple diagnoses to a visit",
+      "description": "Allows doctor to add multiple diagnoses to a visit in a single request. Each diagnosis can include complaints (patient's reported symptoms) and remarks (doctor's clinical observations)",
+      "tags": [
+        "Doctor"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "visit_id",
+                "doctor_id",
+                "diagnoses"
+              ],
+              "properties": {
+                "visit_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "example": "8200932d-dc1f-11f0-a774-0a002700000d"
+                },
+                "doctor_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "example": "60b627dc-d824-42ec-beb4-a82ea823d75d"
+                },
+                "diagnoses": {
+                  "type": "array",
+                  "description": "Array of diagnosis objects",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "diagnosis_name"
+                    ],
+                    "properties": {
+                      "diagnosis_name": {
+                        "type": "string",
+                        "example": "Acute Bronchitis"
+                      },
+                      "diagnosis_code": {
+                        "type": "string",
+                        "example": "J20.9",
+                        "description": "ICD-10 diagnosis code"
+                      },
+                      "complaints": {
+                        "type": "string",
+                        "example": "Patient complains of persistent cough, chest congestion, and mild fever for 3 days",
+                        "description": "Symptoms reported by the patient"
+                      },
+                      "remarks": {
+                        "type": "string",
+                        "example": "Respiratory sounds indicate mild bronchial inflammation. No wheezing detected.",
+                        "description": "Doctor's clinical observations and notes"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Diagnoses added successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "3 diagnosis(es) added successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer",
+                        "example": 3
+                      },
+                      "diagnoses": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "diagnosis_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "diagnosis_name": {
+                              "type": "string"
+                            },
+                            "diagnosis_code": {
+                              "type": "string"
+                            },
+                            "complaints": {
+                              "type": "string"
+                            },
+                            "remarks": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad request - Missing required fields or empty diagnoses array",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "visit_id, doctor_id, and diagnoses are required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a doctor"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/doctor/visit/{visit_id}/diagnoses": {
+    "get": {
+      "summary": "Get all diagnoses for a visit",
+      "description": "Returns all diagnoses recorded for a specific visit, including complaints and doctor's remarks",
+      "tags": [
+        "Doctor"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "visit_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Diagnoses retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "count": {
+                    "type": "integer",
+                    "example": 2
+                  },
+                  "diagnoses": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "diagnosis_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "visit_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "doctor_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "diagnosis_name": {
+                          "type": "string",
+                          "example": "Acute Bronchitis"
+                        },
+                        "diagnosis_code": {
+                          "type": "string",
+                          "example": "J20.9"
+                        },
+                        "complaints": {
+                          "type": "string",
+                          "example": "Patient complains of persistent cough and chest congestion"
+                        },
+                        "remarks": {
+                          "type": "string",
+                          "example": "Respiratory sounds indicate mild bronchial inflammation"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a doctor"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/doctor/nurse-task-types": {
+    "get": {
+      "summary": "Get all nurse task types",
+      "description": "Returns list of all available nurse task types that doctors can assign (ECG, Dressing, Blood Pressure Check, etc.)",
+      "tags": [
+        "Doctor"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Nurse task types retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "task_type_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "task_name": {
+                          "type": "string",
+                          "example": "ECG"
+                        },
+                        "description": {
+                          "type": "string",
+                          "example": "Electrocardiogram test",
+                          "nullable": true
+                        },
+                        "requires_equipment": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a doctor"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/doctor/nurse-task": {
+    "post": {
+      "summary": "Create a nurse task",
+      "description": "Doctor assigns a task to the nursing staff for a specific visit (e.g., ECG, Dressing, Vitals Check)",
+      "tags": [
+        "Doctor"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "visit_id",
+                "doctor_id",
+                "task_type_id"
+              ],
+              "properties": {
+                "visit_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "example": "8200932d-dc1f-11f0-a774-0a002700000d"
+                },
+                "doctor_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "example": "60b627dc-d824-42ec-beb4-a82ea823d75d"
+                },
+                "task_type_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "ID of the task type from nurse-task-types endpoint"
+                },
+                "instructions": {
+                  "type": "string",
+                  "example": "Please perform ECG and note any irregularities",
+                  "description": "Optional specific instructions for the nurse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Nurse task created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Nurse task created successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "task_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "visit_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "task_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "PENDING"
+                      },
+                      "instructions": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad request - Missing required fields",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "visit_id, doctor_id, and task_type_id are required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a doctor"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
   "/api/doctor/prescription-with-tasks": {
     "post": {
       "summary": "Create prescription with automatic nurse task assignment",
@@ -4901,10 +5350,114 @@
       }
     }
   },
+  "/api/nurse/tasks": {
+    "get": {
+      "summary": "Get all nurse tasks",
+      "description": "Retrieve all tasks assigned to the authenticated nurse with visit and patient details. Returns both pending and completed tasks.",
+      "tags": [
+        "Nurse"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Nurse tasks retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "tasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "task_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "visit_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "task_type_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "task_name": {
+                          "type": "string",
+                          "example": "ECG"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"],
+                          "example": "PENDING"
+                        },
+                        "instructions": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "Please perform ECG and note any irregularities"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "completed_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "patient_name": {
+                          "type": "string",
+                          "example": "John Doe"
+                        },
+                        "patient_roll_no": {
+                          "type": "string",
+                          "example": "P001"
+                        },
+                        "doctor_name": {
+                          "type": "string",
+                          "example": "Dr. Arjun Kumar"
+                        },
+                        "visit_reason": {
+                          "type": "string",
+                          "example": "Fever and chest pain"
+                        }
+                      }
+                    }
+                  },
+                  "count": {
+                    "type": "integer",
+                    "example": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a nurse"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
   "/api/nurse/task/{task_id}/complete": {
     "post": {
       "summary": "Complete a nurse task",
-      "description": "Mark a nurse task as completed and create a transaction record with observation notes",
+      "description": "Mark a nurse task as completed and create a transaction record with observation notes, remarks, secret code verification, and medications used",
       "tags": [
         "Nurse"
       ],
@@ -4920,7 +5473,8 @@
           "required": true,
           "description": "Task ID to complete",
           "schema": {
-            "type": "integer"
+            "type": "string",
+            "format": "uuid"
           }
         }
       ],
@@ -4931,16 +5485,46 @@
             "schema": {
               "type": "object",
               "required": [
-                "nurse_id"
+                "secret_code"
               ],
               "properties": {
-                "nurse_id": {
-                  "type": "integer",
-                  "example": 1
-                },
                 "observation": {
                   "type": "string",
-                  "example": "Patient responded well to medication"
+                  "example": "ECG shows normal sinus rhythm. No abnormalities detected.",
+                  "description": "Clinical observations from the task"
+                },
+                "remarks": {
+                  "type": "string",
+                  "example": "Patient was cooperative during the procedure",
+                  "description": "Additional remarks or notes"
+                },
+                "secret_code": {
+                  "type": "string",
+                  "example": "NURSE001",
+                  "description": "Staff secret code for verification (required)"
+                },
+                "medications_used": {
+                  "type": "array",
+                  "description": "Array of medications used during task completion",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "stock_id",
+                      "quantity_used"
+                    ],
+                    "properties": {
+                      "stock_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Nurse stock ID"
+                      },
+                      "quantity_used": {
+                        "type": "integer",
+                        "example": 2,
+                        "description": "Quantity of medication used"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -4955,9 +5539,31 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
                   "message": {
                     "type": "string",
-                    "example": "Task completed"
+                    "example": "Task completed successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "task_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "transaction_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "stock_updates": {
+                        "type": "integer",
+                        "example": 2,
+                        "description": "Number of stock items updated"
+                      }
+                    }
                   }
                 }
               }
@@ -4965,10 +5571,343 @@
           }
         },
         "400": {
-          "description": "Missing required fields"
+          "description": "Bad request - Missing required fields or invalid secret code",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Invalid or inactive secret code"
+                  }
+                }
+              }
+            }
+          }
         },
         "401": {
           "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a nurse"
+        },
+        "404": {
+          "description": "Task not found"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/nurse/task/{task_id}/completed-details": {
+    "get": {
+      "summary": "Get completed task details",
+      "description": "Retrieve detailed information about a completed nurse task including observations, medications used, and transaction history",
+      "tags": [
+        "Nurse"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "task_id",
+          "in": "path",
+          "required": true,
+          "description": "Task ID",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Completed task details retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "task_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "task_name": {
+                        "type": "string",
+                        "example": "ECG"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "COMPLETED"
+                      },
+                      "completed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "observation": {
+                        "type": "string",
+                        "example": "ECG shows normal sinus rhythm"
+                      },
+                      "remarks": {
+                        "type": "string",
+                        "example": "Patient was cooperative"
+                      },
+                      "medications_used": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "medicine_name": {
+                              "type": "string",
+                              "example": "Gauze Pad"
+                            },
+                            "quantity_used": {
+                              "type": "integer",
+                              "example": 2
+                            }
+                          }
+                        }
+                      },
+                      "visit_info": {
+                        "type": "object",
+                        "properties": {
+                          "patient_name": {
+                            "type": "string"
+                          },
+                          "doctor_name": {
+                            "type": "string"
+                          },
+                          "visit_date": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a nurse"
+        },
+        "404": {
+          "description": "Task not found or not completed"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/nurse/stock": {
+    "get": {
+      "summary": "Get available nurse stock",
+      "description": "Retrieve all available stock items for nurses including medicines, dressings, and medical supplies",
+      "tags": [
+        "Nurse"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Stock items retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "stock": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "stock_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "medicine_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "medicine_name": {
+                          "type": "string",
+                          "example": "Gauze Pad"
+                        },
+                        "medicine_type": {
+                          "type": "string",
+                          "example": "Dressing"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "example": 50,
+                          "description": "Available quantity"
+                        },
+                        "batch_number": {
+                          "type": "string",
+                          "example": "BATCH001",
+                          "nullable": true
+                        },
+                        "expiry_date": {
+                          "type": "string",
+                          "format": "date",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  },
+                  "count": {
+                    "type": "integer",
+                    "example": 15
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a nurse"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+  "/api/nurse/verify-code": {
+    "post": {
+      "summary": "Verify staff secret code",
+      "description": "Verify if a staff secret code is valid and active. Used before completing tasks or accessing restricted features.",
+      "tags": [
+        "Nurse"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "secret_code"
+              ],
+              "properties": {
+                "secret_code": {
+                  "type": "string",
+                  "example": "NURSE001",
+                  "description": "Staff secret code to verify"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Secret code is valid",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "valid": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Secret code verified successfully"
+                  },
+                  "staff": {
+                    "type": "object",
+                    "properties": {
+                      "staff_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "P. Sundarammal"
+                      },
+                      "role": {
+                        "type": "string",
+                        "example": "NURSE_RECEPTIONIST"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid or inactive secret code",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "valid": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Invalid or inactive secret code"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        },
+        "403": {
+          "description": "Forbidden - Not a nurse"
         },
         "500": {
           "description": "Internal server error"
