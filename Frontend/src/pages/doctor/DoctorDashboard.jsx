@@ -47,6 +47,7 @@ const DoctorDashboard = () => {
     remarks: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [nurses, setNurses] = useState([]); // For nurse assignments
@@ -199,10 +200,12 @@ const DoctorDashboard = () => {
     // Check if patient is already diagnosed - fetch existing diagnoses
     if (patient.status === "DIAGNOSED" || patient.status === "PRESCRIBED" || patient.status === "PHARMACY" || patient.status === "COMPLETED") {
       await fetchExistingDiagnoses(patient.visitId);
+      setShowDiagnosisForm(false); // Hide form if patient already diagnosed
     } else {
       // Reset for new diagnosis
       setDiagnoses([]);
       setDiagnosisSaved(false);
+      setShowDiagnosisForm(true); // Show form for new diagnosis
     }
 
     // Auto-update status to IN_PROGRESS if SCHEDULED
@@ -277,6 +280,9 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    
+    // Hide form after adding diagnosis
+    setShowDiagnosisForm(false);
   };
 
   const removeDiagnosis = (id) => {
@@ -303,6 +309,7 @@ const DoctorDashboard = () => {
         remarks: diagnosis.remarks
       });
       setEditingId(id);
+      setShowDiagnosisForm(true); // Show form when editing
     }
   };
 
@@ -314,6 +321,7 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    setShowDiagnosisForm(false); // Hide form when canceling edit
   };
 
   const saveDiagnoses = async () => {
@@ -850,28 +858,52 @@ const DoctorDashboard = () => {
                       </p>
                     </div>
 
-                    <h3
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: 600,
-                        color: "#1a237e",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      Add Diagnosis
-                    </h3>
-                    <div style={{ marginBottom: "16px" }}>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          marginBottom: "6px",
-                        }}
-                      >
-                        Patient Complaints *
-                      </label>
-                      <textarea
+                    {/* Add Diagnosis Button - shown when form is hidden and diagnoses exist */}
+                    {!showDiagnosisForm && diagnoses.length > 0 && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+                        <button
+                          onClick={() => setShowDiagnosisForm(true)}
+                          style={{
+                            padding: "10px 20px",
+                            background: "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          + Add Diagnosis
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Diagnosis Form - shown based on state */}
+                    {showDiagnosisForm && (
+                      <>
+                        <h3
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: 600,
+                            color: "#1a237e",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          {editingId ? 'Edit Diagnosis' : 'Add Diagnosis'}
+                        </h3>
+                        <div style={{ marginBottom: "16px" }}>
+                          <label
+                            style={{
+                              display: "block",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              marginBottom: "6px",
+                            }}
+                          >
+                            Patient Complaints *
+                          </label>
+                          <textarea
                         value={currentDiagnosis.complaints}
                         onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, complaints: e.target.value})}
                         placeholder="What symptoms/complaints did the patient report?"
@@ -1001,32 +1033,13 @@ const DoctorDashboard = () => {
                           Cancel
                         </button>
                       )}
-                      {diagnoses.length > 0 && !editingId && (
-                        <button
-                          onClick={saveDiagnoses}
-                          disabled={updateLoading}
-                          style={{
-                            padding: "12px 24px",
-                            background: updateLoading
-                              ? "#cbd5e1"
-                              : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "8px",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            cursor: updateLoading ? "not-allowed" : "pointer",
-                            flex: 1
-                          }}
-                        >
-                          {updateLoading ? "Saving..." : `Save All (${diagnoses.length})`}
-                        </button>
-                      )}
                     </div>
+                    </>
+                    )}
                     
                     {/* Show added diagnoses */}
                     {diagnoses.length > 0 && (
-                      <div style={{ marginTop: "20px" }}>
+                      <div style={{ marginTop: showDiagnosisForm ? "20px" : "0" }}>
                         <h4 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#1e293b" }}>Added Diagnoses ({diagnoses.length})</h4>
                         {diagnoses.map((diag, index) => (
                           <div key={diag.id} style={{
@@ -1086,6 +1099,29 @@ const DoctorDashboard = () => {
                             )}
                           </div>
                         ))}
+                        
+                        {/* Save All button below the cards */}
+                        <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
+                          <button
+                            onClick={saveDiagnoses}
+                            disabled={updateLoading}
+                            style={{
+                              padding: "12px 32px",
+                              background: updateLoading
+                                ? "#cbd5e1"
+                                : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "8px",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              cursor: updateLoading ? "not-allowed" : "pointer",
+                              minWidth: "200px",
+                            }}
+                          >
+                            {updateLoading ? "Saving..." : `💾 Save All (${diagnoses.length})`}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
