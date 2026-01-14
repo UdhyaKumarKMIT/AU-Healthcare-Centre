@@ -198,7 +198,36 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
 
     // Create prescription items
     for (const med of meds) {
-      // Validate medicine exists
+      // Handle external medicines (Others)
+      if (med.is_external) {
+        // Get "Others" medicine record
+        const othersMedicine = await Medicine.findOne({
+          where: { name: 'Others' },
+          transaction: t
+        });
+        
+        if (!othersMedicine) {
+          throw new ApiError(500, 'Others medicine record not found. Please run migration.');
+        }
+
+        const dosagePerDay = (med.morning ? 1 : 0) + (med.afternoon ? 1 : 0) + (med.night ? 1 : 0);
+        await PrescriptionItem.create({
+          prescription_id: prescription.prescription_id,
+          medicine_id: othersMedicine.medicine_id,
+          dosage_per_day: dosagePerDay,
+          duration_days: med.duration_days || 0,
+          quantity: 0,
+          is_external: true,
+          external_notes: med.external_notes || 'External Medicine',
+          food_timing: med.food || null,
+          morning: med.morning || false,
+          afternoon: med.afternoon || false,
+          night: med.night || false
+        }, { transaction: t });
+        continue;
+      }
+
+      // Validate medicine exists (for non-external medicines)
       const medicine = await Medicine.findByPk(med.medicine_id, { transaction: t });
       if (!medicine) {
         throw new ApiError(404, `Medicine not found: ${med.medicine_id}`);
@@ -211,7 +240,11 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
         duration_days: med.duration_days,
         quantity: med.duration_days * ((med.morning ? 1 : 0) + (med.afternoon ? 1 : 0) + (med.night ? 1 : 0)),
         is_external: false,
-        external_notes: med.food ? `Take ${med.food} food` : null
+        external_notes: null,
+        food_timing: med.food || null,
+        morning: med.morning || false,
+        afternoon: med.afternoon || false,
+        night: med.night || false
       }, { transaction: t });
     }
 
@@ -274,6 +307,35 @@ export const createPrescriptionWithTasks = async ({ visit_id, doctor_id, medicin
       prescriptionId = prescription.prescription_id;
 
       for (const med of regularMeds) {
+        // Handle external medicines (Others)
+        if (med.is_external) {
+          // Get "Others" medicine record
+          const othersMedicine = await Medicine.findOne({
+            where: { name: 'Others' },
+            transaction: t
+          });
+          
+          if (!othersMedicine) {
+            throw new ApiError(500, 'Others medicine record not found. Please run migration.');
+          }
+
+          const dosagePerDay = (med.morning ? 1 : 0) + (med.afternoon ? 1 : 0) + (med.night ? 1 : 0);
+          await PrescriptionItem.create({
+            prescription_id: prescription.prescription_id,
+            medicine_id: othersMedicine.medicine_id,
+            dosage_per_day: dosagePerDay,
+            duration_days: med.duration_days || 0,
+            quantity: 0,
+            is_external: true,
+            external_notes: med.external_notes || 'External Medicine',
+            food_timing: med.food || null,
+            morning: med.morning || false,
+            afternoon: med.afternoon || false,
+            night: med.night || false
+          }, { transaction: t });
+          continue;
+        }
+
         const medicine = await Medicine.findByPk(med.medicine_id, { transaction: t });
         if (!medicine) {
           throw new ApiError(404, `Medicine not found: ${med.medicine_id}`);
@@ -287,7 +349,11 @@ export const createPrescriptionWithTasks = async ({ visit_id, doctor_id, medicin
           duration_days: med.duration_days,
           quantity: med.duration_days * dosagePerDay,
           is_external: false,
-          external_notes: med.food ? `Take ${med.food} food` : null
+          external_notes: null,
+          food_timing: med.food || null,
+          morning: med.morning || false,
+          afternoon: med.afternoon || false,
+          night: med.night || false
         }, { transaction: t });
       }
     }
@@ -478,11 +544,12 @@ export const getPatientHistory = async (patient_id) => {
         include: [
           {
             model: PrescriptionItem,
-            attributes: ['duration_days', 'dosage_per_day', 'quantity'],
+            attributes: ['duration_days', 'dosage_per_day', 'quantity', 'is_external', 'external_notes', 'food_timing', 'morning', 'afternoon', 'night'],
             include: [
               {
                 model: Medicine,
-                attributes: ['name', 'type']
+                attributes: ['name', 'type'],
+                required: false
               }
             ]
           }
@@ -529,11 +596,16 @@ export const getPatientHistory = async (patient_id) => {
           prescription_id: p.prescription_id,
           created_at: p.created_at,
           medicines: p.PrescriptionItems?.map(pi => ({
-            medicine_name: pi.Medicine?.name,
-            medicine_type: pi.Medicine?.type,
+            medicine_name: pi.is_external ? pi.external_notes : pi.Medicine?.name,
+            medicine_type: pi.is_external ? 'External' : pi.Medicine?.type,
+            is_external: pi.is_external,
             duration_days: pi.duration_days,
             dosage_per_day: pi.dosage_per_day,
-            quantity: pi.quantity
+            quantity: pi.quantity,
+            food_timing: pi.food_timing,
+            morning: pi.morning,
+            afternoon: pi.afternoon,
+            night: pi.night
           })) || []
         })) || []
       };

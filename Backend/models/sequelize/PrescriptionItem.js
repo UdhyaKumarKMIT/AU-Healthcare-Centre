@@ -46,6 +46,25 @@ PrescriptionItem.init(
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        food_timing: {
+            type: DataTypes.ENUM('BEFORE', 'AFTER', 'WITH', 'EMPTY_STOMACH'),
+            allowNull: true,
+        },
+        morning: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: null,
+        },
+        afternoon: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: null,
+        },
+        night: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: null,
+        },
     },
     {
         sequelize,

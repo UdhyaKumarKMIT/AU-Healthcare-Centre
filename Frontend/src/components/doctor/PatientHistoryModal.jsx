@@ -331,14 +331,26 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                                               gap: '12px',
                                               flexWrap: 'wrap'
                                             }}>
-                                              <span style={{ 
-                                                background: 'white',
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontWeight: 500
-                                              }}>
-                                                📊 Dosage: {med.dosage_per_day} per day
-                                              </span>
+                                              {(med.morning !== null || med.afternoon !== null || med.night !== null) ? (
+                                                <span style={{ 
+                                                  background: 'white',
+                                                  padding: '4px 8px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 500
+                                                }}>
+                                                  📊 Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
+                                                  {med.food_timing && ` (${med.food_timing.charAt(0) + med.food_timing.slice(1).toLowerCase().replace('_', ' ')})`}
+                                                </span>
+                                              ) : (
+                                                <span style={{ 
+                                                  background: 'white',
+                                                  padding: '4px 8px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 500
+                                                }}>
+                                                  📊 Dosage: {med.dosage_per_day} per day
+                                                </span>
+                                              )}
                                               {med.quantity && (
                                                 <span style={{ 
                                                   background: 'white',
@@ -386,7 +398,13 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                             {med.medicine_type && <span className={styles.medType}> ({med.medicine_type})</span>}
                             <div className={styles.medDetails}>
                               <span>Duration: {med.duration_days} days</span>
-                              <span> | Dosage: {med.dosage_per_day} per day</span>
+                              {(med.morning !== null || med.afternoon !== null || med.night !== null) ? (
+                                <span> | Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
+                                  {med.food_timing && ` (${med.food_timing.charAt(0) + med.food_timing.slice(1).toLowerCase().replace('_', ' ')})`}
+                                </span>
+                              ) : (
+                                <span> | Dosage: {med.dosage_per_day} per day</span>
+                              )}
                               {med.quantity && <span> | Qty: {med.quantity}</span>}
                             </div>
                           </div>

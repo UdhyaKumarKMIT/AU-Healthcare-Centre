@@ -20,20 +20,54 @@ const MedicineRow = ({
     setLocalSearch(medicine.name || '')
   }, [medicine.name])
 
-  const isInjection = medicine.type === 'Injection'
+  const isInjection = medicine.type === 'Injection' || medicine.type === 'INJECTION'
   const isDrip = medicine.type === 'DRIP'
   const isInjectable = isInjection || isDrip
+  const isOthers = medicine.name === 'Others' || medicine.is_external
+
+  // Clear food timing fields when medicine type changes to injectable
+  useEffect(() => {
+    if (isInjectable && (medicine.whenToTake || medicine.timing?.morning || medicine.timing?.afternoon || medicine.timing?.night)) {
+      onChange({
+        whenToTake: '',
+        timing: { morning: false, afternoon: false, night: false }
+      })
+    }
+  }, [isInjectable])
 
   const handleSearchChange = (e) => {
     const value = e.target.value
     setLocalSearch(value)
-    onChange({ name: value })
+    
+    // Check if user typed "Others" - mark as external
+    if (value.toLowerCase() === 'others') {
+      onChange({ 
+        name: value,
+        is_external: true,
+        medicineId: 'EXTERNAL', // Placeholder - backend will use Others medicine
+        type: 'External'
+      })
+    } else {
+      onChange({ name: value })
+    }
     onSearch(value)
   }
 
   const handleSelectSuggestion = (suggestion) => {
     setLocalSearch(suggestion.name)
-    onSelectMedicine(suggestion)
+    const isInjectionType = suggestion.type === 'Injection' || suggestion.type === 'DRIP'
+    
+    // Clear external flag and food timing for injections when selecting from dropdown
+    onSelectMedicine({
+      ...suggestion,
+      is_external: false,
+      custom_name: '',
+      // Clear food timing fields for injections
+      ...(isInjectionType && {
+        whenToTake: '',
+        timing: { morning: false, afternoon: false, night: false }
+      })
+    })
   }
 
   const handleWhenToTakeChange = (value) => {
@@ -112,8 +146,8 @@ const MedicineRow = ({
         <div className={styles.fieldGroup}>
           <label className={styles.fieldLabel}>Medicine Type</label>
           <div className={styles.typeDisplay}>
-            {medicine.type || 'Select medicine'}
-            {medicine.type && medicine.available_stock !== undefined && (
+            {medicine.is_external ? '⚠️ External Medicine' : (medicine.type || 'Select medicine')}
+            {medicine.type && !medicine.is_external && medicine.available_stock !== undefined && (
               <span style={{
                 marginLeft: '12px',
                 fontSize: '12px',
@@ -132,6 +166,58 @@ const MedicineRow = ({
             )}
           </div>
         </div>
+
+        {/* External Medicine Checkbox */}
+        <div className={styles.fieldGroup}>
+          <label className={styles.checkboxLabel} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={medicine.is_external || false}
+              onChange={(e) => {
+                const isExternal = e.target.checked
+                onChange({
+                  is_external: isExternal,
+                  name: isExternal ? 'Others' : '',
+                  medicineId: isExternal ? 'EXTERNAL' : null,
+                  type: isExternal ? 'External' : '',
+                  custom_name: isExternal ? medicine.custom_name : ''
+                })
+                if (isExternal) {
+                  setLocalSearch('Others')
+                } else {
+                  setLocalSearch('')
+                }
+              }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: '500' }}>
+              Medicine not in pharmacy stock (External)
+            </span>
+          </label>
+        </div>
+
+        {/* Custom Medicine Name Input (shown when external) */}
+        {medicine.is_external && (
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>
+              Medicine Name *
+            </label>
+            <input
+              type="text"
+              value={medicine.custom_name || ''}
+              onChange={(e) => onChange({ custom_name: e.target.value })}
+              className={styles.searchInput}
+              placeholder="Enter exact medicine name"
+            />
+            <small style={{ 
+              fontSize: '11px',
+              color: '#666',
+              display: 'block',
+              marginTop: '4px'
+            }}>
+              This medicine will be purchased externally by the patient
+            </small>
+          </div>
+        )}
 
         {/* INJECTION-SPECIFIC FIELDS */}
         {isInjection && (
@@ -261,7 +347,7 @@ const MedicineRow = ({
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>When to Take</label>
               <div className={styles.radioGroup}>
-                {['Before Food', 'After Food', 'With Food'].map((v) => (
+                {['Before Food', 'After Food', 'With Food', 'Empty Stomach'].map((v) => (
                   <label key={v} className={styles.radioOption}>
                     <input
                       type="radio"

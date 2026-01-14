@@ -65,6 +65,8 @@ const DoctorDashboard = () => {
       whenToTake: "After Food",
       timing: { morning: false, afternoon: false, night: false },
       duration: 1,
+      is_external: false,
+      custom_name: "",
     },
   ]);
   const [medicineSearchResults, setMedicineSearchResults] = useState([]);
@@ -407,7 +409,7 @@ const DoctorDashboard = () => {
       });
 
       if (hasEmptyMedicine) {
-        toast.error('Please fill all required medicine fields');
+        toast.error('Please fill all required medicine fields (including medicine name for external medicines)');
         return;
       }
 
@@ -430,9 +432,12 @@ const DoctorDashboard = () => {
       const transformed = medicines.map((m) => {
         const isInjectable = m.type === "Injection" || m.type === "DRIP";
 
+        // For external medicines, don't send medicine_id (backend will lookup Others)
         const baseData = {
-          medicine_id: m.medicineId,
+          ...(m.is_external ? {} : { medicine_id: m.medicineId }),
           duration_days: Number(m.duration),
+          is_external: m.is_external || false,
+          external_notes: m.is_external ? m.custom_name : null,
         };
 
         if (isInjectable) {
@@ -445,7 +450,7 @@ const DoctorDashboard = () => {
               m.type === "DRIP" ? Number(m.infusionDuration) : null,
           };
         } else {
-          // For other medicines (regular prescription)
+          // For other medicines (regular prescription and external medicines with dosage)
           return {
             ...baseData,
             food:
@@ -453,10 +458,12 @@ const DoctorDashboard = () => {
                 ? "BEFORE"
                 : m.whenToTake === "With Food"
                 ? "WITH"
+                : m.whenToTake === "Empty Stomach"
+                ? "EMPTY_STOMACH"
                 : "AFTER",
-            morning: m.timing.morning,
-            afternoon: m.timing.afternoon,
-            night: m.timing.night,
+            morning: m.timing.morning || false,
+            afternoon: m.timing.afternoon || false,
+            night: m.timing.night || false,
           };
         }
       });
