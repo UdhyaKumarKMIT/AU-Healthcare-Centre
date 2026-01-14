@@ -143,7 +143,7 @@ if (formData.dob) {
   if (dobDate >= today) {
     newErrors.dob = 'Date of birth must be in the past'
   } else {
-    const age = today.getFullYear() - dobDate.getFullYear()
+    var age = today.getFullYear() - dobDate.getFullYear()
     const m = today.getMonth() - dobDate.getMonth()
     if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
       age--
