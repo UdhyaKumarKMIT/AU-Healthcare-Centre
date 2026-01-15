@@ -346,15 +346,18 @@ export const getAllAvailableDoctors = async () => {
   }));
 };
 
-export const getAllVisits = async () => {
-  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+export const getAllVisits = async ({ from, to } = {}) => {
+  const where = {}
+
+  if (from && to) {
+    where.visit_date = { [Op.between]: [new Date(from), new Date(to)] }
+  } else {
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000)
+    where.visit_date = { [Op.gte]: fourHoursAgo }
+  }
 
   const visits = await Visit.findAll({
-    where: {
-      visit_date: {
-        [Op.gte]: fourHoursAgo
-      }
-    },
+    where,
     include: [
       {
         model: Patient,
