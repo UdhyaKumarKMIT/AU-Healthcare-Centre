@@ -108,23 +108,23 @@
 
 .createVisit {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .recentVisits {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .registerPatientSection {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
   align-self: start;
 }
 
 .doctorAvailabilitySection {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
   align-self: start;
 }
 
