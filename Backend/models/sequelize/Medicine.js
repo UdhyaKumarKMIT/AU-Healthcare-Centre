@@ -15,7 +15,7 @@ Medicine.init(
             allowNull: false,
         },
         type: {
-            type: DataTypes.ENUM('TABLET', 'SYRUP', 'OINTMENT', 'INJECTION', 'DROPS'),
+            type: DataTypes.ENUM('TABLET', 'SYRUP', 'OINTMENT', 'INJECTION', 'DROPS','EXTERNAL'),
             allowNull: false,
         },
     },
