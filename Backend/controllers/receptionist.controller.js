@@ -7,7 +7,7 @@ export const registerPatient = async (req, res, next) => {
     
     const result = await receptionistService.registerPatient({
       ...req.body,
-      created_by_code: code
+      created_by_code: req.body.created_by_code || code
     });
     
     res.status(201).json({ 
@@ -25,7 +25,7 @@ export const createVisit = async (req, res, next) => {
     
     const result = await receptionistService.createVisit({
       ...req.body,
-      created_by_code: code
+      created_by_code: req.body.created_by_code || code
     });
     
     res.status(201).json({
