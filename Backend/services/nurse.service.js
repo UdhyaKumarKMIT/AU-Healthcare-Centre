@@ -408,25 +408,19 @@ export const verifyStaffCode = async (secret_code) => {
 
   try {
     const staff = await StaffDetails.findOne({
-      where: { 
-        code: secret_code,
-        role: 'NURSE_RECEPTIONIST',
-        status: 'ACTIVE'
-      }
-    });
+  attributes: [
+    'staff_id',
+  ],
+  where: { 
+    code: secret_code,
+    role: 'NURSE_RECEPTIONIST',
+    status: 'ACTIVE'
+  }
+});
+
 
     console.log('🔍 [VERIFY CODE] Database query result:', staff ? 'FOUND' : 'NOT FOUND');
     
-    if (staff) {
-      console.log('✅ [VERIFY CODE] Valid staff found:', {
-        name: staff.name,
-        code: staff.code,
-        role: staff.role
-      });
-    } else {
-      console.log('❌ [VERIFY CODE] No matching staff in database');
-      console.log('🔍 [VERIFY CODE] Query was: code =', secret_code, ', role = NURSE_RECEPTIONIST, status = ACTIVE');
-    }
 
     return !!staff;
   } catch (error) {
