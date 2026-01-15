@@ -1,10 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styles from './RecentVisitsList.module.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSync } from '@fortawesome/free-solid-svg-icons'
 
 
 const RecentVisitsList = ({ visits = [], onRefresh, isLoading }) => {
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  
   const getStatusBadge = (status) => {
     const statusConfig = {
       SCHEDULED: { className: styles.statusScheduled, label: 'Scheduled' },
@@ -48,14 +51,31 @@ const RecentVisitsList = ({ visits = [], onRefresh, isLoading }) => {
     <p className={styles.subtitle}>Monitor visit flow</p>
   </div>
 
+<div className={styles.filterControls}>
+  <input
+    type="datetime-local"
+    value={from}
+    onChange={e => setFrom(e.target.value)}
+    className={styles.filterInput}
+  />
+
+  <input
+    type="datetime-local"
+    value={to}
+    onChange={e => setTo(e.target.value)}
+    className={styles.filterInput}
+  />
+
   <button
-    onClick={onRefresh}
+    onClick={() => onRefresh({ from, to })}
     disabled={isLoading}
     className={styles.refreshButton}
   >
     <FontAwesomeIcon icon={faSync} spin={isLoading} />
-    Refresh
+    Filter
   </button>
+</div>
+
 </div>
 
 
