@@ -55,7 +55,8 @@ const ReceptionistDashboard = () => {
   const availableDoctors = doctors?.filter(doc => doc.status === 'AVAILABLE').length || 0;
   const todayVisits = visits?.filter(visit => {
     try {
-      const visitDate = new Date(visit.visitDate).toDateString();
+      const visitDate = new Date(visit.visitDate
+).toDateString();
       const today = new Date().toDateString();
       return visitDate === today;
     } catch {
@@ -67,8 +68,8 @@ const ReceptionistDashboard = () => {
     // Navigate to nurse dashboard
     navigate('/nurse');
   };
-  const handleRefreshVisits = () => {
-  dispatch(fetchVisits())
+  const handleRefreshVisits = (filters = {}) => {
+  dispatch(fetchVisits(filters))
 }
 
 
