@@ -80,7 +80,7 @@ return response.data
 
 export const fetchPatients = createAsyncThunk(
   'receptionist/fetchPatients',
-  async (_, { rejectWithValue }) => {
+  async ({ from, to } = {}, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/receptionist/patients`, {
         headers: getAuthHeaders()
@@ -161,9 +161,10 @@ export const updateDoctorAvailability = createAsyncThunk(
 
 export const fetchVisits = createAsyncThunk(
   'receptionist/fetchVisits',
-  async (_, { rejectWithValue }) => {
+  async ({ from, to } = {}, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/receptionist/visits`, {
+  params: { from, to },
         headers: getAuthHeaders()
       });
       return response.data.data;
