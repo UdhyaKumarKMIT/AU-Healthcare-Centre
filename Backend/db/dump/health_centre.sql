@@ -174,7 +174,7 @@ DROP TABLE IF EXISTS `medicine`;
 CREATE TABLE `medicine` (
   `medicine_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
-  `type` enum('TABLET','SYRUP','OINTMENT','INJECTION','DROPS') NOT NULL,
+  `type` enum('TABLET','SYRUP','OINTMENT','INJECTION','DROPS', 'EXTERNAL') NOT NULL,
   PRIMARY KEY (`medicine_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -185,6 +185,8 @@ CREATE TABLE `medicine` (
 
 LOCK TABLES `medicine` WRITE;
 /*!40000 ALTER TABLE `medicine` DISABLE KEYS */;
+INSERT INTO `medicine` (`medicine_id`, `name`, `type`) VALUES
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Others', 'EXTERNAL');
 /*!40000 ALTER TABLE `medicine` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -465,6 +467,10 @@ CREATE TABLE `prescription_items` (
   `quantity` int NOT NULL,
   `is_external` tinyint(1) NOT NULL,
   `external_notes` text,
+  `food_timing` enum('BEFORE','AFTER','WITH','EMPTY_STOMACH') DEFAULT NULL,
+  `morning` tinyint(1) DEFAULT NULL,
+  `afternoon` tinyint(1) DEFAULT NULL,
+  `night` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`item_id`),
   KEY `prescription_id` (`prescription_id`),
   KEY `medicine_id` (`medicine_id`),

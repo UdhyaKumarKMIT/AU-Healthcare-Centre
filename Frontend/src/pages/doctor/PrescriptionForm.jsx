@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateVisitStatus } from '../../store/slices/doctorsSlice';
+import { toast } from 'react-toastify';
 import Header from '../../components/Header/Header';
 import {
   savePrescription,
@@ -54,7 +55,6 @@ const PrescriptionForm = () => {
 
   useEffect(() => {
     if (!patient || !diagnosis) {
-      console.log('Missing data:', { patient, diagnosis, patients, diagnoses });
       navigate('/doctor/dashboard');
       return;
     }
@@ -75,10 +75,9 @@ const PrescriptionForm = () => {
   const handleStatusUpdate = async (newStatus) => {
     try {
       await dispatch(updateVisitStatus({ visitId, status: newStatus })).unwrap();
-      console.log(`✅ Visit status updated to ${newStatus}`);
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('Failed to update visit status');
+      toast.error('Failed to update visit status');
     }
   };
 
@@ -158,9 +157,9 @@ const PrescriptionForm = () => {
       // Update status to PRESCRIBED after saving prescription
       await handleStatusUpdate('PRESCRIBED');
       
-      alert('Prescription saved successfully!');
+      toast.success('Prescription saved successfully!');
     } catch (error) {
-      alert(`Failed to save prescription: ${error.message}`);
+      toast.error(`Failed to save prescription: ${error.message}`);
     }
   };
 
@@ -193,16 +192,16 @@ const PrescriptionForm = () => {
       // Update status to PHARMACY when submitted to pharmacy
       await handleStatusUpdate('PHARMACY');
       
-      alert('Prescription submitted to pharmacy!');
+      toast.success('Prescription submitted to pharmacy!');
       navigate('/doctor/dashboard');
     } catch (error) {
-      alert(`Failed to submit prescription: ${error.message}`);
+      toast.error(`Failed to submit prescription: ${error.message}`);
     }
   };
 
   const validatePrescription = () => {
     if (medicines.length === 0) {
-      alert('Please add at least one medicine');
+      toast.error('Please add at least one medicine');
       return false;
     }
 

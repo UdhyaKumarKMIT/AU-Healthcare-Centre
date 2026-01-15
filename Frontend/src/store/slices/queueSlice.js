@@ -39,10 +39,16 @@ export const fetchPatientQueue = createAsyncThunk(
         visitType: visit.visit_type,
         status: visit.status,
         patientId: visit.patient_id,
+        patientDob: visit.patient_dob,
         age: visit.age || 'N/A',
         gender: visit.gender || 'N/A',
         bloodGroup: visit.blood_group || 'N/A',
-        reason: visit.reason || visit.chief_complaint || 'Not specified'
+        patientType: visit.patient_type,
+        patientPhone: visit.patient_phone,
+        patientAllergies: visit.patient_allergies,
+        patientCreatedAt: visit.patient_created_at,
+        reason: visit.reason || visit.chief_complaint || 'Not specified',
+        vitals: visit.vitals || null
       }));
     } catch (error) {
       console.error('💥 Fetch queue error:', error);

@@ -12,7 +12,7 @@ async function startServer() {
     // Creates tables for all defined models if they do not exist
     // Note: avoid `alter: true` to prevent unintended schema changes
     // and issues like exceeding MySQL's max index/keys limit.
-    await sequelize.sync({alter: true});
+    await sequelize.sync({alter: false});
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

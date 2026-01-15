@@ -1,11 +1,16 @@
 // src/components/doctor/PatientHistoryModal.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSpinner, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import styles from './PatientHistoryModal.module.css';
 
 const PatientHistoryModal = ({ history, loading, error, onClose }) => {
+  const [expandedVisitId, setExpandedVisitId] = useState(null);
+
+  const toggleVisit = (visitId) => {
+    setExpandedVisitId(expandedVisitId === visitId ? null : visitId);
+  };
   if (loading) {
     return (
       <div className={styles.modalOverlay} onClick={onClose}>
@@ -67,23 +72,19 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                   <span className={styles.value}>{patient.gender || 'N/A'}</span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.label}>Blood Group:</span>
-                  <span className={styles.value}>{patient.blood_group || 'N/A'}</span>
+                  <span className={styles.label}>Patient Type:</span>
+                  <span className={styles.value}>{patient.patient_type?.replace('_', ' ') || 'N/A'}</span>
                 </div>
                 <div className={styles.infoItem}>
                   <span className={styles.label}>Phone:</span>
                   <span className={styles.value}>{patient.phone || 'N/A'}</span>
                 </div>
-                {patient.emergency_contact && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Emergency Contact:</span>
-                    <span className={styles.value}>{patient.emergency_contact}</span>
-                  </div>
-                )}
-                {patient.roll_no && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.label}>Roll No:</span>
-                    <span className={styles.value}>{patient.roll_no}</span>
+                {patient.allergies && (
+                  <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
+                    <span className={styles.label}>⚠️ Allergies:</span>
+                    <span className={styles.value} style={{ color: '#ef4444', fontWeight: 600 }}>
+                      {patient.allergies}
+                    </span>
                   </div>
                 )}
               </div>
@@ -145,76 +146,266 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
               <section className={styles.section}>
                 <h3 className={styles.sectionTitle}>Past Visits</h3>
                 <div className={styles.visitsList}>
-                  {pastVisits.map((visit) => (
-                    <div key={visit.visit_id} className={styles.visitItem}>
-                      <div className={styles.visitHeader}>
-                        <div>
-                          <strong>{new Date(visit.visit_date).toLocaleDateString()}</strong>
-                          <span className={styles.visitType}> - {visit.visit_type}</span>
-                        </div>
-                        <span className={styles.badge}>{visit.status}</span>
-                      </div>
-                      {visit.doctor_name && (
-                        <p className={styles.visitDetail}>
-                          Doctor: {visit.doctor_name}
-                          {visit.specialization && ` (${visit.specialization})`}
-                        </p>
-                      )}
-                      {visit.reason && (
-                        <p className={styles.visitDetail}>Reason: {visit.reason}</p>
-                      )}
-                      {visit.diagnosis_name && (
-                        <div className={styles.diagnosisBox}>
-                          <strong>Diagnosis:</strong> {visit.diagnosis_name}
-                          {visit.diagnosis_code && ` (${visit.diagnosis_code})`}
-                          {visit.diagnosis_notes && (
-                            <p className={styles.diagnosisNotes}>{visit.diagnosis_notes}</p>
+                  {pastVisits.map((visit) => {
+                    const isExpanded = expandedVisitId === visit.visit_id;
+                    const diagnosisCount = visit.diagnoses?.length || 0;
+                    const prescriptionCount = visit.prescriptions?.length || 0;
+                    
+                    return (
+                      <div 
+                        key={visit.visit_id} 
+                        className={styles.visitItem}
+                        style={{ 
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          border: isExpanded ? '2px solid #3b82f6' : '1px solid #e2e8f0'
+                        }}
+                      >
+                        {/* High-level summary - always visible */}
+                        <div onClick={() => toggleVisit(visit.visit_id)}>
+                          <div className={styles.visitHeader}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                              <div>
+                                <strong>{new Date(visit.visit_date).toLocaleDateString()}</strong>
+                                <span className={styles.visitType}> - {visit.visit_type || 'General'}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                                {diagnosisCount > 0 && (
+                                  <span style={{ 
+                                    background: '#dbeafe', 
+                                    color: '#1e40af', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '12px',
+                                    fontWeight: 600
+                                  }}>
+                                    {diagnosisCount} Diagnosis
+                                  </span>
+                                )}
+                                {prescriptionCount > 0 && (
+                                  <span style={{ 
+                                    background: '#dcfce7', 
+                                    color: '#166534', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '12px',
+                                    fontWeight: 600
+                                  }}>
+                                    {prescriptionCount} Prescription{prescriptionCount > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span className={styles.badge}>{visit.status}</span>
+                              <FontAwesomeIcon 
+                                icon={isExpanded ? faChevronUp : faChevronDown} 
+                                style={{ color: '#64748b', fontSize: '14px' }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {visit.doctor_name && (
+                            <p className={styles.visitDetail}>
+                              Doctor: {visit.doctor_name}
+                              {visit.specialization && ` (${visit.specialization})`}
+                            </p>
+                          )}
+                          {visit.reason && (
+                            <p className={styles.visitDetail}>Reason: {visit.reason}</p>
                           )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {/* Detailed information - shown when expanded */}
+                        {isExpanded && (
+                          <div style={{ 
+                            marginTop: '16px', 
+                            paddingTop: '16px', 
+                            borderTop: '1px solid #e2e8f0',
+                            animation: 'slideDown 0.3s ease'
+                          }}>
+                            {/* Diagnoses Details */}
+                            {visit.diagnoses && visit.diagnoses.length > 0 && (
+                              <div className={styles.diagnosisBox}>
+                                <strong style={{ color: '#1a237e', fontSize: '14px' }}>
+                                  📋 Diagnoses ({visit.diagnoses.length})
+                                </strong>
+                                {visit.diagnoses.map((diag, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    style={{ 
+                                      marginTop: '12px',
+                                      padding: '12px',
+                                      background: '#f8fafc',
+                                      borderRadius: '6px',
+                                      borderLeft: '3px solid #3b82f6'
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                                      {diag.diagnosis_name}
+                                    </div>
+                                    {diag.complaints && (
+                                      <p className={styles.diagnosisNotes} style={{ 
+                                        marginTop: '8px',
+                                        padding: '8px',
+                                        background: 'white',
+                                        borderRadius: '4px',
+                                        fontSize: '13px',
+                                        color: '#475569'
+                                      }}>
+                                        <strong>Patient Complaints:</strong> {diag.complaints}
+                                      </p>
+                                    )}
+                                    {diag.remarks && (
+                                      <p className={styles.diagnosisNotes} style={{ 
+                                        marginTop: '8px',
+                                        padding: '8px',
+                                        background: 'white',
+                                        borderRadius: '4px',
+                                        fontSize: '13px',
+                                        color: '#475569',
+                                        fontStyle: 'italic'
+                                      }}>
+                                        <strong>Doctor's Remarks:</strong> {diag.remarks}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* Prescriptions Details */}
+                            {visit.prescriptions && visit.prescriptions.length > 0 && (
+                              <div className={styles.prescriptionBox} style={{ marginTop: '16px' }}>
+                                <strong style={{ color: '#1a237e', fontSize: '14px' }}>
+                                  💊 Prescribed Medicines
+                                </strong>
+                                {visit.prescriptions.map((prescription, pIdx) => (
+                                  <div key={pIdx} style={{ marginTop: '12px' }}>
+                                    {prescription.medicines && prescription.medicines.length > 0 && (
+                                      <div className={styles.medicinesList}>
+                                        {prescription.medicines.map((med, mIdx) => (
+                                          <div 
+                                            key={mIdx} 
+                                            style={{ 
+                                              padding: '12px', 
+                                              background: '#f1f5f9', 
+                                              borderRadius: '6px',
+                                              marginTop: mIdx > 0 ? '8px' : 0,
+                                              borderLeft: '3px solid #10b981'
+                                            }}
+                                          >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                              <div style={{ flex: 1 }}>
+                                                <strong style={{ color: '#1e293b', fontSize: '14px' }}>
+                                                  {med.medicine_name}
+                                                </strong>
+                                                {med.medicine_type && (
+                                                  <span className={styles.medType} style={{ 
+                                                    marginLeft: '8px',
+                                                    background: '#dbeafe',
+                                                    color: '#1e40af',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 600
+                                                  }}>
+                                                    {med.medicine_type}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <div style={{ 
+                                                background: '#dcfce7', 
+                                                color: '#166534',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '11px',
+                                                fontWeight: 600
+                                              }}>
+                                                {med.duration_days} days
+                                              </div>
+                                            </div>
+                                            <div className={styles.medDetails} style={{ 
+                                              fontSize: '12px', 
+                                              color: '#64748b', 
+                                              marginTop: '8px',
+                                              display: 'flex',
+                                              gap: '12px',
+                                              flexWrap: 'wrap'
+                                            }}>
+                                              {(med.morning !== null || med.afternoon !== null || med.night !== null) ? (
+                                                <span style={{ 
+                                                  background: 'white',
+                                                  padding: '4px 8px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 500
+                                                }}>
+                                                  📊 Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
+                                                  {med.food_timing && ` (${med.food_timing.charAt(0) + med.food_timing.slice(1).toLowerCase().replace('_', ' ')})`}
+                                                </span>
+                                              ) : (
+                                                <span style={{ 
+                                                  background: 'white',
+                                                  padding: '4px 8px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 500
+                                                }}>
+                                                  📊 Dosage: {med.dosage_per_day} per day
+                                                </span>
+                                              )}
+                                              {med.quantity && (
+                                                <span style={{ 
+                                                  background: 'white',
+                                                  padding: '4px 8px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 500
+                                                }}>
+                                                  📦 Qty: {med.quantity}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
 
-            {/* Prescriptions */}
+            {/* Separate Prescriptions Section - if needed for standalone prescriptions */}
             {prescriptions && prescriptions.length > 0 && (
               <section className={styles.section} style={{ marginTop: '24px' }}>
-                <h3 className={styles.sectionTitle}>Recent Prescriptions</h3>
+                <h3 className={styles.sectionTitle}>All Prescriptions</h3>
                 <div className={styles.prescriptionsList}>
-                  {Object.values(prescriptions.reduce((acc, prescription) => {
-                    const key = prescription.prescription_id;
-                    if (!acc[key]) {
-                      acc[key] = {
-                        ...prescription,
-                        medicines: []
-                      };
-                    }
-                    if (prescription.med_name) {
-                      acc[key].medicines.push(prescription);
-                    }
-                    return acc;
-                  }, {})).map((grouped, idx) => (
+                  {prescriptions.map((prescription, idx) => (
                     <div key={idx} className={styles.prescriptionItem}>
                       <div className={styles.prescriptionHeader}>
                         <div>
-                          <strong>{new Date(grouped.created_at).toLocaleDateString()}</strong>
-                          <span> - Dr. {grouped.doctor_name}</span>
+                          <strong>{new Date(prescription.created_at).toLocaleDateString()}</strong>
                         </div>
                       </div>
                       <div className={styles.medicinesList}>
-                        {grouped.medicines.map((med, medIdx) => (
+                        {prescription.medicines && prescription.medicines.map((med, medIdx) => (
                           <div key={medIdx} className={styles.medicineItem}>
-                            <strong>{med.med_name}</strong>
-                            {med.med_type && <span className={styles.medType}> ({med.med_type})</span>}
+                            <strong>{med.medicine_name}</strong>
+                            {med.medicine_type && <span className={styles.medType}> ({med.medicine_type})</span>}
                             <div className={styles.medDetails}>
-                              <span>Duration: {med.total_days} days</span>
-                              <span> | {med.food}</span>
-                              <span> | </span>
-                              {med.morning && <span>Morning </span>}
-                              {med.afternoon && <span>Afternoon </span>}
-                              {med.night && <span>Night</span>}
+                              <span>Duration: {med.duration_days} days</span>
+                              {(med.morning !== null || med.afternoon !== null || med.night !== null) ? (
+                                <span> | Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
+                                  {med.food_timing && ` (${med.food_timing.charAt(0) + med.food_timing.slice(1).toLowerCase().replace('_', ' ')})`}
+                                </span>
+                              ) : (
+                                <span> | Dosage: {med.dosage_per_day} per day</span>
+                              )}
+                              {med.quantity && <span> | Qty: {med.quantity}</span>}
                             </div>
                           </div>
                         ))}

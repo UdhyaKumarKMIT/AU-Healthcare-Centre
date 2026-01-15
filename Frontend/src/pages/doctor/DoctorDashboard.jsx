@@ -14,6 +14,7 @@ import DiagnosisSummary from "../../components/doctor/DiagnosisSummary";
 import MedicineRow from "../../components/doctor/MedicineRow";
 import PatientHistoryModal from "../../components/doctor/PatientHistoryModal";
 import Header from "../../components/Header/Header";
+import { toast } from 'react-toastify';
 import styles from "./DoctorDashboard.module.css";
 
 const API_BASE = "http://localhost:5000";
@@ -37,11 +38,22 @@ const DoctorDashboard = () => {
   const { updateLoading } = useSelector((state) => state.doctors || {});
 
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [diagnosis, setDiagnosis] = useState(null);
+  const [diagnoses, setDiagnoses] = useState([]);
+  const [diagnosisSaved, setDiagnosisSaved] = useState(false);
+  const [currentDiagnosis, setCurrentDiagnosis] = useState({
+    diagnosis_name: '',
+    diagnosis_code: '',
+    complaints: '',
+    remarks: ''
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [nurses, setNurses] = useState([]); // For nurse assignments
   const [todayVisitsCount, setTodayVisitsCount] = useState(0); // Today's visits count
+  const [nurseTaskTypes, setNurseTaskTypes] = useState([]); // Available nurse task types
+  const [nurseTasks, setNurseTasks] = useState([]); // Nurse tasks to be created
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
@@ -53,21 +65,16 @@ const DoctorDashboard = () => {
       whenToTake: "After Food",
       timing: { morning: false, afternoon: false, night: false },
       duration: 1,
+      is_external: false,
+      custom_name: "",
     },
   ]);
   const [medicineSearchResults, setMedicineSearchResults] = useState([]);
   const [activeMedicineIndex, setActiveMedicineIndex] = useState(null);
 
-  // Debug nurses state changes
-  useEffect(() => {
-    console.log("🔧 DEBUG: nurses state changed:", nurses);
-    console.log("🔧 DEBUG: nurses length:", nurses.length);
-  }, [nurses]);
-
   // Load patients from Redux on mount
   useEffect(() => {
     if (doctorId) {
-      console.log("📡 Loading queue for doctor:", doctorId);
       dispatch(fetchPatientQueue(doctorId));
 
       // Fetch today's visits count
@@ -80,8 +87,6 @@ const DoctorDashboard = () => {
       }, 30000);
 
       return () => clearInterval(interval);
-    } else {
-      console.error("No doctor_id found. Please login again.");
     }
   }, [dispatch, doctorId]);
 
@@ -90,7 +95,6 @@ const DoctorDashboard = () => {
   const fetchTodayVisitsCount = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      console.log("📡 Fetching today's visits count for:", today);
 
       const response = await fetch(
         `${API_BASE}/api/doctor/visits/today?doctor_id=${doctorId}&date=${today}`,
@@ -103,7 +107,6 @@ const DoctorDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Today's visits count:", data.count);
         setTodayVisitsCount(data.count || 0);
       } else {
         console.error("Failed to fetch today's visits count");
@@ -117,18 +120,13 @@ const DoctorDashboard = () => {
 
   // Fetch nurses on mount
   useEffect(() => {
-    console.log("🔧 DEBUG: useEffect triggered for fetchNurses");
     fetchNurses();
   }, []);
 
   const fetchNurses = async () => {
-    console.log("🔧 DEBUG: fetchNurses called");
-    console.log("🔧 DEBUG: API_BASE:", API_BASE);
-    console.log("🔧 DEBUG: token:", token ? "Token exists" : "No token");
 
     try {
       const url = `${API_BASE}/api/doctor/nurses`;
-      console.log("🔧 DEBUG: Fetching from URL:", url);
 
       const response = await fetch(url, {
         headers: {
@@ -136,27 +134,10 @@ const DoctorDashboard = () => {
         },
       });
 
-      console.log("🔧 DEBUG: Response status:", response.status);
-      console.log("🔧 DEBUG: Response ok:", response.ok);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ DEBUG: Fetched nurses data:", data);
-        console.log("✅ DEBUG: Nurses array:", data.nurses);
-        console.log("✅ DEBUG: Number of nurses:", data.nurses?.length || 0);
-
-        // Debug each nurse object structure
-        if (data.nurses && data.nurses.length > 0) {
-          console.log("✅ DEBUG: First nurse structure:", data.nurses[0]);
-          console.log(
-            "✅ DEBUG: First nurse has nurse_id?",
-            !!data.nurses[0].nurse_id
-          );
-          console.log("✅ DEBUG: First nurse has name?", !!data.nurses[0].name);
-        }
 
         setNurses(data.nurses || []);
-        console.log("✅ DEBUG: setNurses called with:", data.nurses || []);
       } else {
         const errorText = await response.text();
         console.error("❌ DEBUG: Failed to fetch nurses");
@@ -170,6 +151,28 @@ const DoctorDashboard = () => {
     }
   };
 
+  const fetchNurseTaskTypes = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/doctor/nurse-task-types`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNurseTaskTypes(data.data || []);
+      } else {
+        console.error("❌ Failed to fetch nurse task types");
+        setNurseTaskTypes([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching nurse task types:", error);
+      setNurseTaskTypes([]);
+    }
+  };
+
   // Sync selected patient with Redux state
   useEffect(() => {
     if (selectedPatient) {
@@ -177,10 +180,6 @@ const DoctorDashboard = () => {
         (p) => p.visitId === selectedPatient.visitId
       );
       if (updatedPatient && updatedPatient.status !== selectedPatient.status) {
-        console.log(
-          "🔄 Syncing selected patient with updated status:",
-          updatedPatient.status
-        );  
         setSelectedPatient(updatedPatient);
       }
     }
@@ -191,21 +190,25 @@ const DoctorDashboard = () => {
       await dispatch(
         updateVisitStatus({ visitId, status: newStatus })
       ).unwrap();
-      console.log(`✅ Status updated to ${newStatus}`);
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert("Failed to update visit status");
+      toast.error('Failed to update visit status');
     }
   };
 
   const handlePatientSelect = async (patient) => {
-    console.log(
-      "👤 Patient selected:",
-      patient.patientName,
-      "Status:",
-      patient.status
-    );
     setSelectedPatient(patient);
+
+    // Check if patient is already diagnosed - fetch existing diagnoses
+    if (patient.status === "DIAGNOSED" || patient.status === "PRESCRIBED" || patient.status === "PHARMACY" || patient.status === "COMPLETED") {
+      await fetchExistingDiagnoses(patient.visitId);
+      setShowDiagnosisForm(false); // Hide form if patient already diagnosed
+    } else {
+      // Reset for new diagnosis
+      setDiagnoses([]);
+      setDiagnosisSaved(false);
+      setShowDiagnosisForm(true); // Show form for new diagnosis
+    }
 
     // Auto-update status to IN_PROGRESS if SCHEDULED
     if (patient.status === "SCHEDULED") {
@@ -213,8 +216,33 @@ const DoctorDashboard = () => {
     }
   };
 
+  const fetchExistingDiagnoses = async (visitId) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/doctor/visit/${visitId}/diagnoses`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch diagnoses");
+
+      const result = await response.json();
+
+      if (result.diagnoses && result.diagnoses.length > 0) {
+        setDiagnoses(result.diagnoses);
+        setDiagnosisSaved(true); // Mark as already saved
+      } else {
+        setDiagnoses([]);
+        setDiagnosisSaved(false);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching existing diagnoses:", error);
+      setDiagnoses([]);
+      setDiagnosisSaved(false);
+    }
+  };
+
   const handleViewHistory = async (patientId) => {
-    console.log("📜 Opening history for patient:", patientId);
     setShowHistoryModal(true);
     await dispatch(fetchPatientHistory(patientId));
   };
@@ -224,9 +252,88 @@ const DoctorDashboard = () => {
     dispatch(clearPatientHistory());
   };
 
-  const saveDiagnosis = async (diagnosisData) => {
+  const addDiagnosis = () => {
+    if (!currentDiagnosis.diagnosis_name.trim()) {
+      toast.error('Please enter diagnosis name');
+      return;
+    }
+    
+    if (editingId) {
+      // Update existing diagnosis
+      setDiagnoses(diagnoses.map(d => 
+        d.id === editingId 
+          ? { ...currentDiagnosis, id: editingId, createdAt: d.createdAt }
+          : d
+      ));
+      setEditingId(null);
+    } else {
+      // Add new diagnosis
+      const newDiagnosis = {
+        ...currentDiagnosis,
+        id: Date.now(), // Temporary ID for frontend
+        createdAt: new Date().toISOString()
+      };
+      setDiagnoses([...diagnoses, newDiagnosis]);
+    }
+    
+    setCurrentDiagnosis({
+      diagnosis_name: '',
+      diagnosis_code: '',
+      complaints: '',
+      remarks: ''
+    });
+    
+    // Hide form after adding diagnosis
+    setShowDiagnosisForm(false);
+  };
+
+  const removeDiagnosis = (id) => {
+    setDiagnoses(diagnoses.filter(d => d.id !== id));
+    // If currently editing this diagnosis, clear the form
+    if (editingId === id) {
+      setEditingId(null);
+      setCurrentDiagnosis({
+        diagnosis_name: '',
+        diagnosis_code: '',
+        complaints: '',
+        remarks: ''
+      });
+    }
+  };
+
+  const editDiagnosis = (id) => {
+    const diagnosis = diagnoses.find(d => d.id === id);
+    if (diagnosis) {
+      setCurrentDiagnosis({
+        diagnosis_name: diagnosis.diagnosis_name,
+        diagnosis_code: diagnosis.diagnosis_code,
+        complaints: diagnosis.complaints,
+        remarks: diagnosis.remarks
+      });
+      setEditingId(id);
+      setShowDiagnosisForm(true); // Show form when editing
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setCurrentDiagnosis({
+      diagnosis_name: '',
+      diagnosis_code: '',
+      complaints: '',
+      remarks: ''
+    });
+    setShowDiagnosisForm(false); // Hide form when canceling edit
+  };
+
+  const saveDiagnoses = async () => {
+    if (diagnoses.length === 0) {
+      toast.error('Please add at least one diagnosis');
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/api/doctor/diagnosis`, {
+      const response = await fetch(`${API_BASE}/api/doctor/diagnoses`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -235,31 +342,36 @@ const DoctorDashboard = () => {
         body: JSON.stringify({
           visit_id: selectedPatient.visitId,
           doctor_id: doctorId,
-          diagnosis_code: diagnosisData.diagnosis_code || null,
-          diagnosis_name: diagnosisData.diagnosis_name,
-          diagnosis_notes: diagnosisData.diagnosis_notes || null,
+          diagnoses: diagnoses.map(d => ({
+            diagnosis_code: d.diagnosis_code || null,
+            diagnosis_name: d.diagnosis_name,
+            complaints: d.complaints || null,
+            remarks: d.remarks || null,
+          }))
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to save diagnosis");
+      if (!response.ok) throw new Error("Failed to save diagnoses");
 
       const result = await response.json();
-      console.log("✅ Diagnosis saved:", result);
-
-      setDiagnosis({
-        diagnosisName: diagnosisData.diagnosis_name,
-        diagnosisNotes: diagnosisData.diagnosis_notes,
-        diagnosisCode: diagnosisData.diagnosis_code,
-        createdAt: new Date().toISOString(),
-      });
 
       // Update status to DIAGNOSED
       await handleStatusUpdate(selectedPatient.visitId, "DIAGNOSED");
 
-      alert("Diagnosis saved successfully!");
+      toast.success(`${diagnoses.length} diagnosis(es) saved successfully!`);
+      
+      // Mark as saved and clear form (keep diagnoses for display in summary)
+      setDiagnosisSaved(true);
+      setCurrentDiagnosis({
+        diagnosis_name: '',
+        diagnosis_code: '',
+        complaints: '',
+        remarks: ''
+      });
+      setEditingId(null);
     } catch (error) {
-      console.error("Error saving diagnosis:", error);
-      alert("Failed to save diagnosis: " + error.message);
+      console.error("Error saving diagnoses:", error);
+      toast.error("Failed to save diagnoses: " + error.message);
     }
   };
 
@@ -297,22 +409,22 @@ const DoctorDashboard = () => {
       });
 
       if (hasEmptyMedicine) {
-        alert("Please fill all required medicine fields");
+        toast.error('Please fill all required medicine fields (including medicine name for external medicines)');
         return;
       }
 
       if (hasInvalidInjectable) {
-        alert("Please assign nurse and route for all injections/drips");
+        toast.error('Please assign nurse and route for all injections/drips');
         return;
       }
 
       if (hasInvalidDrip) {
-        alert("Please set infusion duration (minimum 5 mins) for all drips");
+        toast.error('Please set infusion duration (minimum 5 mins) for all drips');
         return;
       }
 
       if (hasNoTiming) {
-        alert("Please select at least one timing for non-injectable medicines");
+        toast.error('Please select at least one timing for non-injectable medicines');
         return;
       }
 
@@ -320,9 +432,12 @@ const DoctorDashboard = () => {
       const transformed = medicines.map((m) => {
         const isInjectable = m.type === "Injection" || m.type === "DRIP";
 
+        // For external medicines, don't send medicine_id (backend will lookup Others)
         const baseData = {
-          medicine_id: m.medicineId,
+          ...(m.is_external ? {} : { medicine_id: m.medicineId }),
           duration_days: Number(m.duration),
+          is_external: m.is_external || false,
+          external_notes: m.is_external ? m.custom_name : null,
         };
 
         if (isInjectable) {
@@ -335,7 +450,7 @@ const DoctorDashboard = () => {
               m.type === "DRIP" ? Number(m.infusionDuration) : null,
           };
         } else {
-          // For other medicines (regular prescription)
+          // For other medicines (regular prescription and external medicines with dosage)
           return {
             ...baseData,
             food:
@@ -343,19 +458,14 @@ const DoctorDashboard = () => {
                 ? "BEFORE"
                 : m.whenToTake === "With Food"
                 ? "WITH"
+                : m.whenToTake === "Empty Stomach"
+                ? "EMPTY_STOMACH"
                 : "AFTER",
-            morning: m.timing.morning,
-            afternoon: m.timing.afternoon,
-            night: m.timing.night,
+            morning: m.timing.morning || false,
+            afternoon: m.timing.afternoon || false,
+            night: m.timing.night || false,
           };
         }
-      });
-
-      console.log("🔧 DEBUG: Transformed medicines:", transformed);
-      console.log("🔧 DEBUG: Request payload:", {
-        visit_id: selectedPatient.visitId,
-        doctor_id: doctorId,
-        medicines: transformed,
       });
 
       // Use the new endpoint that handles both prescriptions and nurse tasks
@@ -375,19 +485,8 @@ const DoctorDashboard = () => {
         }
       );
 
-      console.log(
-        "🔧 DEBUG: Prescription response status:",
-        prescriptionResponse.status
-      );
-
       if (!prescriptionResponse.ok) {
         const errorData = await prescriptionResponse.json().catch(() => null);
-        console.error("❌ DEBUG: Error response:", errorData);
-        console.error("❌ DEBUG: Request body was:", {
-          visit_id: selectedPatient.visitId,
-          doctor_id: doctorId,
-          medicines: transformed,
-        });
         throw new Error(
           errorData?.message ||
             errorData?.error ||
@@ -396,15 +495,37 @@ const DoctorDashboard = () => {
       }
 
       const result = await prescriptionResponse.json();
-      console.log("✅ Prescription saved:", result);
+
+      // Save nurse tasks if any
+      if (nurseTasks.length > 0) {
+        for (const task of nurseTasks) {
+          try {
+            const taskResponse = await fetch(`${API_BASE}/api/doctor/nurse-task`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                visit_id: selectedPatient.visitId,
+                doctor_id: doctorId,
+                task_type_id: task.task_type_id,
+                instructions: task.instructions || ""
+              }),
+            });
+          } catch (error) {
+            // Nurse task creation failed
+          }
+        }
+      }
 
       // Show success message with nurse task info
       const nurseTaskMsg =
-        result.data.nurse_tasks_created > 0
-          ? `\n${result.data.nurse_tasks_created} nurse task(s) created for injectable medicines.`
+        result.data.nurse_tasks_created > 0 || nurseTasks.length > 0
+          ? ` ${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
           : "";
 
-      alert(`Visit completed successfully!${nurseTaskMsg}`);
+      toast.success(`Visit completed successfully!${nurseTaskMsg}`);
 
       // Update status to COMPLETED
       await handleStatusUpdate(selectedPatient.visitId, "COMPLETED");
@@ -412,7 +533,16 @@ const DoctorDashboard = () => {
       // Reset state
       setShowPrescriptionModal(false);
       setSelectedPatient(null);
-      setDiagnosis(null);
+      setDiagnoses([]);
+      setDiagnosisSaved(false);
+      setCurrentDiagnosis({
+        diagnosis_name: '',
+        diagnosis_code: '',
+        complaints: '',
+        remarks: ''
+      });
+      setEditingId(null);
+      setNurseTasks([]); // Clear nurse tasks
       setMedicines([
         {
           medicineId: null,
@@ -432,7 +562,7 @@ const DoctorDashboard = () => {
       await fetchTodayVisitsCount();
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to save prescription: " + error.message);
+      toast.error('Failed to save prescription: ' + error.message);
     }
   };
 
@@ -443,6 +573,8 @@ const DoctorDashboard = () => {
       medicineId: medicine.id,
       name: medicine.name,
       type: medicine.type,
+      available_stock: medicine.available_stock,
+      stock_details: medicine.stock_details
     };
     setMedicines(newMeds);
     setMedicineSearchResults([]);
@@ -583,7 +715,117 @@ const DoctorDashboard = () => {
                   <h2 className={styles.sectionTitle}>Diagnosis & Treatment</h2>
                 </div>
 
-                {selectedPatient && !diagnosis && (
+                {/* Patient Information - Moved to top */}
+                {selectedPatient && (
+                  <div style={{ padding: "24px", borderBottom: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                      <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#1a237e", margin: 0 }}>
+                        Patient Information
+                      </h3>
+                      <span style={{
+                        background: selectedPatient.patientType === 'STUDENT' ? '#dbeafe' : selectedPatient.patientType === 'PERMANENT_STAFF' ? '#dcfce7' : '#fef3c7',
+                        color: selectedPatient.patientType === 'STUDENT' ? '#1e3a8a' : selectedPatient.patientType === 'PERMANENT_STAFF' ? '#14532d' : '#78350f',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 600
+                      }}>
+                        {selectedPatient.patientType?.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>FULL NAME</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.patientName}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>AGE / DOB</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>
+                          {selectedPatient.age} years
+                          {selectedPatient.patientDob && (
+                            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 400, marginLeft: "6px" }}>
+                              ({new Date(selectedPatient.patientDob).toLocaleDateString()})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>GENDER</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.gender}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>BLOOD GROUP</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.bloodGroup || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>VISIT TYPE</span>
+                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.visitType}</div>
+                      </div>
+                      {selectedPatient.patientAllergies && (
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>⚠️ ALLERGIES</span>
+                          <div style={{ 
+                            fontSize: "14px", 
+                            color: "#ef4444", 
+                            fontWeight: 600,
+                            background: "#fef2f2",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid #fecaca"
+                          }}>
+                            {selectedPatient.patientAllergies}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vitals Section */}
+                    {selectedPatient.vitals && (
+                      <div style={{ marginTop: "20px" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#1a237e", marginBottom: "12px" }}>
+                          Vital Signs
+                        </h4>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
+                          {selectedPatient.vitals.temperature && (
+                            <div style={{ background: "#fef3c7", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a" }}>
+                              <div style={{ fontSize: "11px", color: "#92400e", fontWeight: 600, marginBottom: "4px" }}>TEMPERATURE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#78350f" }}>{selectedPatient.vitals.temperature}°F</div>
+                            </div>
+                          )}
+                          {(selectedPatient.vitals.bp_systolic || selectedPatient.vitals.bp_diastolic) && (
+                            <div style={{ background: "#fecaca", padding: "12px", borderRadius: "8px", border: "1px solid #fca5a5" }}>
+                              <div style={{ fontSize: "11px", color: "#7f1d1d", fontWeight: 600, marginBottom: "4px" }}>BLOOD PRESSURE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#7f1d1d" }}>{selectedPatient.vitals.bp_systolic}/{selectedPatient.vitals.bp_diastolic}</div>
+                              <div style={{ fontSize: "10px", color: "#991b1b" }}>mmHg</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.heart_rate && (
+                            <div style={{ background: "#fecdd3", padding: "12px", borderRadius: "8px", border: "1px solid #fda4af" }}>
+                              <div style={{ fontSize: "11px", color: "#881337", fontWeight: 600, marginBottom: "4px" }}>HEART RATE</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#881337" }}>{selectedPatient.vitals.heart_rate}</div>
+                              <div style={{ fontSize: "10px", color: "#9f1239" }}>bpm</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.spo2 && (
+                            <div style={{ background: "#dbeafe", padding: "12px", borderRadius: "8px", border: "1px solid #bfdbfe" }}>
+                              <div style={{ fontSize: "11px", color: "#1e3a8a", fontWeight: 600, marginBottom: "4px" }}>SpO2</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#1e3a8a" }}>{selectedPatient.vitals.spo2}%</div>
+                            </div>
+                          )}
+                          {selectedPatient.vitals.cbg && (
+                            <div style={{ background: "#e0e7ff", padding: "12px", borderRadius: "8px", border: "1px solid #c7d2fe" }}>
+                              <div style={{ fontSize: "11px", color: "#3730a3", fontWeight: 600, marginBottom: "4px" }}>BLOOD SUGAR</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#3730a3" }}>{selectedPatient.vitals.cbg}</div>
+                              <div style={{ fontSize: "10px", color: "#4338ca" }}>mg/dL</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedPatient && !diagnosisSaved && (
                   <div
                     style={{
                       padding: "24px",
@@ -623,16 +865,67 @@ const DoctorDashboard = () => {
                       </p>
                     </div>
 
-                    <h3
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: 600,
-                        color: "#1a237e",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      Add Diagnosis
-                    </h3>
+                    {/* Add Diagnosis Button - shown when form is hidden and diagnoses exist */}
+                    {!showDiagnosisForm && diagnoses.length > 0 && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+                        <button
+                          onClick={() => setShowDiagnosisForm(true)}
+                          style={{
+                            padding: "10px 20px",
+                            background: "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          + Add Diagnosis
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Diagnosis Form - shown based on state */}
+                    {showDiagnosisForm && (
+                      <>
+                        <h3
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: 600,
+                            color: "#1a237e",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          {editingId ? 'Edit Diagnosis' : 'Add Diagnosis'}
+                        </h3>
+                        <div style={{ marginBottom: "16px" }}>
+                          <label
+                            style={{
+                              display: "block",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              marginBottom: "6px",
+                            }}
+                          >
+                            Patient Complaints *
+                          </label>
+                          <textarea
+                        value={currentDiagnosis.complaints}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, complaints: e.target.value})}
+                        placeholder="What symptoms/complaints did the patient report?"
+                        rows="3"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          resize: "vertical",
+                          fontFamily: "inherit",
+                        }}
+                      />
+                    </div>
                     <div style={{ marginBottom: "16px" }}>
                       <label
                         style={{
@@ -645,8 +938,9 @@ const DoctorDashboard = () => {
                         Diagnosis Name *
                       </label>
                       <input
-                        id="diagnosis_name"
                         type="text"
+                        value={currentDiagnosis.diagnosis_name}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, diagnosis_name: e.target.value})}
                         placeholder="e.g., Common Cold, Fever"
                         style={{
                           width: "100%",
@@ -669,8 +963,9 @@ const DoctorDashboard = () => {
                         Diagnosis Code
                       </label>
                       <input
-                        id="diagnosis_code"
                         type="text"
+                        value={currentDiagnosis.diagnosis_code}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, diagnosis_code: e.target.value})}
                         placeholder="e.g., J00, R50.9"
                         style={{
                           width: "100%",
@@ -690,11 +985,12 @@ const DoctorDashboard = () => {
                           marginBottom: "6px",
                         }}
                       >
-                        Diagnosis Notes
+                        Doctor's Remarks
                       </label>
                       <textarea
-                        id="diagnosis_notes"
-                        placeholder="Additional notes..."
+                        value={currentDiagnosis.remarks}
+                        onChange={(e) => setCurrentDiagnosis({...currentDiagnosis, remarks: e.target.value})}
+                        placeholder="Additional notes, observations, treatment plan..."
                         rows="4"
                         style={{
                           width: "100%",
@@ -707,46 +1003,232 @@ const DoctorDashboard = () => {
                         }}
                       />
                     </div>
-                    <button
-                      onClick={() => {
-                        const diagnosisData = {
-                          diagnosis_name:
-                            document.getElementById("diagnosis_name").value,
-                          diagnosis_code:
-                            document.getElementById("diagnosis_code").value,
-                          diagnosis_notes:
-                            document.getElementById("diagnosis_notes").value,
-                        };
-                        if (diagnosisData.diagnosis_name) {
-                          saveDiagnosis(diagnosisData);
-                        } else {
-                          alert("Please enter diagnosis name");
-                        }
-                      }}
-                      disabled={updateLoading}
-                      style={{
-                        padding: "12px 24px",
-                        background: updateLoading
-                          ? "#cbd5e1"
-                          : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        cursor: updateLoading ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {updateLoading ? "Saving..." : "Save Diagnosis"}
-                    </button>
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <button
+                        onClick={addDiagnosis}
+                        style={{
+                          padding: "12px 24px",
+                          background: editingId 
+                            ? "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)"
+                            : "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1
+                        }}
+                      >
+                        {editingId ? '✏️ Update Diagnosis' : '+ Add Diagnosis'}
+                      </button>
+                      {editingId && (
+                        <button
+                          onClick={cancelEdit}
+                          style={{
+                            padding: "12px 24px",
+                            background: "#6b7280",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                    </>
+                    )}
+                    
+                    {/* Show added diagnoses */}
+                    {diagnoses.length > 0 && (
+                      <div style={{ marginTop: showDiagnosisForm ? "20px" : "0" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "#1e293b" }}>Added Diagnoses ({diagnoses.length})</h4>
+                        {diagnoses.map((diag, index) => (
+                          <div key={diag.id} style={{
+                            background: editingId === diag.id ? "#fef3c7" : "#f8fafc",
+                            padding: "12px",
+                            borderRadius: "6px",
+                            marginBottom: "8px",
+                            border: editingId === diag.id ? "2px solid #f59e0b" : "1px solid #e2e8f0",
+                            position: "relative"
+                          }}>
+                            <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "4px" }}>
+                              <button
+                                onClick={() => editDiagnosis(diag.id)}
+                                disabled={editingId && editingId !== diag.id}
+                                style={{
+                                  background: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  padding: "4px 8px",
+                                  fontSize: "12px",
+                                  cursor: editingId && editingId !== diag.id ? "not-allowed" : "pointer",
+                                  opacity: editingId && editingId !== diag.id ? 0.5 : 1
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => removeDiagnosis(diag.id)}
+                                disabled={editingId === diag.id}
+                                style={{
+                                  background: editingId === diag.id ? "#9ca3af" : "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  padding: "4px 8px",
+                                  fontSize: "12px",
+                                  cursor: editingId === diag.id ? "not-allowed" : "pointer"
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div style={{ fontSize: "13px", marginBottom: "4px" }}>
+                              <strong>#{index + 1}: {diag.diagnosis_name}</strong>
+                              {diag.diagnosis_code && <span style={{ marginLeft: "8px", color: "#64748b" }}>({diag.diagnosis_code})</span>}
+                            </div>
+                            {diag.complaints && (
+                              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                                <strong>Complaints:</strong> {diag.complaints}
+                              </div>
+                            )}
+                            {diag.remarks && (
+                              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                                <strong>Remarks:</strong> {diag.remarks}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        {/* Save All button below the cards */}
+                        <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
+                          <button
+                            onClick={saveDiagnoses}
+                            disabled={updateLoading}
+                            style={{
+                              padding: "12px 32px",
+                              background: updateLoading
+                                ? "#cbd5e1"
+                                : "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "8px",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              cursor: updateLoading ? "not-allowed" : "pointer",
+                              minWidth: "200px",
+                            }}
+                          >
+                            {updateLoading ? "Saving..." : `💾 Save All (${diagnoses.length})`}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                )}  
 
                 <DiagnosisSummary
                   patient={selectedPatient}
-                  diagnosis={diagnosis}
-                  onProceedToPrescription={() => setShowPrescriptionModal(true)}
+                  diagnoses={diagnoses}
+                  onProceedToPrescription={() => {
+                    setShowPrescriptionModal(true);
+                    fetchNurseTaskTypes();
+                  }}
                 />
+
+                {/* Refer to Other Hospital */}
+                {selectedPatient && diagnosisSaved && diagnoses.length > 0 && (
+                  <div style={{ padding: "24px", borderTop: "1px solid #e2e8f0" }}>
+                    <button
+                      onClick={async () => {
+                        const referralReason = prompt("Enter referral reason (e.g., specialized treatment required, advanced care needed):");
+                        
+                        if (!referralReason) {
+                          return;
+                        }
+
+                        const confirmed = window.confirm(
+                          `Are you sure you want to refer ${selectedPatient.patientName} to another hospital?\n\nThis will complete the visit without prescription.`
+                        );
+
+                        if (!confirmed) return;
+
+                        try {
+                          // Complete visit with referral note
+                          const response = await fetch(
+                            `${API_BASE}/api/doctor/visit/${selectedPatient.visitId}/complete`,
+                            {
+                              method: "PATCH",
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                status: "COMPLETED",
+                                remarks: `REFERRED TO OTHER HOSPITAL: ${referralReason}`,
+                              }),
+                            }
+                          );
+
+                          if (!response.ok) throw new Error("Failed to complete referral");
+
+                          toast.success(`Patient referred successfully. Reason: ${referralReason}`);
+
+                          // Reset and refresh
+                          setSelectedPatient(null);
+                          setDiagnoses([]);
+                          setDiagnosisSaved(false);
+                          setCurrentDiagnosis({
+                            diagnosis_name: '',
+                            diagnosis_code: '',
+                            complaints: '',
+                            remarks: ''
+                          });
+                          setEditingId(null);
+                          dispatch(fetchPatientQueue(doctorId));
+                          await fetchTodayVisitsCount();
+                        } catch (error) {
+                          console.error("Error referring patient:", error);
+                          toast.error('Failed to complete referral. Please try again.');
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "14px",
+                        background: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px"
+                      }}
+                    >
+                      <span style={{ fontSize: "18px" }}>🏥</span>
+                      Refer to Other Hospital (Can't Handle)
+                    </button>
+                    <p style={{ 
+                      fontSize: "12px", 
+                      color: "#64748b", 
+                      marginTop: "8px", 
+                      textAlign: "center",
+                      fontStyle: "italic" 
+                    }}>
+                      Use this when patient requires specialized treatment not available here
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -781,63 +1263,7 @@ const DoctorDashboard = () => {
               </h2>
 
               {/* MANUAL DEBUG BUTTON */}
-              <button
-                onClick={() => {
-                  console.log("🔧 Manual fetch nurses triggered");
-                  fetchNurses();
-                }}
-                style={{
-                  padding: "8px 16px",
-                  background: "#f59e0b",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  marginBottom: "16px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
-              >
-                🔄 Manually Fetch Nurses (Debug)
-              </button>
-
-              {/* DEBUG PANEL */}
-              <div
-                style={{
-                  background: "#fff3cd",
-                  border: "1px solid #ffc107",
-                  padding: "12px",
-                  borderRadius: "6px",
-                  marginBottom: "16px",
-                  fontSize: "12px",
-                  fontFamily: "monospace",
-                }}
-              >
-                <strong>🔧 DEBUG INFO:</strong>
-                <div>Nurses loaded: {nurses.length}</div>
-                <div>
-                  Nurse names:{" "}
-                  {nurses.map((n) => n.name).join(", ") || "No nurses found"}
-                </div>
-                <div>
-                  Nurse IDs:{" "}
-                  {nurses.map((n) => n.nurse_id).join(", ") || "No IDs"}
-                </div>
-                <div style={{ marginTop: "8px", color: "#856404" }}>
-                  <strong>Nurses state variable:</strong>{" "}
-                  {JSON.stringify(nurses)}
-                </div>
-              </div>
-
               {medicines.map((med, i) => {
-                console.log(
-                  `🔧 DoctorDashboard: Rendering MedicineRow ${i + 1}`
-                );
-                console.log(`🔧 DoctorDashboard: Passing nurses prop:`, nurses);
-                console.log(
-                  `🔧 DoctorDashboard: nurses.length:`,
-                  nurses.length
-                );
-
                 return (
                   <MedicineRow
                     key={i}
@@ -861,7 +1287,7 @@ const DoctorDashboard = () => {
                       if (medicines.length > 1) {
                         setMedicines(medicines.filter((_, idx) => idx !== i));
                       } else {
-                        alert("At least one medicine is required");
+                        toast.error('At least one medicine is required');
                       }
                     }}
                     onFocus={() => setActiveMedicineIndex(i)}
@@ -908,6 +1334,139 @@ const DoctorDashboard = () => {
               >
                 + Add Medicine
               </button>
+
+              {/* Nurse Tasks Section */}
+              <div style={{ marginTop: "32px", padding: "24px", background: "#f1f5f9", borderRadius: "8px" }}>
+                <h3 style={{ color: "#1a237e", marginBottom: "16px", fontSize: "16px", fontWeight: 600 }}>
+                  Nurse Tasks
+                </h3>
+                
+                {nurseTasks.map((task, idx) => (
+                  <div key={idx} style={{ 
+                    background: "white", 
+                    padding: "16px", 
+                    borderRadius: "8px", 
+                    marginBottom: "12px",
+                    border: "1px solid #e2e8f0"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "8px" }}>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ color: "#1a237e" }}>
+                          {nurseTaskTypes.find(t => t.task_type_id === task.task_type_id)?.task_name || 'Unknown Task'}
+                        </strong>
+                        {task.instructions && (
+                          <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>
+                            {task.instructions}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setNurseTasks(nurseTasks.filter((_, i) => i !== idx))}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          marginLeft: "12px"
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ 
+                  background: "white", 
+                  padding: "16px", 
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0"
+                }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                        Task Type
+                      </label>
+                      <select
+                        id="nurseTaskType"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          color: "#1e293b"
+                        }}
+                      >
+                        <option value="">Select a task...</option>
+                        {nurseTaskTypes.map(taskType => (
+                          <option key={taskType.task_type_id} value={taskType.task_type_id}>
+                            {taskType.task_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                        Instructions
+                      </label>
+                      <input
+                        type="text"
+                        id="nurseTaskInstructions"
+                        placeholder="Enter instructions..."
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          color: "#1e293b"
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const taskTypeSelect = document.getElementById('nurseTaskType');
+                        const instructionsInput = document.getElementById('nurseTaskInstructions');
+                        const task_type_id = taskTypeSelect.value;
+                        const instructions = instructionsInput.value;
+
+                        if (!task_type_id) {
+                          toast.error('Please select a task type');
+                          return;
+                        }
+
+                        setNurseTasks([...nurseTasks, { task_type_id, instructions }]);
+                        taskTypeSelect.value = '';
+                        instructionsInput.value = '';
+                      }}
+                      style={{
+                        marginTop: "28px",
+                        padding: "10px 20px",
+                        background: "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      Add Task
+                    </button>
+                  </div>
+                </div>
+                
+                {nurseTaskTypes.length === 0 && (
+                  <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                    No task types available. Please populate the nurse_task_master table.
+                  </p>
+                )}
+              </div>
 
               <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
                 <button
