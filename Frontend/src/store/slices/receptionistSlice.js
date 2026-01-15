@@ -35,7 +35,7 @@ const getAuthHeaders = () => {
 
 export const registerPatient = createAsyncThunk(
   'receptionist/registerPatient',
-  async (patientData, { rejectWithValue }) => {
+  async (patientData, { rejectWithValue, dispatch }) => {
     try {
       const staffCode = patientData.staffCode || getStaffCode();
       
@@ -68,7 +68,8 @@ export const registerPatient = createAsyncThunk(
       );
       
       
-      return response.data;
+      dispatch(fetchPatients())
+return response.data
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to register patient';
       
@@ -176,7 +177,7 @@ export const fetchVisits = createAsyncThunk(
 
 export const createVisit = createAsyncThunk(
   'receptionist/createVisit',
-  async (visitData, { rejectWithValue }) => {
+  async (visitData, { rejectWithValue, dispatch }) => {
     try {
       const staffCode = visitData.staffCode || getStaffCode();
       
@@ -230,8 +231,8 @@ export const createVisit = createAsyncThunk(
       }
 
       
-      return visitResponse.data;
-    } catch (error) {
+      dispatch(fetchPatients())
+return visitResponse.data    } catch (error) {
       console.error('Create visit error:', error);
       const errorMsg = error.response?.data?.message || 'Failed to create visit';
       
@@ -242,7 +243,7 @@ export const createVisit = createAsyncThunk(
 
 export const startVisit = createAsyncThunk(
   'receptionist/startVisit',
-  async (visitId, { rejectWithValue }) => {
+  async (visitId, { rejectWithValue, dispatch }) => {
     try {
       const staffCode = visitData.staffCode || getStaffCode();
       
@@ -264,7 +265,7 @@ export const startVisit = createAsyncThunk(
 
 export const cancelVisit = createAsyncThunk(
   'receptionist/cancelVisit',
-  async (visitId, { rejectWithValue }) => {
+  async (visitId, { rejectWithValue, dispatch }) => {
     try {
       const staffCode = visitData.staffCode || getStaffCode();
       
@@ -275,7 +276,8 @@ export const cancelVisit = createAsyncThunk(
       );
       
       
-      return { visitId, status: 'CANCELLED' };
+      dispatch(fetchPatients())
+return { visitId, status: 'CANCELLED' }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to cancel visit';
       
