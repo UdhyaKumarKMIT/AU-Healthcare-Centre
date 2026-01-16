@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faChevronDown, 
-  faChevronUp, 
+import {
+  faChevronDown,
+  faChevronUp,
   faExchangeAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,13 +14,14 @@ import DoctorAvailabilityTable from '../../components/receptionist/DoctorAvailab
 import RegisterPatientForm from '../../components/receptionist/RegisterPatientForm';
 import CreateVisitForm from '../../components/receptionist/CreateVisitForm';
 import RecentVisitsList from '../../components/receptionist/RecentVisitsList';
-import { 
-  fetchDoctors, 
-  fetchPatients, 
+import {
+  fetchDoctors,
+  fetchPatients,
   fetchVisits,
   selectDoctors,
   selectPatients,
-  selectVisits
+  selectVisits,
+  selectVisitsLoading
 } from '../../store/slices/receptionistSlice';
 import styles from './ReceptionistDashboard.module.css';
 
@@ -28,10 +29,11 @@ const ReceptionistDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
-  
+
   const doctors = useSelector(selectDoctors);
   const patients = useSelector(selectPatients);
   const visits = useSelector(selectVisits);
+  const visitsLoading = useSelector(selectVisitsLoading);
 
   const [showCreateVisit, setShowCreateVisit] = useState(true);
   const [showRecentVisits, setShowRecentVisits] = useState(true);
@@ -64,8 +66,8 @@ const ReceptionistDashboard = () => {
     navigate('/nurse');
   };
 
-  const handleRefreshVisits = () => {
-    dispatch(fetchVisits());
+  const handleRefreshVisits = ({ from, to } = {}) => {
+    dispatch(fetchVisits({ from, to }));
   };
 
   if (authLoading) {
@@ -86,7 +88,7 @@ const ReceptionistDashboard = () => {
       <div className={styles.roleSwapBar}>
         <div className={styles.roleSwapContainer}>
           <span className={styles.roleSwapText}>Switch Role:</span>
-          <button 
+          <button
             className={styles.roleSwapButton}
             onClick={handleRoleSwap}
           >
@@ -106,7 +108,7 @@ const ReceptionistDashboard = () => {
           </div>
 
           <section className={styles.statsSection}>
-            <DashboardStats 
+            <DashboardStats
               totalPatients={totalPatients}
               availableDoctors={availableDoctors}
               todayVisits={todayVisits}
@@ -144,7 +146,7 @@ const ReceptionistDashboard = () => {
 
               {showCreateVisit && (
                 <div className={styles.collapsibleContent}>
-                  <CreateVisitForm 
+                  <CreateVisitForm
                     patients={patients || []}
                     availableDoctors={doctors?.filter(d => d.status === 'AVAILABLE') || []}
                   />
@@ -172,8 +174,9 @@ const ReceptionistDashboard = () => {
               {showRecentVisits && (
                 <div className={styles.collapsibleContent}>
                   <RecentVisitsList
-                    visits={visits?.slice(0, 5) || []}
+                    visits={visits || []}
                     onRefresh={handleRefreshVisits}
+                    isLoading={visitsLoading}
                   />
                 </div>
               )}
