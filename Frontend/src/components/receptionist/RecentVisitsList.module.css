@@ -228,4 +228,17 @@
   justify-content:space-between;
   align-items:center;
 }
+.filterControls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.filterInput{
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #cbd5e1;
+  font-size:13px;
+}
+
 

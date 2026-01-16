@@ -7,7 +7,7 @@ export const registerPatient = async (req, res, next) => {
     
     const result = await receptionistService.registerPatient({
       ...req.body,
-      created_by_code: code
+      created_by_code: req.body.created_by_code || code
     });
     
     res.status(201).json({ 
@@ -25,7 +25,7 @@ export const createVisit = async (req, res, next) => {
     
     const result = await receptionistService.createVisit({
       ...req.body,
-      created_by_code: code
+      created_by_code: req.body.created_by_code || code
     });
     
     res.status(201).json({
@@ -136,7 +136,8 @@ export const getVisits = async (req, res, next) => {
     console.log('🔧 DEBUG: getVisits called');
     console.log('🔧 DEBUG: User:', req.user);
     
-    const data = await receptionistService.getAllVisits();
+    const { from, to } = req.query
+const data = await receptionistService.getAllVisits({ from, to })
     
     console.log('✅ DEBUG: Visits fetched:', data.length);
     res.json({ success: true, data });

@@ -1,16 +1,12 @@
-/* ============================================================================
-   RegisterPatientForm.module.css - Complete Styles
-   ============================================================================ */
-
-/* Container */
 .container {
   padding: 24px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Header */
 .header {
   display: flex;
   justify-content: space-between;
@@ -21,41 +17,21 @@
 }
 
 .title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 20px;
   color: #1a237e;
+  font-weight: 600;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.fullFormButton {
-  background: transparent;
-  border: 2px solid #4299e1;
-  color: #4299e1;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.fullFormButton:hover {
-  background: #4299e1;
-  color: white;
-  transform: translateY(-1px);
-}
-
-/* Form */
 .form {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* Section */
 .section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
@@ -82,21 +58,18 @@
   gap: 8px;
 }
 
-/* Form Grid */
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
-/* Form Group */
 .formGroup {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Label */
 .label {
   font-size: 14px;
   font-weight: 600;
@@ -106,8 +79,18 @@
   gap: 6px;
 }
 
-/* Inputs */
-.input,
+.input {
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: white;
+  color: #1e293b;
+  width: 100%;
+}
+
 .select {
   padding: 12px 16px;
   border: 2px solid #e2e8f0;
@@ -117,67 +100,17 @@
   font-family: inherit;
   background: white;
   color: #1e293b;
-}
-
-.select {
   cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 40px;
+  width: 100%;
 }
 
-.input::placeholder,
-.select::placeholder {
-  color: #94a3b8;
-  opacity: 1;
-}
-
-.input:focus,
-.select:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
-}
-
-.input.error,
-.select.error {
-  border-color: #f56565;
-  background-color: #fff5f5;
-}
-
-.input:disabled,
-.select:disabled {
-  background-color: #f1f5f9;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Error Text */
-.errorText {
-  font-size: 13px;
-  color: #f56565;
-  font-weight: 500;
-  margin-top: -4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.errorText::before {
-  content: "⚠";
-  font-size: 14px;
-}
-
-/* Family Member Card */
 .familyMemberCard {
   background: white;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .familyMemberHeader {
@@ -189,14 +122,6 @@
   border-bottom: 2px solid #f1f5f9;
 }
 
-.familyMemberHeader h4 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #475569;
-  margin: 0;
-}
-
-/* Buttons */
 .addButton {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -207,24 +132,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.addButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.addButton:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.addButton:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .removeButton {
@@ -239,19 +146,73 @@
   transition: all 0.2s;
 }
 
-.removeButton:hover:not(:disabled) {
-  background: #ef4444;
-  color: white;
-  transform: translateY(-1px);
+.codeInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.removeButton:active:not(:disabled) {
-  transform: translateY(0);
+.validatingSpinner {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
 }
 
-.removeButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.smallSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #3949ab;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.validIcon {
+  position: absolute;
+  right: 12px;
+  color: #10b981;
+  font-size: 18px;
+}
+
+.invalidIcon {
+  position: absolute;
+  right: 12px;
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.inputValid {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.inputInvalid {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.errorInput {
+  border-color: #f56565;
+  background: #fff5f5;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #f56565;
+  font-weight: 500;
+  margin-top: -4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.helpText {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .submitButton {
@@ -265,22 +226,13 @@
   cursor: pointer;
   transition: all 0.3s;
   align-self: flex-start;
-  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+  box-shadow: 0 4px 12px rgba(26,35,126,0.2);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.submitButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(26, 35, 126, 0.3);
-}
-
-.submitButton:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.submitButton:disabled {
+.submitButtonDisabled {
   background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
   cursor: not-allowed;
   transform: none;
@@ -288,147 +240,6 @@
   opacity: 0.7;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .formGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .section {
-    padding: 16px;
-  }
-
-  .familyMemberCard {
-    padding: 16px;
-  }
-
-  .familyMemberHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .submitButton {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .fullFormButton {
-    align-self: flex-start;
-  }
-}
-
-@media (max-width: 480px) {
-  .title {
-    font-size: 18px;
-  }
-
-  .sectionTitle {
-    font-size: 16px;
-  }
-
-  .addButton {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .removeButton {
-    width: 100%;
-  }
-}
-
-/* Loading State */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: #64748b;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #3949ab;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
-}
-
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Success State */
-.successState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.successState::before {
-  content: "✓";
-  font-size: 64px;
-  color: #10b981;
-  margin-bottom: 16px;
-}
-
-.successState h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-}
-
-.successState p {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-}
-
-/* Accessibility */
-.input:focus-visible,
-.select:focus-visible,
-.addButton:focus-visible,
-.removeButton:focus-visible,
-.submitButton:focus-visible {
-  outline: 3px solid #4299e1;
-  outline-offset: 2px;
-}
-
-/* Print Styles */
-@media print {
-  .addButton,
-  .removeButton,
-  .submitButton,
-  .fullFormButton {
-    display: none;
-  }
-
-  .container {
-    box-shadow: none;
-    padding: 0;
-  }
-
-  .section {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
+  to { transform: rotate(360deg); }
 }

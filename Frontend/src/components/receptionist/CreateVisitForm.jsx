@@ -196,7 +196,27 @@ const handleSubmit = async (e) => {
 
   if (result.meta.requestStatus === 'fulfilled') {
     toast.success('Visit created successfully')
+
+    setFormData({
+      patientId: '',
+      doctorId: '',
+      visitType: 'OPD',
+      reason: '',
+      temperature: '',
+      bpSystolic: '',
+      bpDiastolic: '',
+      heartRate: '',
+      cbg: '',
+      spo2: '',
+      secretCode: ''
+    })
+
+    setSelectedPatient(null)
+    setPatientSearchQuery('')
+    setErrors({})
+    setIsCodeValid(null)
   } else {
+
     toast.error(result.payload || 'Failed to create visit')
   }
 }
