@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 import User from '../models/sequelize/User.js';
-import Doctor from '../models/sequelize/Doctor.js';
+import Doctor from '../models/sequelize/Doctor.js'; 
 import StaffDetails from '../models/sequelize/StaffDetails.js';
 import ApiError from '../utils/ApiError.js';
 import dotenv from 'dotenv';
@@ -207,6 +207,10 @@ export const login = async (username, password, role) => {
 
   // If admin, use username as name
   if (user.role === ROLES.ADMIN) {
+    response.user.name = user.username;
+  }
+
+  if (user.role === ROLES.CLERICAL_ASSISTANT) {
     response.user.name = user.username;
   }
 

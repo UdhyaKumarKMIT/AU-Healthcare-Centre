@@ -14,6 +14,16 @@ StaffDetails.init(
             type: DataTypes.STRING(100),
             allowNull: false,
         },
+        user_id: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: 'users', // name of the target table
+                key: 'user_id',
+            },
+            onUpdate: 'CASCADE',
+            onDelete: 'CASCADE',
+        },
         role: {
             type: DataTypes.ENUM('NURSE_RECEPTIONIST', 'PHARMACIST', 'CLERICAL_ASSISTANT'),
             allowNull: false,

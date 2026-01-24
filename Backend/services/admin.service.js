@@ -21,7 +21,7 @@ export const getAdminStats = async () => {
     );
     
     const [patientCount] = await pool.execute(
-      `SELECT COUNT(*) as total FROM patient_profile`
+      `SELECT COUNT(*) as total FROM patient`
     );
 
     const [nurseCount] = await pool.execute(
@@ -87,7 +87,7 @@ export const getPatientOverview = async () => {
       `SELECT 
          gender,
          COUNT(*) as count
-       FROM patient_profile
+       FROM patient
        WHERE gender IS NOT NULL
        GROUP BY gender`
     );
@@ -200,8 +200,8 @@ export const createUser = async ({ name, email, password, role, phone, specializ
     const hashedPassword = await bcrypt.hash(password, 10);
     
     await connection.execute(
-      `INSERT INTO users (user_id, email, password, role)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO users (user_id, password, role)
+       VALUES (?, ?, ?)`,
       [userId, email, hashedPassword, role.toUpperCase()]
     );
     
@@ -317,7 +317,7 @@ export const deleteUser = async (userId) => {
       await connection.execute(`DELETE FROM pharmacist WHERE user_id = ?`, [userId]);
     } else if (user.role === 'PATIENT') {
       const [visits] = await connection.execute(
-        `SELECT COUNT(*) as count FROM visit WHERE patient_id IN (SELECT patient_id FROM patient_profile WHERE user_id = ?)`,
+        `SELECT COUNT(*) as count FROM visit WHERE patient_id IN (SELECT patient_id FROM patient WHERE user_id = ?)`,
         [userId]
       );
       
@@ -325,7 +325,7 @@ export const deleteUser = async (userId) => {
         throw new ApiError(400, 'Cannot delete patient with existing visits');
       }
       
-      await connection.execute(`DELETE FROM patient_profile WHERE user_id = ?`, [userId]);
+      await connection.execute(`DELETE FROM patient WHERE user_id = ?`, [userId]);
     }
     
     await connection.execute(`DELETE FROM users WHERE user_id = ?`, [userId]);
@@ -537,7 +537,7 @@ export const getAllVisits = async ({ date, status }) => {
         p.name as patient_name,
         d.name as doctor_name
       FROM visit v
-      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
+      LEFT JOIN patient p ON v.patient_id = p.patient_id
       LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
       WHERE 1=1
     `;
@@ -651,7 +651,7 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
           ON pt.prescription_id = pr.prescription_id
         JOIN visit v
           ON pr.visit_id = v.visit_id
-        JOIN patient_profile pat
+        JOIN patient pat
           ON v.patient_id = pat.patient_id
         JOIN doctor d
           ON v.doctor_id = d.doctor_id
@@ -697,7 +697,7 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
           ON nt.task_id = t.task_id
         JOIN visit v
           ON t.visit_id = v.visit_id
-        JOIN patient_profile pat
+        JOIN patient pat
           ON v.patient_id = pat.patient_id
         JOIN doctor d
           ON v.doctor_id = d.doctor_id

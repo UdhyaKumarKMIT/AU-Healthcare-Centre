@@ -3,8 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
 import styles from './Login.module.css';
-import { loginUserApi } from '../../services/auth.service';
-import PharmacistLogin from '../Pharmacist/Login'; // ensure default export
+import { loginUserApi } from '../../services/auth.service'; 
 
 const ROLE_MAP = {
   admin: 'ADMIN',
@@ -12,35 +11,27 @@ const ROLE_MAP = {
   pharmacist: 'PHARMACIST',
   nurse: 'NURSE_RECEPTIONIST',
   receptionist: 'NURSE_RECEPTIONIST',
+  clerical: 'CLERICAL_ASSISTANT',
   patient: 'PATIENT',
   labtech: 'LAB_TECHNICIAN'
 };
 
 // Role-specific roles that use shared credentials
 const ROLE_SPECIFIC_ROLES = ['NURSE_RECEPTIONIST', 'PHARMACIST'];
-
-// User-specific roles that have individual credentials
-const USER_SPECIFIC_ROLES = ['ADMIN', 'DOCTOR', 'LAB_TECHNICIAN'];
-
+ 
 const Login = () => {
   const { role } = useParams();
   const userRole = ROLE_MAP[role];
   const navigate = useNavigate();
-  const { login } = useAuth();
-  
-  // If pharmacist, render the imported PharmacistLogin component
-  // if (role === 'pharmacist') {
-  //   return <PharmacistLogin />;
-  // }
-  
+  const { login } = useAuth(); 
+
   // State for other roles
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(userRole);
-  const isUserSpecific = USER_SPECIFIC_ROLES.includes(userRole) || userRole === 'PATIENT';
+  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(userRole); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,6 +71,12 @@ const Login = () => {
           console.log('Navigating to labtech dashboard');
           navigate('/labtech/dashboard');
           break;
+        case 'CLERICAL_ASSISTANT':
+          console.log('User role:', result.user.role);
+          console.log('Token exists:', !!result.token);
+          console.log('Navigating to clerical assistant dashboard');
+          navigate('/clerical_assistant/dashboard');
+          break;  
         default:
           console.log('Unknown role, redirecting to home');
           navigate('/');
@@ -131,7 +128,12 @@ const Login = () => {
                 />
                 {isRoleSpecific && (
                   <small className={styles.helpText}>
-                    Use shared {role === 'nurse' ? 'Nurse/Receptionist' : 'Pharmacist'} account credentials
+                    Use shared{' '}
+                    {role === 'nurse'
+                      ? 'Nurse/Receptionist'
+                      : role === 'clerical'
+                      ? 'Clerical Assistant'
+                      : 'Pharmacist'} account credentials
                   </small>
                 )}
               </div>

@@ -1,32 +1,27 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Pill, ArrowLeft, Activity } from "lucide-react";
-import api from "../../api/axios";
-import { useAuth } from "../../contexts/AuthContext";
+import { ArrowLeft } from "lucide-react";
+import api from "../../api/axios"; 
+import CustomModal from "./CustomModal";
 
 const AddMedicineStockPage = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+  const [navigateOnClose, setNavigateOnClose] = useState(false);
+
   const { name } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const pharmacistId = user?.pharmacist_id;
 
   const [batchId, setBatchId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!pharmacistId) {
-      alert("Please login again");
-      navigate("/login/pharmacist");
-      return;
-    }
+    e.preventDefault(); 
 
     try {
-      const response = await api.post("/pharmacy/medicine/addStock", {
-        pharmacist_id: pharmacistId,
+      const response = await api.post("/clerical_assistant/medicine/addStock", {
         medicine_name: name,
         batch_id: batchId,
         in_stock: quantity,
@@ -34,18 +29,40 @@ const AddMedicineStockPage = () => {
       });
 
       if (response.status === 201) {
-        alert("Stock added successfully!");
-        navigate("/pharmacist/medicineStock", { replace: true});
+        setModalMessage("Stock added successfully!");
+        setModalConfirmCallback(null);  
+        setModalOpen(true);
+        setNavigateOnClose(true); 
       } else {
-        alert(`Unexpected response: ${response.status}`);
+        setModalMessage(`Unexpected response: ${response.status}`);
+        setModalOpen(true);
+        setNavigateOnClose(false); 
       }
     } catch (err) {
       console.error("Failed to add stock:", err);
-      alert("Failed to add stock. Please try again.");
+      setModalMessage("Failed to add stock. Please try again.");
+      setModalOpen(true);
+      setNavigateOnClose(false); 
     }
   };
 
   return (
+    <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalOpen(false);
+        if (navigateOnClose) {
+          navigate(-1);
+          setNavigateOnClose(false);
+        }
+      }}
+    />
+
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* HEADER */}
       <header
@@ -53,24 +70,15 @@ const AddMedicineStockPage = () => {
           background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
           color: "white",
         }}
-      >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <Activity aria-hidden="true" />
-            <div>
-              <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
-              <small>Update Medicine Stock</small>
-            </div>
-          </div>
-        </div>
+      >   
       </header>
 
       {/* MAIN */}
       <main
         style={{
-          maxWidth: 600,
+          maxWidth: 1200,
           margin: "auto",
-          padding: "2rem",
+          padding: "1rem",
           color: "black",
         }}
       >
@@ -112,7 +120,7 @@ const AddMedicineStockPage = () => {
             {/* Batch ID */}
             <div>
               <label htmlFor="batchId" style={labelStyle}>
-                Batch ID
+                Batch No
               </label>
               <input
                 id="batchId"
@@ -165,6 +173,7 @@ const AddMedicineStockPage = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
@@ -183,6 +192,7 @@ const cardHeaderStyle: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   marginBottom: "1.5rem",
+  fontSize: "1.2rem"
 };
 
 const labelStyle: React.CSSProperties = {

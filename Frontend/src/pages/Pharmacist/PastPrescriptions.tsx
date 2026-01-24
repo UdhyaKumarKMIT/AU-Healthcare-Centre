@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  FileText,
-  Activity,
+import { 
   CircleUser,
   FileCheck,
   Pill,
@@ -9,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
+import CustomModal from "./CustomModal";
 
 /* ---------- Types ---------- */
 interface PastPrescription {
@@ -23,20 +22,19 @@ interface PastPrescription {
 interface PrescriptionItem {
   medicine_name: string; 
   medicine_type: string;
-  total_days: number; 
-  food: string,
-  morning: number,
-  afternoon: number,
-  night: number,
+  total_days: number;  
   issued_days: number;
+  dosage_per_day: number;
 }
 
 /* ---------- Helpers ---------- */
 const toTitleCase = (str: string) =>
   str.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.substring(1).toLowerCase());
 
-const formatDateTime = (date: string) =>
-  new Date(date).toLocaleString("en-US", {
+const formatDateTime = (date?: string | null) => {
+  if (!date) return "—"; // or some placeholder
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? "Invalid Date" : d.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -44,9 +42,15 @@ const formatDateTime = (date: string) =>
     minute: "2-digit",
     hour12: true,
   });
+};
 
 /* ---------- Component ---------- */
 const PastPrescriptions = () => {
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -59,6 +63,8 @@ const PastPrescriptions = () => {
   const [patientName, setPatientName] = useState("")
   const [doctorName, setDoctorName] = useState("")
   const [pharmacistName, setPharmacistName] = useState("")
+  const [specialization, setSpecialization] = useState("")
+  const [filterDate, setFilterDate] = useState("");
 
   /* FILTER STATE (SAME AS PENDING) */
   const [filterType, setFilterType] = useState<"all" | "patient" | "doctor" | "pharmacist" | "specialization">("all");
@@ -77,7 +83,8 @@ const PastPrescriptions = () => {
         });
         setPrescriptions(res.data || []);
       } catch {
-        alert("Could not load past prescriptions.");
+        setModalMessage("Could not load past prescriptions.");
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -86,29 +93,53 @@ const PastPrescriptions = () => {
   }, [pharmacistId, navigate]);
 
   /* FILTER LOGIC (SAME AS PENDING) */
-  const filteredPrescriptions = prescriptions.filter((p) => {
-    const term = searchTerm.toLowerCase();
+const filteredPrescriptions = prescriptions.filter((p) => {
+  const term = searchTerm.toLowerCase();
 
-    if (filterType === "patient") {
-      return p.patient_name.toLowerCase().includes(term);
-    }
+  const matchesText =
+    filterType === "all"
+      ? (
+          p.patient_name.toLowerCase().includes(term) ||
+          p.doctor_name.toLowerCase().includes(term) ||
+          p.name.toLowerCase().includes(term) ||
+          p.specialization.toLowerCase().includes(term)
+        )
+      : filterType === "patient"
+      ? p.patient_name.toLowerCase().includes(term)
+      : filterType === "doctor"
+      ? p.doctor_name.toLowerCase().includes(term)
+      : filterType === "pharmacist"
+      ? p.name.toLowerCase().includes(term)
+      : filterType === "specialization"
+      ? p.specialization.toLowerCase().includes(term)
+      : true;
 
-    if (filterType === "doctor") {
-      return p.doctor_name.toLowerCase().includes(term);
-    }
+  let matchesDate = true;
 
-    if (filterType === "specialization") {
-      return p.specialization.toLowerCase().includes(term);
-    }
+  if (filterDate) {
+    const issuedDate = new Date(p.issued_at).toISOString().split("T")[0];
+    matchesDate = issuedDate === filterDate;
+  }
 
-    if (filterType === "pharmacist") {
-      return p.name.toLowerCase().includes(term);
-    }
+  return matchesText && matchesDate;
+});
 
-    return true;
-  });
+
 
   return (
+     <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalConfirmCallback(null);
+        setModalOpen(false);
+      }}
+    />
+
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* HEADER */}
       <div
@@ -116,24 +147,15 @@ const PastPrescriptions = () => {
           background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
           color: "white",
         }}
-      >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Activity />
-            <div>
-              <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
-              <small>Past Prescriptions</small>
-            </div>
-          </div>
-        </div>
-      </div>
+      > 
+      </div> 
 
       {/* MAIN */}
       <main
         style={{
           maxWidth: 1200,
           margin: "auto",
-          padding: "2rem",
+          padding: "1rem",
           color: "black",
         }}
       >
@@ -155,32 +177,62 @@ const PastPrescriptions = () => {
 
             {/* FILTER CONTROLS */}
             {!selected && (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <select
-                  value={filterType}
-                  onChange={(e) =>
-                    setFilterType(e.target.value as "all" | "patient" | "doctor")
-                  }
-                  style={filterSelectStyle}
-                >
-                  <option value="all">All</option>
-                  <option value="patient">Patient</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="pharmacist">Pharmacist</option>
-                  <option value="specialization">Specialization</option>
-                </select>
+  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+    <select
+      value={filterType}
+      onChange={(e) =>
+        setFilterType(
+          e.target.value as
+            | "all"
+            | "patient"
+            | "doctor"
+            | "pharmacist"
+            | "specialization"
+        )
+      }
+      style={filterSelectStyle}
+    >
+      <option value="all">All</option>
+      <option value="patient">Patient</option>
+      <option value="doctor">Doctor</option>
+      <option value="pharmacist">Pharmacist</option>
+      <option value="specialization">Specialization</option>
+    </select>
 
-                {filterType !== "all" && (
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={`Search by ${filterType}`}
-                    style={filterInputStyle}
-                  />
-                )}
-              </div>
-            )}
+    {filterType !== "all" && (
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder={`Search by ${filterType}`}
+        style={filterInputStyle}
+      />
+    )}
+
+    {/* DATE FILTER */}
+    <input
+      type="date"
+      value={filterDate}
+      onChange={(e) => setFilterDate(e.target.value)}
+      style={filterInputStyle}
+    />
+
+    {/* CLEAR */}
+    {(searchTerm || filterDate || filterType !== "all") && (
+      <button
+        onClick={() => {
+          setSearchTerm("");
+          setFilterDate("");
+          setFilterType("all");
+        }}
+        style={clearFilterButtonStyle}
+      >
+        Clear
+      </button>
+    )}
+  </div>
+)}
+
           </div>
 
           {/* CONTENT */}
@@ -206,6 +258,7 @@ const PastPrescriptions = () => {
                     setPatientName(p.patient_name);
                     setPharmacistName(p.name);
                     setDoctorName(p.doctor_name);
+                    setSpecialization(p.specialization);
                     setSelected(res.data);
                   }}
                 >
@@ -214,78 +267,59 @@ const PastPrescriptions = () => {
                       <CircleUser size={20} />
                     </div>
 
-                    <div style={{ flex: 1 }}>
-                      <p>
+                    <div style={{ flex: 1, fontFamily: "verdana"}}>
+                      <p style={{paddingBottom: "2px"}}>
                         <strong>Patient:</strong>{" "}
                         {toTitleCase(p.patient_name)}
                       </p>
-                      <p>
+                      <p style={{paddingBottom: "2px"}}>
                         <strong>Doctor:</strong>{" "}
-                        {toTitleCase(p.doctor_name)}
+                        Dr. {toTitleCase(p.doctor_name)}
                       </p>
-                      <p>
+                      <p style={{paddingBottom: "2px"}}>
                         <strong>Specialization:</strong>{" "}
                         {toTitleCase(p.specialization)}
                       </p>
-                      <p>
+                      <p style={{paddingBottom: "2px"}}>
                         <strong>Pharmacist:</strong>{" "}
                         {toTitleCase(p.name)}
                       </p>
-                      <p>
+                      <p style={{paddingBottom: "2px"}}>
                         <strong>Issued At:</strong> {formatDateTime(p.issued_at)}
-                      </p>
+                      </p>  
                     </div>
                   </div>
                 </article>
               ))
             )
           ) : (
-            <>
-            <p><strong>Patient: </strong>{patientName}</p>
-            <p><strong>Doctor: </strong>{doctorName}</p>
-            <p><strong>Pharmacist: </strong>{pharmacistName}</p><br />
+            <div style={{fontFamily: "verdana"}}>
+            <p style={{paddingBottom: "2px"}}><strong>Patient: </strong>{toTitleCase(patientName)}</p>
+            <p style={{paddingBottom: "2px"}}><strong>Doctor: </strong>{toTitleCase(doctorName)}</p>
+            <p style={{paddingBottom: "2px"}}><strong>Specialization: </strong>{toTitleCase(specialization)}</p>
+            <p style={{paddingBottom: "2px"}}><strong>Pharmacist: </strong>{toTitleCase(pharmacistName)}</p><br />
               {selected.items?.map((item, idx) => (
                 <div key={idx} style={detailCardStyle}>
-                  <p>
+                  <p style={{paddingBottom: "2px"}}>
                     <Pill size={18} /> <strong>Medicine:</strong>{" "}
                     {toTitleCase(item.medicine_name)} - {toTitleCase(item.medicine_type)}
                   </p> 
-                  <p><strong>Prescribed Duration:</strong> {item.total_days} days</p> 
-                  <p><strong>Dispensed Duration:</strong> {item.issued_days} days</p>
-                  <p><strong>Food Instruction: </strong> {toTitleCase(item.food)} food </p><br />
-                  <div style={timingStyle}>
-                    <label style={timingLabelStyle}>
-                      <span style={item.morning === 1 ? tickStyle : emptyStyle}>
-                        {item.morning === 1 ? "✓" : "–"}
-                      </span>
-                      Morning
-                    </label>
-
-                    <label style={timingLabelStyle}>
-                      <span style={item.afternoon === 1 ? tickStyle : emptyStyle}>
-                        {item.afternoon === 1 ? "✓" : "–"}
-                      </span>
-                      Afternoon
-                    </label>
-
-                    <label style={timingLabelStyle}>
-                      <span style={item.night === 1 ? tickStyle : emptyStyle}>
-                        {item.night === 1 ? "✓" : "–"}
-                      </span>
-                      Night
-                    </label>
-                  </div>
+                  <p style={{paddingBottom: "2px"}}><strong>Prescribed Duration:</strong> {item.total_days} days</p> 
+                  <p style={{paddingBottom: "2px"}}><strong>Dispensed Duration:</strong> {item.issued_days} days</p>
+                  <p style={{paddingBottom: "2px"}}><strong>Dosage per day:</strong> {item.dosage_per_day}</p>
+                  
                 </div>
               ))}
 
               <button onClick={() => setSelected(null)} style={backButtonStyle}>
                 ← Back to list
               </button>
-            </>
+            </div>
           )}
         </div>
       </main>
     </div>
+    </>
   );
 };
 
@@ -366,26 +400,13 @@ const filterInputStyle: React.CSSProperties = {
   fontWeight: "bold",
 };
 
-const timingLabelStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.4rem",
-};
-
-const tickStyle: React.CSSProperties = {
-  color: "#0070dfff",
-  fontWeight: "bold",
-  fontSize: "1rem",
-};
-
-const emptyStyle: React.CSSProperties = {
-  color: "#000000",
-  fontWeight: "800"
-};
-
-const timingStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "1rem",
-};
+const clearFilterButtonStyle: React.CSSProperties = {
+  padding: "0.4rem", 
+  background: "white",
+  color: "#b80a0a",
+  borderRadius: "5px",
+  fontWeight: "500",
+  border: "1px solid #dc2626",
+}; 
 
 export default PastPrescriptions;

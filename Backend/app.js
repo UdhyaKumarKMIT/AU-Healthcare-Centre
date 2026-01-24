@@ -10,7 +10,8 @@ import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import receptionistRoutes from './routes/receptionist.routes.js';
 import doctorRoutes from './routes/doctor.route.js';
-import pharmacyRoutes from './routes/pharmacyRoutes.js';
+import pharmacyRoutes from './routes/pharmacist.routes.js';
+import CARoutes from './routes/clericalAssistant.routes.js';
 import studentRoutes from './routes/student.routes.js';
 import userRoutes from './routes/user.routes.js';
 import staffRoutes from './routes/staff.routes.js';
@@ -55,6 +56,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/receptionist', receptionistRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/pharmacy', pharmacyRoutes); // pharmacist-specific routes
+app.use('/api/clerical_assistant', CARoutes); // clerical assistant
 app.use('/api/students', studentRoutes); // student-specific routes
 app.use('/api/users', userRoutes); // user management (admin)
 app.use('/api/nurse', nurseRoutes);

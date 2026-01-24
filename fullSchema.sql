@@ -125,8 +125,8 @@ CREATE TABLE `medicine_batch` (
   `batch_id` varchar(20) NOT NULL,
   `medicine_id` int NOT NULL,
   `expiry_date` date NOT NULL,
-  `in_stock` int NOT NULL,
-  `status` enum('ACTIVE','EXPIRED','DISPOSED') NOT NULL,
+  `quantity` int NOT NULL,
+  `status` enum('ACTIVE','EXPIRED') NOT NULL,
   `pharmacist_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`batch_id`),
@@ -142,19 +142,33 @@ CREATE TABLE `medicine_batch` (
 -- Table structure for table `medicine_log`
 --
 
-DROP TABLE IF EXISTS `medicine_log`;
+DROP TABLE IF EXISTS `pharmacy_expired_medicine_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `medicine_log` (
-  `batch_id` varchar(20) NOT NULL,
-  `medicine_id` int NOT NULL,
-  `expiry_date` date NOT NULL,
-  `in_stock` int NOT NULL,
-  `pharmacist_id` int NOT NULL,
+CREATE TABLE `pharmacy_expired_medicine_log` (
+  `batch_no` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `medicine_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `sub_stock_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expiry` date NOT NULL,
+  `quantity` int NOT NULL, 
   `cleared_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `cleared_pharmacist_id` int NOT NULL,
-  PRIMARY KEY (`batch_id`),
-  CONSTRAINT `medicine_log_chk_1` CHECK ((`in_stock` >= 0))
+  `cleared_by_code` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`batch_no`),
+  CONSTRAINT `medicine_log_chk_1` CHECK ((`quantity` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `main_expired_medicine_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `main_expired_medicine_log` (
+  `batch_no` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `medicine_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `main_stock_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expiry` date NOT NULL,
+  `quantity` int NOT NULL, 
+  `cleared_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,  
+  CONSTRAINT `medicine_log_chk_1` CHECK ((`quantity` >= 0))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -188,8 +202,8 @@ DROP TABLE IF EXISTS `patient_profile`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `patient_profile` (
   `patient_id` char(36) NOT NULL,
-  `user_id` char(36) NOT NULL,
-  `roll_no` varchar(255) DEFAULT NULL,
+  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
+  `roll_no` varchar(255) DEFAULT NULL, 
   `name` varchar(255) NOT NULL,
   `dob` date DEFAULT NULL,
   `gender` enum('MALE','FEMALE','OTHER') DEFAULT NULL,
@@ -200,7 +214,7 @@ CREATE TABLE `patient_profile` (
   PRIMARY KEY (`patient_id`),
   UNIQUE KEY `roll_no` (`roll_no`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `patient_profile_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+  CONSTRAINT `patient_profile_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -212,8 +226,8 @@ DROP TABLE IF EXISTS `pharmacist`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `pharmacist` (
-  `pharmacist_id` int NOT NULL AUTO_INCREMENT,
-  `user_id` char(36) NOT NULL,
+  `pharmacist_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
@@ -222,20 +236,20 @@ CREATE TABLE `pharmacist` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`pharmacist_id`),
   KEY `fk_pharmacist_user` (`user_id`),
-  CONSTRAINT `fk_pharmacist_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+  CONSTRAINT `fk_pharmacist_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `pharmacy_transaction`
+-- Table structure for table `prescription_transaction`
 --
 
-DROP TABLE IF EXISTS `pharmacy_transaction`;
+DROP TABLE IF EXISTS `prescription_transaction`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `pharmacy_transaction` (
+CREATE TABLE `prescription_transaction` (
   `pharmacy_txn_id` int NOT NULL AUTO_INCREMENT,
-  `prescription_id` char(36) NOT NULL,
+  `prescription_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `pharmacist_id` int NOT NULL,
   `issued_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `issued_days` int NOT NULL,
@@ -256,16 +270,16 @@ DROP TABLE IF EXISTS `prescription`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `prescription` (
-  `prescription_id` char(36) NOT NULL,
-  `visit_id` char(36) NOT NULL,
-  `doctor_id` char(36) NOT NULL,
+  `prescription_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `visit_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `doctor_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `status` enum('PENDING','ISSUED','CANCELLED') DEFAULT NULL,
   PRIMARY KEY (`prescription_id`),
   KEY `visit_id` (`visit_id`),
   KEY `doctor_id` (`doctor_id`),
-  CONSTRAINT `prescription_ibfk_1` FOREIGN KEY (`visit_id`) REFERENCES `visit` (`visit_id`),
-  CONSTRAINT `prescription_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctor` (`doctor_id`)
+  CONSTRAINT `prescription_ibfk_1` FOREIGN KEY (`visit_id`) REFERENCES `visit` (`visit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `prescription_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctor` (`doctor_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -300,11 +314,11 @@ DROP TABLE IF EXISTS `receptionist`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `receptionist` (
   `receptionist_id` char(36) NOT NULL,
-  `user_id` char(36) NOT NULL,
+  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `receptionist_name` varchar(255) NOT NULL,
   PRIMARY KEY (`receptionist_id`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `receptionist_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+  CONSTRAINT `receptionist_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -381,3 +395,19 @@ CREATE TABLE `vitals` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-12-29 21:31:09
+
+CREATE TABLE `stock_request` (
+  `medicine_id` CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `requested_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+
+  `dressing_substock` TINYINT(1) NOT NULL DEFAULT 0 CHECK (`dressing_substock` IN (0,1)),
+  `labtech_substock`  TINYINT(1) NOT NULL DEFAULT 0 CHECK (`labtech_substock` IN (0,1)),
+  `nurse_substock`    TINYINT(1) NOT NULL DEFAULT 0 CHECK (`nurse_substock` IN (0,1)),
+  `pharmacy_substock` TINYINT(1) NOT NULL DEFAULT 0 CHECK (`pharmacy_substock` IN (0,1)),
+
+  KEY `medicine_id` (`medicine_id`),
+  CONSTRAINT `medicine_stock_log_ibfk_1`
+    FOREIGN KEY (`medicine_id`) REFERENCES `medicine` (`medicine_id`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;

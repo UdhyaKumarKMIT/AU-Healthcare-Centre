@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import styles from './SelectRole.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileLines } from '@fortawesome/free-solid-svg-icons';
+
 import { 
   faUserMd, 
   faPills, 
@@ -18,6 +20,7 @@ const roles = [
   { label: 'Doctor', path: '/login/doctor', icon: faUserMd },
   { label: 'Pharmacist', path: '/login/pharmacist', icon: faPills },
   { label: 'Nurse/Receptionist', path: '/login/nurse', icon: faUserNurse },
+  { label: 'Clerical Assistant', path: '/login/clerical', icon: faFileLines },
   { label: 'Lab Technician', path: '/login/labtech', icon: faVial }
 ];
 

@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
-import { Activity, ShieldX, Pill } from "lucide-react";
+import { ShieldX, Pill } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
+import CustomModal from "./CustomModal";
 
 /* ---------- Component ---------- */
 const ExpiredStockPage = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -28,7 +33,8 @@ const ExpiredStockPage = () => {
         setExpiredMedicines(response.data.items || []);
       } catch (err) {
         console.error("Failed to fetch expired medicine:", err);
-        alert("Failed to fetch expired medicine.");
+        setModalMessage("Failed to fetch expired medicine.");
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -37,8 +43,16 @@ const ExpiredStockPage = () => {
     fetchExpiredMedicine();
   }, [pharmacistId, navigate]);
 
-  const handleClear = async (batchId: string) => {
-    if (!window.confirm("Are you sure you want to clear this batch?")) return;
+  const handleClear = (batchId: string) => {
+    setModalMessage("Are you sure you want to clear this batch?");
+    setModalConfirmCallback(() => () => {
+      clearBatchConfirmed(batchId);
+    });
+    setModalOpen(true);
+  };
+
+
+  const clearBatchConfirmed = async (batchId: string) => {   
 
     try {
       const response = await api.delete(
@@ -52,15 +66,29 @@ const ExpiredStockPage = () => {
           params: { pharmacist_id: pharmacistId }
         });
         setExpiredMedicines(response.data.items || []);
-        alert("Stock cleared successfully!");
+        setModalMessage("Stock cleared successfully!");
+        setModalOpen(true);
       }
     } catch (err) {
       console.error("Failed to clear stock:", err);
-      alert("Failed to clear stock.");
+      setModalMessage("Failed to clear stock.");
+      setModalOpen(true);
     }
   };
 
   return (
+    <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalConfirmCallback(null);
+        setModalOpen(false);
+      }}
+    />
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* HEADER */}
       <div
@@ -68,24 +96,15 @@ const ExpiredStockPage = () => {
           background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
           color: "white",
         }}
-      >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Activity />
-            <div>
-              <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
-              <small>Expired Stock</small>
-            </div>
-          </div>
-        </div>
-      </div>
+      > 
+      </div> 
 
       {/* MAIN */}
       <main
         style={{
           maxWidth: 1200,
           margin: "auto",
-          padding: "2rem",
+          padding: "1rem",
           color: "black",
         }}
       >
@@ -104,19 +123,19 @@ const ExpiredStockPage = () => {
           ) : (
             expiredMedicines.map((med, idx) => (
   <article key={idx} style={prescriptionRowStyle}>
-    <div style={{ display: "flex", gap: "1.5rem" }}>
+    <div style={{ display: "flex", gap: "1.5rem", fontFamily: "verdana"}}>
       <div style={iconBoxStyle}>
         <Pill size={20} />
       </div>
 
       <div style={{ flex: 1 }}>
-        <p>
+        <p style={{paddingBottom: "2px"}}>
           <strong>Medicine:</strong> {med.medicine_name}
         </p>
-        <p>
+        <p style={{paddingBottom: "2px"}}>
           <strong>Batch ID:</strong> {med.batch_id}
         </p>
-        <p>
+        <p style={{paddingBottom: "2px"}}>
           <strong>Expiry Date:</strong>{" "}
           {new Date(med.expiry_date).toLocaleDateString("en-US", {
             year: "numeric",
@@ -146,6 +165,7 @@ const ExpiredStockPage = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 

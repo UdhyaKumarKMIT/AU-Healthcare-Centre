@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  FileScan,
-  Activity,
+  FileScan, 
   Stethoscope,
   CircleUser,
   PersonStanding,
@@ -10,14 +9,14 @@ import {
 import api from "../../api/axios";
 import { replace, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import CustomModal from "./CustomModal";
 
 /* ---------- Types ---------- */
 interface Prescription {
   prescription_id: string;
   patient_name: string;
   doctor_name: string;
-  doctor_specialization: string;
-  status: string;
+  doctor_specialization: string; 
   created_at: Date;
 }
 
@@ -29,6 +28,10 @@ const toTitleCase = (str: string) =>
 
 /* ---------- Component ---------- */
 const PendingPrescriptions = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -51,13 +54,13 @@ const PendingPrescriptions = () => {
 
     const fetchPrescriptions = async () => {
       try {
-        const res = await api.get("/pharmacy/prescriptions", {
-          params: { pharmacist_id: pharmacistId }
-        });
+        const res = await api.get("/pharmacy/prescriptions");
+        console.log(res.data)
         setPrescriptions(res.data || []);
       } catch (err) {
         console.error("Failed to fetch prescriptions:", err);
-        alert("Could not load prescriptions.");
+        setModalMessage("Could not load prescriptions.");
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -86,31 +89,27 @@ const PendingPrescriptions = () => {
   });
 
   return (
+    <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalConfirmCallback(null);
+        setModalOpen(false);
+      }}
+    />
+
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* HEADER */}
-      <div
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Activity aria-hidden="true" />
-            <div>
-              <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
-              <small>Pending Prescriptions</small>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* MAIN */}
       <main
         style={{
           maxWidth: 1200,
           margin: "auto",
-          padding: "2rem",
+          padding: "1rem",
           color: "black",
         }}
       >
@@ -184,7 +183,7 @@ const PendingPrescriptions = () => {
           {loading ? (
             <p>Loading prescriptions...</p>
           ) : filteredPrescriptions.length === 0 ? (
-            <p>No matching prescriptions found.</p>
+            <p>No pending prescriptions found.</p>
           ) : (
             filteredPrescriptions.map((p) => (
               <article
@@ -206,26 +205,26 @@ const PendingPrescriptions = () => {
                     <CircleUser size={20} aria-hidden="true" />
                   </div>
 
-                  <div style={{ flex: 1 }}>
-                    <p style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ flex: 1, fontFamily: "verdana"}}>
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px"}}>
                       <PersonStanding size={18} aria-hidden="true" />
                       <strong>Patient:</strong>{" "}
                       {toTitleCase(p.patient_name)}
                     </p>
 
-                    <p style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
                       <Stethoscope size={18} aria-hidden="true" />
                       <strong>Doctor:</strong>{" "}
                       {toTitleCase(p.doctor_name)}
                     </p>
 
-                    <p style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
                       <GraduationCap size={18} aria-hidden="true" />
                       <strong>Specialization:</strong>{" "}
                       {toTitleCase(p.doctor_specialization)}
                     </p>
 
-                    <p>
+                    <p style={{paddingBottom: "2px"}}>
                       <strong>Issued Time:</strong>{" "}
                       {new Date(p.created_at).toLocaleString("en-US", {
                         year: "numeric",
@@ -237,10 +236,7 @@ const PendingPrescriptions = () => {
                       })}
                     </p>
                   </div>
-
-                  <div style={statusBadgeStyle}>
-                    {toTitleCase(p.status)}
-                  </div>
+ 
                 </div>
               </article>
             ))
@@ -248,6 +244,7 @@ const PendingPrescriptions = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
@@ -288,16 +285,6 @@ const iconBoxStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "#1e40af",
-};
-
-const statusBadgeStyle: React.CSSProperties = {
-  background: "#dbeafe",
-  color: "#1e40af",
-  padding: "0.4rem 0.9rem",
-  borderRadius: "999px",
-  fontWeight: 700,
-  fontSize: "0.9rem",
-  height: "fit-content",
-};
+}; 
 
 export default PendingPrescriptions;

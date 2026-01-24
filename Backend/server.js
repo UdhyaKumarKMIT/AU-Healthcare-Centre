@@ -10,7 +10,7 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     // Creates tables for all defined models if they do not exist
-    await sequelize.sync({alter: true});
+    await sequelize.sync({alter: false});  
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
