@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faPlus, faUserNurse } from '@fortawesome/free-solid-svg-icons';
 import { fetchNurses } from '../../store/slices/adminSlice';
 import ReceptionistStats from '../../components/Admin/ReceptionistStats';
 import ReceptionistTable from '../../components/Admin/ReceptionistTable';
@@ -76,7 +76,7 @@ const NursesManagement = () => {
     <div className={styles.receptionistManagement}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>👩‍⚕️ Nurses Management</h1>
+          <h1 className={styles.title}><FontAwesomeIcon icon={faUserNurse} /> Nurses Management</h1>
           <p className={styles.subtitle}>
             Manage nursing staff and their assignments
           </p>

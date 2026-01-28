@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faSync, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faSync, faExclamationTriangle, faClipboardList, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 import { fetchSystemLogs, clearError } from '../../store/slices/adminSlice';
 import styles from './ReceptionistManagement.module.css';
 import tableStyles from '../../components/Admin/ReceptionistTable.module.css';
@@ -86,7 +86,7 @@ const LogsManagement = () => {
       <div className={styles.receptionistManagement}>
         <div className={styles.header}>
           <div>
-            <h1 className={styles.title}>📋 System Logs & Audit</h1>
+            <h1 className={styles.title}><FontAwesomeIcon icon={faClipboardList} /> System Logs & Audit</h1>
             <p className={styles.subtitle}>View system activity logs and audit trails</p>
           </div>
         </div>
@@ -169,7 +169,7 @@ const LogsManagement = () => {
           borderLeft: '4px solid #2196f3'
         }}>
           <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
-            <strong>💡 Note:</strong> If you're a developer, check the backend logs for the 
+            <strong><FontAwesomeIcon icon={faLightbulb} /> Note:</strong> If you're a developer, check the backend logs for the 
             <code style={{ 
               background: '#fff', 
               padding: '2px 6px', 

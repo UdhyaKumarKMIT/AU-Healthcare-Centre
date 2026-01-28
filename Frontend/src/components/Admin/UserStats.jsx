@@ -1,5 +1,7 @@
 // src/components/Admin/UserStats.jsx
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUsers, faCheckCircle, faPauseCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from './UserStats.module.css';
 
 const UserStats = ({ stats = {} }) => {
@@ -15,21 +17,21 @@ const UserStats = ({ stats = {} }) => {
     {
       title: 'Total Users',
       value: total,
-      icon: '👥',
+      icon: faUsers,
       color: '#4299e1',
       description: 'All registered users',
     },
     {
       title: 'Active Users',
       value: active,
-      icon: '✅',
+      icon: faCheckCircle,
       color: '#48bb78',
       description: 'Currently active',
     },
     {
       title: 'Inactive Users',
       value: inactive,
-      icon: '⏸️',
+      icon: faPauseCircle,
       color: '#ed8936',
       description: 'Currently inactive',
     },
@@ -47,7 +49,7 @@ const UserStats = ({ stats = {} }) => {
                 className={styles.statIcon}
                 style={{ backgroundColor: stat.color }}
               >
-                {stat.icon}
+                <FontAwesomeIcon icon={stat.icon} />
               </div>
               <div>
                 <h4 className={styles.statTitle}>{stat.title}</h4>
