@@ -40,17 +40,25 @@ const PharmacistsManagement = () => {
   );
 
   // Transform pharmacists data to match receptionist table format
-  const transformedPharmacists = filteredPharmacists.map(pharmacist => ({
-    id: pharmacist.pharmacist_id,
-    name: pharmacist.name,
-    email: pharmacist.email,
-    employeeId: `PH-${pharmacist.pharmacist_id.toString().substring(0, 6)}`,
-    shift: pharmacist.phone || 'N/A',
-    patientsToday: pharmacist.transactionsToday || 0,
-    status: pharmacist.status,
-    phone: pharmacist.phone,
-    avatar: pharmacist.name.charAt(0).toUpperCase()
-  }));
+  const transformedPharmacists = filteredPharmacists.map(pharmacist => {
+    // Safe handling of pharmacist_id - it might be undefined, null, or a string
+    const pharmacistId = pharmacist.pharmacist_id || pharmacist.id || '';
+    const employeeId = pharmacistId 
+      ? `PH-${String(pharmacistId).substring(0, 6)}` 
+      : 'N/A';
+
+    return {
+      id: pharmacistId,
+      name: pharmacist.name || 'Unknown',
+      email: pharmacist.email || 'N/A',
+      employeeId: employeeId,
+      shift: pharmacist.phone || 'N/A',
+      patientsToday: pharmacist.transactionsToday || 0,
+      status: pharmacist.status || 'active',
+      phone: pharmacist.phone || 'N/A',
+      avatar: pharmacist.name ? pharmacist.name.charAt(0).toUpperCase() : '?'
+    };
+  });
 
   if (pharmacistsLoading) {
     return (
@@ -66,8 +74,10 @@ const PharmacistsManagement = () => {
   if (error) {
     return (
       <div className={styles.receptionistManagement}>
-        <p>Error: {error}</p>
-        <button onClick={() => dispatch(fetchPharmacists())}>Retry</button>
+        <div className={styles.errorContainer}>
+          <p>Error: {error}</p>
+          <button onClick={() => dispatch(fetchPharmacists())}>Retry</button>
+        </div>
       </div>
     );
   }
