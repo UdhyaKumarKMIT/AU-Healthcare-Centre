@@ -9,7 +9,7 @@ const UserForm = ({ mode = 'add' }) => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const [searchParams] = useSearchParams();
-  const presetRole = searchParams.get('role');
+  const presetRole = searchParams.get('role')?.toLowerCase();
 
   const isEdit = useMemo(() => mode === 'edit', [mode]);
 
@@ -18,7 +18,7 @@ const UserForm = ({ mode = 'add' }) => {
 
   const [form, setForm] = useState({
     name: '',
-    email: '',
+    username: '',
     password: '',
     role: 'doctor',
     phone: '',
@@ -44,7 +44,26 @@ const UserForm = ({ mode = 'add' }) => {
     setLoading(true);
 
     try {
-      await dispatch(createUser(form)).unwrap();
+      const roleMap = {
+  doctor: 'DOCTOR',
+  nurse: 'NURSE_RECEPTIONIST',
+  pharmacist: 'PHARMACIST'
+};
+
+const payload = {
+  name: form.name,
+  username: form.username.trim(),
+  password: form.password,
+  phone: form.phone || '',
+  role: roleMap[form.role],
+  ...(form.role === 'doctor' && { specialization: form.specialization }),
+  ...(form.role === 'nurse' && {
+    qualification: form.qualification,
+    register_number: form.register_number
+  })
+};
+
+await dispatch(createUser(payload)).unwrap();
       navigate(-1);
     } catch (err) {
       setError(typeof err === 'string' ? err : 'Failed to create user');
@@ -82,7 +101,7 @@ const UserForm = ({ mode = 'add' }) => {
 
         <div className={styles.formGroup}>
           <label>Email *</label>
-          <input name="email" type="email" required onChange={onChange} />
+          <input name="username" required onChange={onChange} />
         </div>
 
         <div className={styles.formGroup}>
