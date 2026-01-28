@@ -122,6 +122,7 @@ const DoctorManagement = () => {
             receptionists={transformedDoctors}
             onView={(id) => navigate(`/admin/doctors/${id}`)}
             onEdit={(id) => navigate(`/admin/doctors/${id}/edit`)}
+            roleLabel="Doctor"
             columnHeaders={{
               employeeId: 'Doctor ID',
               shift: 'Specialization',

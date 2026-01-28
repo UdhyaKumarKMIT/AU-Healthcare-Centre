@@ -52,7 +52,6 @@ const PharmacistsManagement = () => {
       name: pharmacist.name || 'Unknown',
       email: pharmacist.email || 'N/A',
       employeeId: employeeId,
-      shift: pharmacist.phone || 'N/A',
       patientsToday: pharmacist.transactionsToday || 0,
       status: pharmacist.status || 'active',
       phone: pharmacist.phone || 'N/A',
@@ -135,11 +134,8 @@ const PharmacistsManagement = () => {
             receptionists={transformedPharmacists}
             onView={(id) => navigate(`/admin/pharmacists/${id}`)}
             onEdit={(id) => navigate(`/admin/pharmacists/${id}/edit`)}
-            columnHeaders={{
-              employeeId: 'Employee ID',
-              shift: 'Phone',
-              patientsToday: 'Transactions Today'
-            }}
+            hideShift={true}
+            roleLabel="Pharmacist"
           />
         )}
       </section>

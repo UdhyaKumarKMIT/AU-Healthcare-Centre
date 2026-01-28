@@ -77,7 +77,7 @@ const ReceptionistManagement = () => {
       </div>
 
       <section className={styles.statsSection}>
-        <ReceptionistStats stats={receptionistStats} />
+        <ReceptionistStats stats={receptionistStats} title="Receptionist Statistics" />
       </section>
 
       <section className={styles.filtersSection}>
@@ -103,8 +103,7 @@ const ReceptionistManagement = () => {
           <ReceptionistTable
             receptionists={filteredReceptionists}
             onView={(id) => navigate(`/admin/receptionists/${id}`)}
-            onEdit={(id) => navigate(`/admin/receptionists/${id}/edit`)}
-          />
+            onEdit={(id) => navigate(`/admin/receptionists/${id}/edit`)}            roleLabel="Receptionist"          />
         )}
       </section>
     </div>

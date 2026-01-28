@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import styles from './ReceptionistTable.module.css';
 
-const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange }) => {
+const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange, hideShift = false, roleLabel = 'Receptionist' }) => {
   const [selectedReceptionists, setSelectedReceptionists] = useState([]);
 
   const getStatusBadge = (status) => {
@@ -73,7 +73,7 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
   if (receptionists.length === 0) {
     return (
       <div className={styles.emptyTable}>
-        <p>No receptionists to display</p>
+        <p>No {roleLabel.toLowerCase()}s to display</p>
       </div>
     );
   }
@@ -82,7 +82,7 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
     <div className={styles.tableContainer}>
       {selectedReceptionists.length > 0 && (
         <div className={styles.bulkActions}>
-          <span>{selectedReceptionists.length} receptionist(s) selected</span>
+          <span>{selectedReceptionists.length} {roleLabel.toLowerCase()}(s) selected</span>
           <div className={styles.bulkButtons}>
             <button onClick={() => setSelectedReceptionists([])}>Clear Selection</button>
           </div>
@@ -99,9 +99,9 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
                 checked={selectedReceptionists.length === receptionists.length && receptionists.length > 0}
               />
             </th>
-            <th>Receptionist</th>
+            <th>{roleLabel}</th>
             <th>Employee Code</th>
-            <th>Shift</th>
+            {!hideShift && <th>Shift</th>}
             <th>Status</th>
             <th>Patients Today</th>
             <th>Phone</th>
@@ -137,9 +137,11 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
                 <td>
                   <span className={styles.employeeId}>{employeeCode || 'N/A'}</span>
                 </td>
-                <td>
-                  {getShiftBadge(receptionist.shift)}
-                </td>
+                {!hideShift && (
+                  <td>
+                    {getShiftBadge(receptionist.shift)}
+                  </td>
+                )}
                 <td>
                   {getStatusBadge(receptionist.status)}
                 </td>
