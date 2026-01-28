@@ -5,13 +5,11 @@ import styles from './UserStats.module.css';
 const UserStats = ({ stats = {} }) => {
   const { 
     active = 0, 
-    inactive = 0, 
-    pending = 0, 
-    suspended = 0,
+    inactive = 0,
     byRole = {}
   } = stats;
 
-  const total = active + inactive + pending + suspended;
+  const total = active + inactive;
 
   const statCards = [
     {
@@ -33,21 +31,7 @@ const UserStats = ({ stats = {} }) => {
       value: inactive,
       icon: '⏸️',
       color: '#ed8936',
-      description: 'Not logged in recently',
-    },
-    {
-      title: 'Pending',
-      value: pending,
-      icon: '⏳',
-      color: '#9f7aea',
-      description: 'Awaiting approval',
-    },
-    {
-      title: 'Suspended',
-      value: suspended,
-      icon: '🚫',
-      color: '#f56565',
-      description: 'Temporarily blocked',
+      description: 'Currently inactive',
     },
   ];
 
@@ -82,11 +66,13 @@ const UserStats = ({ stats = {} }) => {
           <div className={styles.roleList}>
             {Object.entries(byRole).map(([role, count]) => (
               <div key={role} className={styles.roleItem}>
-                <span className={styles.roleName}>{role}</span>
+                <span className={styles.roleName}>
+                  {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </span>
                 <div className={styles.roleBar}>
                   <div 
                     className={styles.roleBarFill}
-                    style={{ width: `${(count / total) * 100}%` }}
+                    style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }}
                   />
                 </div>
                 <span className={styles.roleCount}>{count}</span>

@@ -11,8 +11,8 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
     const statusConfig = {
       active: { label: 'Active', color: '#28a745', bgColor: '#d4edda' },
       inactive: { label: 'Inactive', color: '#6c757d', bgColor: '#e2e3e5' },
-      onduty: { label: 'On Duty', color: '#17a2b8', bgColor: '#d1ecf1' },
-      offduty: { label: 'Off Duty', color: '#ffc107', bgColor: '#fff3cd' },
+      ACTIVE: { label: 'Active', color: '#28a745', bgColor: '#d4edda' },
+      INACTIVE: { label: 'Inactive', color: '#6c757d', bgColor: '#e2e3e5' },
     };
     
     const config = statusConfig[status] || { label: status, color: '#6c757d', bgColor: '#e2e3e5' };
@@ -39,7 +39,7 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
       flexible: { label: 'Flexible', color: '#17a2b8', bgColor: '#d1ecf1' },
     };
     
-    const config = shiftConfig[shift] || { label: shift, color: '#6c757d', bgColor: '#e2e3e5' };
+    const config = shiftConfig[shift] || { label: shift || 'Flexible', color: '#17a2b8', bgColor: '#d1ecf1' };
     
     return (
       <span 
@@ -56,7 +56,7 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedReceptionists(receptionists.map(rec => rec.id));
+      setSelectedReceptionists(receptionists.map(rec => rec.id || rec.staff_id));
     } else {
       setSelectedReceptionists([]);
     }
@@ -69,6 +69,14 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
         : [...prev, receptionistId]
     );
   };
+
+  if (receptionists.length === 0) {
+    return (
+      <div className={styles.emptyTable}>
+        <p>No receptionists to display</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.tableContainer}>
@@ -92,7 +100,7 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
               />
             </th>
             <th>Receptionist</th>
-            <th>Employee ID</th>
+            <th>Employee Code</th>
             <th>Shift</th>
             <th>Status</th>
             <th>Patients Today</th>
@@ -100,49 +108,56 @@ const ReceptionistTable = ({ receptionists = [], onView, onEdit, onStatusChange 
           </tr>
         </thead>
         <tbody>
-          {receptionists.map((receptionist) => (
-            <tr key={receptionist.id} className={styles.receptionistRow}>
-              <td>
-                <input 
-                  type="checkbox" 
-                  checked={selectedReceptionists.includes(receptionist.id)}
-                  onChange={() => handleSelectReceptionist(receptionist.id)}
-                />
-              </td>
-              <td>
-                <div className={styles.receptionistInfo}>
-                  <div className={styles.avatar}>
-                    {receptionist.avatar || receptionist.name.charAt(0).toUpperCase()}
+          {receptionists.map((receptionist) => {
+            const receptionistId = receptionist.id || receptionist.staff_id;
+            const employeeCode = receptionist.employeeId || receptionist.code;
+            
+            return (
+              <tr key={receptionistId} className={styles.receptionistRow}>
+                <td>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedReceptionists.includes(receptionistId)}
+                    onChange={() => handleSelectReceptionist(receptionistId)}
+                  />
+                </td>
+                <td>
+                  <div className={styles.receptionistInfo}>
+                    <div className={styles.avatar}>
+                      {receptionist.avatar || receptionist.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className={styles.receptionistName}>{receptionist.name}</div>
+                      <div className={styles.receptionistEmail}>
+                        {receptionist.email || receptionist.username || 'N/A'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className={styles.receptionistName}>{receptionist.name}</div>
-                    <div className={styles.receptionistEmail}>{receptionist.email}</div>
+                </td>
+                <td>
+                  <span className={styles.employeeId}>{employeeCode || 'N/A'}</span>
+                </td>
+                <td>
+                  {getShiftBadge(receptionist.shift)}
+                </td>
+                <td>
+                  {getStatusBadge(receptionist.status)}
+                </td>
+                <td>
+                  <div className={styles.patientCount}>
+                    <span className={styles.count}>{receptionist.patientsToday || 0}</span>
+                    <div className={styles.progressBar}>
+                      <div 
+                        className={styles.progressFill}
+                        style={{ width: `${Math.min((receptionist.patientsToday || 0) * 5, 100)}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td>
-                <span className={styles.employeeId}>EMP{receptionist.employeeId}</span>
-              </td>
-              <td>
-                {getShiftBadge(receptionist.shift)}
-              </td>
-              <td>
-                {getStatusBadge(receptionist.status)}
-              </td>
-              <td>
-                <div className={styles.patientCount}>
-                  <span className={styles.count}>{receptionist.patientsToday || 0}</span>
-                  <div className={styles.progressBar}>
-                    <div 
-                      className={styles.progressFill}
-                      style={{ width: `${Math.min((receptionist.patientsToday || 0) * 5, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </td>
-              <td>{receptionist.phone}</td>
-            </tr>
-          ))}
+                </td>
+                <td>{receptionist.phone || 'N/A'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
