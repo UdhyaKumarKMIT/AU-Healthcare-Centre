@@ -1,85 +1,103 @@
 // src/services/admin.service.js
-import pool from '../config/db.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import ApiError from '../utils/ApiError.js';
+import { Op } from 'sequelize';
+import sequelize from '../config/sequelize.js';
+import {
+  User,
+  Doctor,
+  StaffDetails,
+  Patient,
+  Visit,
+  Vitals,
+  Diagnosis,
+  NurseTask,
+  NurseTransaction,
+  Prescription,
+  PrescriptionTransaction,
+  Medicine,
+  MedicineMainStock,
+  PharmacyStock,
+  NurseStock,
+  DressingStock,
+  SystemAuditLog
+} from '../models/sequelize/index.js';
 
 export const getAdminStats = async () => {
   try {
     console.log('📊 Fetching admin stats from database...');
     
     // Get total users count
-    const [userCount] = await pool.execute(
-      `SELECT COUNT(*) as total FROM users`
-    );
+    const userCount = await User.count();
     
     // Get doctors count
-    const [doctorCount] = await pool.execute(
-      `SELECT COUNT(*) as total FROM doctor`
-    );
+    const doctorCount = await Doctor.count();
     
     // Get staff counts by role (NURSE_RECEPTIONIST, PHARMACIST, etc.)
-    const [nurseReceptionistCount] = await pool.execute(
-      `SELECT COUNT(*) as total 
-       FROM staff_details 
-       WHERE role = 'NURSE_RECEPTIONIST'`
-    );
+    const nurseReceptionistCount = await StaffDetails.count({
+      where: { role: 'NURSE_RECEPTIONIST' }
+    });
     
-    const [pharmacistCount] = await pool.execute(
-      `SELECT COUNT(*) as total 
-       FROM staff_details 
-       WHERE role = 'PHARMACIST'`
-    );
+    const pharmacistCount = await StaffDetails.count({
+      where: { role: 'PHARMACIST' }
+    });
     
     // Get patient count
-    const [patientCount] = await pool.execute(
-      `SELECT COUNT(*) as total FROM patient`
-    );
+    const patientCount = await Patient.count();
     
     // Get role distribution
-    const [roleCounts] = await pool.execute(
-      `SELECT role, COUNT(*) as count FROM users GROUP BY role`
-    );
+    const roleCounts = await User.findAll({
+      attributes: [
+        'role',
+        [sequelize.fn('COUNT', sequelize.col('role')), 'count']
+      ],
+      group: ['role'],
+      raw: true
+    });
     
     const roleCountsObj = roleCounts.reduce((acc, row) => {
-      acc[row.role.toLowerCase()] = row.count;
+      acc[row.role.toLowerCase()] = parseInt(row.count);
       return acc;
     }, {});
     
     // Get today's visits
-    const [todayVisits] = await pool.execute(
-      `SELECT COUNT(*) as total FROM visit 
-       WHERE DATE(visit_date) = CURDATE()`
-    );
+    const todayVisits = await Visit.count({
+      where: sequelize.where(
+        sequelize.fn('DATE', sequelize.col('visit_date')),
+        sequelize.fn('CURDATE')
+      )
+    });
     
-    // Get new patients today (first visit today)
-    const [newPatientsToday] = await pool.execute(
-      `SELECT COUNT(DISTINCT patient_id) as total 
-       FROM patient 
-       WHERE DATE(created_at) = CURDATE()`
-    );
+    // Get new patients today
+    const newPatientsToday = await Patient.count({
+      where: sequelize.where(
+        sequelize.fn('DATE', sequelize.col('created_at')),
+        sequelize.fn('CURDATE')
+      )
+    });
     
     // Get active users by status
-    const [activeUsers] = await pool.execute(
-      `SELECT COUNT(*) as total FROM users WHERE status = 'ACTIVE'`
-    );
+    const activeUsers = await User.count({
+      where: { status: 'ACTIVE' }
+    });
     
-    const [inactiveUsers] = await pool.execute(
-      `SELECT COUNT(*) as total FROM users WHERE status = 'INACTIVE'`
-    );
+    const inactiveUsers = await User.count({
+      where: { status: 'INACTIVE' }
+    });
     
     const stats = {
-      totalUsers: userCount[0].total,
-      totalDoctors: doctorCount[0].total,
-      totalReceptionists: nurseReceptionistCount[0].total,
-      totalNurses: nurseReceptionistCount[0].total, // Same as receptionist in new schema
-      totalPharmacists: pharmacistCount[0].total,
+      totalUsers: userCount,
+      totalDoctors: doctorCount,
+      totalReceptionists: nurseReceptionistCount,
+      totalNurses: nurseReceptionistCount, // Same as receptionist in new schema
+      totalPharmacists: pharmacistCount,
       totalAdministrators: roleCountsObj.admin || 0,
-      totalPatients: patientCount[0].total,
-      todayVisits: todayVisits[0].total,
-      newPatientsToday: newPatientsToday[0].total,
-      activeUsers: activeUsers[0].total,
-      inactiveUsers: inactiveUsers[0].total,
+      totalPatients: patientCount,
+      todayVisits: todayVisits,
+      newPatientsToday: newPatientsToday,
+      activeUsers: activeUsers,
+      inactiveUsers: inactiveUsers,
       roleDistribution: roleCountsObj
     };
     
@@ -97,48 +115,61 @@ export const getPatientOverview = async () => {
     console.log('📊 Fetching patient overview...');
     
     // Get patient demographics by gender
-    const [demographics] = await pool.execute(
-      `SELECT 
-         gender,
-         COUNT(*) as count
-       FROM patient
-       WHERE gender IS NOT NULL
-       GROUP BY gender`
-    );
+    const demographics = await Patient.findAll({
+      attributes: [
+        'gender',
+        [sequelize.fn('COUNT', sequelize.col('gender')), 'count']
+      ],
+      where: {
+        gender: { [Op.ne]: null }
+      },
+      group: ['gender'],
+      raw: true
+    });
     
     // Get visit trends for last 6 months
-    const [visitTrends] = await pool.execute(
-      `SELECT 
-         DATE_FORMAT(visit_date, '%b') as month,
-         MONTH(visit_date) as month_num,
-         YEAR(visit_date) as year,
-         COUNT(*) as visits
-       FROM visit
-       WHERE visit_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-       GROUP BY YEAR(visit_date), MONTH(visit_date), DATE_FORMAT(visit_date, '%b')
-       ORDER BY year, month_num ASC`
-    );
+    const visitTrends = await Visit.findAll({
+      attributes: [
+        [sequelize.fn('DATE_FORMAT', sequelize.col('visit_date'), '%b'), 'month'],
+        [sequelize.fn('MONTH', sequelize.col('visit_date')), 'month_num'],
+        [sequelize.fn('YEAR', sequelize.col('visit_date')), 'year'],
+        [sequelize.fn('COUNT', sequelize.col('visit_id')), 'visits']
+      ],
+      where: {
+        visit_date: {
+          [Op.gte]: sequelize.literal('DATE_SUB(NOW(), INTERVAL 6 MONTH)')
+        }
+      },
+      group: [
+        sequelize.fn('YEAR', sequelize.col('visit_date')),
+        sequelize.fn('MONTH', sequelize.col('visit_date')),
+        sequelize.fn('DATE_FORMAT', sequelize.col('visit_date'), '%b')
+      ],
+      order: [[sequelize.literal('year'), 'ASC'], [sequelize.literal('month_num'), 'ASC']],
+      raw: true
+    });
     
     // Get patient type distribution
-    const [patientTypes] = await pool.execute(
-      `SELECT 
-         patient_type,
-         COUNT(*) as count
-       FROM patient
-       GROUP BY patient_type`
-    );
+    const patientTypes = await Patient.findAll({
+      attributes: [
+        'patient_type',
+        [sequelize.fn('COUNT', sequelize.col('patient_type')), 'count']
+      ],
+      group: ['patient_type'],
+      raw: true
+    });
     
     const result = {
       demographics: demographics.reduce((acc, row) => {
-        acc[row.gender.toLowerCase()] = row.count;
+        acc[row.gender.toLowerCase()] = parseInt(row.count);
         return acc;
       }, {}),
       visitTrends: visitTrends.map(row => ({
         month: row.month,
-        visits: row.visits
+        visits: parseInt(row.visits)
       })),
       patientTypes: patientTypes.reduce((acc, row) => {
-        acc[row.patient_type] = row.count;
+        acc[row.patient_type] = parseInt(row.count);
         return acc;
       }, {})
     };
@@ -155,54 +186,55 @@ export const getAllUsers = async ({ role, status, search }) => {
   try {
     console.log('👥 Fetching users with filters:', { role, status, search });
     
-    let query = `
-      SELECT 
-        u.user_id,
-        u.username,
-        u.role,
-        u.status,
-        u.created_at,
-        COALESCE(d.name, s.name, 'Unknown') as name,
-        COALESCE(d.phone, s.phone, 'N/A') as phone,
-        COALESCE(d.specialization, s.email, 'N/A') as additional_info
-      FROM users u
-      LEFT JOIN doctor d ON u.user_id = d.user_id
-      LEFT JOIN staff_details s ON u.user_id = s.user_id
-      WHERE 1=1
-    `;
-    
-    const params = [];
+    const whereClause = {};
     
     if (role && role !== 'all') {
-      query += ` AND u.role = ?`;
-      params.push(role.toUpperCase());
+      whereClause.role = role.toUpperCase();
     }
     
     if (status && status !== 'all') {
-      query += ` AND u.status = ?`;
-      params.push(status.toUpperCase());
+      whereClause.status = status.toUpperCase();
     }
     
     if (search) {
-      query += ` AND (u.username LIKE ? OR d.name LIKE ? OR s.name LIKE ?)`;
-      const searchParam = `%${search}%`;
-      params.push(searchParam, searchParam, searchParam);
+      whereClause[Op.or] = [
+        { username: { [Op.like]: `%${search}%` } }
+      ];
     }
     
-    query += ` ORDER BY u.created_at DESC`;
+    const users = await User.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Doctor,
+          required: false,
+          attributes: ['name', 'phone', 'specialization']
+        },
+        {
+          model: StaffDetails,
+          required: false,
+          attributes: ['name', 'phone', 'email']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
     
-    const [users] = await pool.execute(query, params);
-    
-    const mappedUsers = users.map(user => ({
-      user_id: user.user_id,
-      name: user.name,
-      username: user.username,
-      role: user.role,
-      status: user.status,
-      phone: user.phone,
-      additional_info: user.additional_info,
-      registeredDate: user.created_at
-    }));
+    const mappedUsers = users.map(user => {
+      const userData = user.toJSON();
+      const doctor = userData.Doctor;
+      const staff = userData.StaffDetails && userData.StaffDetails[0];
+      
+      return {
+        user_id: userData.user_id,
+        name: doctor?.name || staff?.name || 'Unknown',
+        username: userData.username,
+        role: userData.role,
+        status: userData.status,
+        phone: doctor?.phone || staff?.phone || 'N/A',
+        additional_info: doctor?.specialization || staff?.email || 'N/A',
+        registeredDate: userData.created_at
+      };
+    });
     
     return mappedUsers;
     
@@ -223,19 +255,18 @@ export const createUser = async ({
   code,
   is_role_specific = false 
 }) => {
-  const connection = await pool.getConnection();
+  const transaction = await sequelize.transaction();
   
   try {
     console.log('➕ Creating user:', { name, username, role });
-    await connection.beginTransaction();
     
     // Check if username already exists
-    const [existing] = await connection.execute(
-      `SELECT user_id FROM users WHERE username = ?`,
-      [username]
-    );
+    const existing = await User.findOne({
+      where: { username }
+    });
     
-    if (existing.length > 0) {
+    if (existing) {
+      await transaction.rollback();
       throw new ApiError(409, 'User with this username already exists');
     }
     
@@ -243,37 +274,50 @@ export const createUser = async ({
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Insert into users table
-    await connection.execute(
-      `INSERT INTO users (user_id, username, password_hash, role, status, created_at, is_role_specific)
-       VALUES (?, ?, ?, ?, 'ACTIVE', NOW(), ?)`,
-      [userId, username, hashedPassword, role.toUpperCase(), is_role_specific]
-    );
+    await User.create({
+      user_id: userId,
+      username,
+      password_hash: hashedPassword,
+      role: role.toUpperCase(),
+      status: 'ACTIVE',
+      is_role_specific
+    }, { transaction });
     
     // Create role-specific record
     if (role.toUpperCase() === 'DOCTOR') {
-      const doctorId = crypto.randomUUID();
-      await connection.execute(
-        `INSERT INTO doctor (doctor_id, user_id, name, specialization, phone, availability_status)
-         VALUES (?, ?, ?, ?, ?, 'AVAILABLE')`,
-        [doctorId, userId, name, specialization || 'General Medicine', phone || null]
-      );
+      await Doctor.create({
+        doctor_id: crypto.randomUUID(),
+        user_id: userId,
+        name,
+        specialization: specialization || 'General Medicine',
+        phone: phone || null,
+        availability_status: 'AVAILABLE'
+      }, { transaction });
     } else if (role.toUpperCase() === 'NURSE_RECEPTIONIST') {
-      const staffId = crypto.randomUUID();
-      await connection.execute(
-        `INSERT INTO staff_details (staff_id, user_id, name, role, code, phone, email, status)
-         VALUES (?, ?, ?, 'NURSE_RECEPTIONIST', ?, ?, ?, 'ACTIVE')`,
-        [staffId, userId, name, code || `NR-${Date.now()}`, phone || null, email || null]
-      );
+      await StaffDetails.create({
+        staff_id: crypto.randomUUID(),
+        user_id: userId,
+        name,
+        role: 'NURSE_RECEPTIONIST',
+        code: code || `NR-${Date.now()}`,
+        phone: phone || null,
+        email: email || null,
+        status: 'ACTIVE'
+      }, { transaction });
     } else if (role.toUpperCase() === 'PHARMACIST') {
-      const staffId = crypto.randomUUID();
-      await connection.execute(
-        `INSERT INTO staff_details (staff_id, user_id, name, role, code, phone, email, status)
-         VALUES (?, ?, ?, 'PHARMACIST', ?, ?, ?, 'ACTIVE')`,
-        [staffId, userId, name, code || `PH-${Date.now()}`, phone || null, email || null]
-      );
+      await StaffDetails.create({
+        staff_id: crypto.randomUUID(),
+        user_id: userId,
+        name,
+        role: 'PHARMACIST',
+        code: code || `PH-${Date.now()}`,
+        phone: phone || null,
+        email: email || null,
+        status: 'ACTIVE'
+      }, { transaction });
     }
     
-    await connection.commit();
+    await transaction.commit();
     
     return {
       user_id: userId,
@@ -284,47 +328,38 @@ export const createUser = async ({
       specialization: specialization || null
     };
   } catch (error) {
-    await connection.rollback();
+    // Only rollback if transaction hasn't been committed or rolled back
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     
     if (error instanceof ApiError) {
       throw error;
     }
     throw new ApiError(500, 'Failed to create user: ' + error.message);
-  } finally {
-    connection.release();
   }
 };
 
 export const updateUserStatus = async (userId, status, reason) => {
   try {
-    const [users] = await pool.execute(
-      `SELECT user_id FROM users WHERE user_id = ?`,
-      [userId]
-    );
+    const user = await User.findByPk(userId);
     
-    if (users.length === 0) {
+    if (!user) {
       throw new ApiError(404, 'User not found');
     }
     
-    await pool.execute(
-      `UPDATE users SET status = ? WHERE user_id = ?`,
-      [status.toUpperCase(), userId]
-    );
+    await user.update({ status: status.toUpperCase() });
     
     // Log the status change in audit log
-    await pool.execute(
-      `INSERT INTO system_audit_log (
-        log_id, actor_user_id, action, entity_type, entity_id, 
-        new_value, remarks, created_at
-      ) VALUES (?, ?, 'UPDATE_STATUS', 'USER', ?, ?, ?, NOW())`,
-      [
-        crypto.randomUUID(),
-        userId,
-        userId,
-        JSON.stringify({ status: status.toUpperCase() }),
-        reason || 'Status updated by admin'
-      ]
-    );
+    await SystemAuditLog.create({
+      log_id: crypto.randomUUID(),
+      actor_user_id: userId,
+      action: 'UPDATE_STATUS',
+      entity_type: 'USER',
+      entity_id: userId,
+      new_value: JSON.stringify({ status: status.toUpperCase() }),
+      remarks: reason || 'Status updated by admin'
+    });
     
     return { message: 'User status updated successfully' };
   } catch (error) {
@@ -336,91 +371,82 @@ export const updateUserStatus = async (userId, status, reason) => {
 };
 
 export const deleteUser = async (userId) => {
-  const connection = await pool.getConnection();
+  const transaction = await sequelize.transaction();
   
   try {
-    await connection.beginTransaction();
+    const user = await User.findByPk(userId, { transaction });
     
-    const [users] = await connection.execute(
-      `SELECT user_id, role FROM users WHERE user_id = ?`,
-      [userId]
-    );
-    
-    if (users.length === 0) {
+    if (!user) {
+      await transaction.rollback();
       throw new ApiError(404, 'User not found');
     }
     
     // The foreign key constraints with ON DELETE CASCADE will handle related records
-    await connection.execute(
-      `DELETE FROM users WHERE user_id = ?`,
-      [userId]
-    );
+    await user.destroy({ transaction });
     
     // Log the deletion
-    await connection.execute(
-      `INSERT INTO system_audit_log (
-        log_id, action, entity_type, entity_id, remarks, created_at
-      ) VALUES (?, 'DELETE', 'USER', ?, 'User deleted by admin', NOW())`,
-      [crypto.randomUUID(), userId]
-    );
+    await SystemAuditLog.create({
+      log_id: crypto.randomUUID(),
+      action: 'DELETE',
+      entity_type: 'USER',
+      entity_id: userId,
+      remarks: 'User deleted by admin'
+    }, { transaction });
     
-    await connection.commit();
+    await transaction.commit();
     
     return { message: 'User deleted successfully' };
   } catch (error) {
-    await connection.rollback();
+    // Only rollback if transaction hasn't been committed or rolled back
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     
     if (error instanceof ApiError) {
       throw error;
     }
     throw new ApiError(500, 'Failed to delete user: ' + error.message);
-  } finally {
-    connection.release();
   }
 };
 
 export const getAllDoctors = async () => {
   try {
-    const [doctors] = await pool.execute(
-      `SELECT 
-        d.doctor_id,
-        d.user_id,
-        d.name,
-        d.specialization,
-        d.phone,
-        d.availability_status,
-        u.username,
-        u.status,
-        u.created_at
-      FROM doctor d
-      JOIN users u ON d.user_id = u.user_id
-      ORDER BY d.name ASC`
-    );
+    const doctors = await Doctor.findAll({
+      include: [{
+        model: User,
+        attributes: ['username', 'status', 'created_at']
+      }],
+      order: [['name', 'ASC']]
+    });
     
     // Get today's visit count for each doctor
     const doctorsWithStats = await Promise.all(
       doctors.map(async (doctor) => {
-        const [visitCount] = await pool.execute(
-          `SELECT COUNT(*) as count 
-           FROM visit 
-           WHERE doctor_id = ? 
-           AND DATE(visit_date) = CURDATE()`,
-          [doctor.doctor_id]
-        );
+        const doctorData = doctor.toJSON();
+        
+        const visitCount = await Visit.count({
+          where: {
+            doctor_id: doctorData.doctor_id,
+            [Op.and]: sequelize.where(
+              sequelize.fn('DATE', sequelize.col('visit_date')),
+              sequelize.fn('CURDATE')
+            )
+          }
+        });
         
         return {
-          id: doctor.doctor_id,
-          doctor_id: doctor.doctor_id,
-          user_id: doctor.user_id,
-          name: doctor.name,
-          username: doctor.username,
-          email: doctor.username, // Use username as email fallback
-          specialization: doctor.specialization,
-          phone: doctor.phone || 'N/A',
-          availability: doctor.availability_status,
-          status: doctor.status.toLowerCase(),
-          patientsToday: visitCount[0].count,
-          joinedDate: doctor.created_at
+          id: doctorData.doctor_id,
+          doctor_id: doctorData.doctor_id,
+          user_id: doctorData.user_id,
+          name: doctorData.name,
+          username: doctorData.User.username,
+          email: doctorData.User.username, // Use username as email fallback
+          specialization: doctorData.specialization,
+          phone: doctorData.phone || 'N/A',
+          availability: doctorData.availability_status,
+          status: doctorData.User.status.toLowerCase(),
+          patientsToday: visitCount,
+          joinedDate: doctorData.User.created_at
         };
       })
     );
@@ -434,47 +460,43 @@ export const getAllDoctors = async () => {
 
 export const getAllReceptionists = async () => {
   try {
-    const [receptionists] = await pool.execute(
-      `SELECT 
-        s.staff_id,
-        s.user_id,
-        s.name,
-        s.code,
-        s.phone,
-        s.email,
-        s.status,
-        u.username,
-        u.created_at
-      FROM staff_details s
-      JOIN users u ON s.user_id = u.user_id
-      WHERE s.role = 'NURSE_RECEPTIONIST'
-      ORDER BY s.name ASC`
-    );
+    const receptionists = await StaffDetails.findAll({
+      where: { role: 'NURSE_RECEPTIONIST' },
+      include: [{
+        model: User,
+        attributes: ['username', 'created_at']
+      }],
+      order: [['name', 'ASC']]
+    });
     
     // Get today's visit registrations for each receptionist
     const receptionistsWithStats = await Promise.all(
       receptionists.map(async (receptionist) => {
-        const [visitCount] = await pool.execute(
-          `SELECT COUNT(*) as count 
-           FROM visit 
-           WHERE created_by_code = ? 
-           AND DATE(visit_date) = CURDATE()`,
-          [receptionist.code]
-        );
+        const receptionistData = receptionist.toJSON();
+        
+        const visitCount = await Visit.count({
+          where: {
+            created_by_code: receptionistData.code,
+            [Op.and]: sequelize.where(
+              sequelize.fn('DATE', sequelize.col('visit_date')),
+              sequelize.fn('CURDATE')
+            )
+          }
+        });
         
         return {
-          id: receptionist.staff_id,
-          staff_id: receptionist.staff_id,
-          user_id: receptionist.user_id,
-          name: receptionist.name,
-          username: receptionist.username,
-          email: receptionist.email || receptionist.username,
-          employeeId: receptionist.code,
-          phone: receptionist.phone || 'N/A',
-          status: receptionist.status.toLowerCase(),
+          id: receptionistData.staff_id,
+          staff_id: receptionistData.staff_id,
+          user_id: receptionistData.user_id,
+          name: receptionistData.name,
+          username: receptionistData.User.username,
+          email: receptionistData.email || receptionistData.User.username,
+          employeeId: receptionistData.code,
+          phone: receptionistData.phone || 'N/A',
+          status: receptionistData.status.toLowerCase(),
           shift: 'flexible', // Can be extended with shift table
-          patientsToday: visitCount[0].count,
-          joinedDate: receptionist.created_at
+          patientsToday: visitCount,
+          joinedDate: receptionistData.User.created_at
         };
       })
     );
@@ -489,48 +511,44 @@ export const getAllReceptionists = async () => {
 export const getAllNurses = async () => {
   try {
     // In the new schema, nurses are part of staff_details with role NURSE_RECEPTIONIST
-    const [nurses] = await pool.execute(
-      `SELECT 
-        s.staff_id,
-        s.user_id,
-        s.name,
-        s.code,
-        s.phone,
-        s.email,
-        s.status,
-        u.username,
-        u.created_at
-      FROM staff_details s
-      JOIN users u ON s.user_id = u.user_id
-      WHERE s.role = 'NURSE_RECEPTIONIST'
-      ORDER BY s.name ASC`
-    );
+    const nurses = await StaffDetails.findAll({
+      where: { role: 'NURSE_RECEPTIONIST' },
+      include: [{
+        model: User,
+        attributes: ['username', 'created_at']
+      }],
+      order: [['name', 'ASC']]
+    });
     
     // Get today's task count for each nurse
     const nursesWithStats = await Promise.all(
       nurses.map(async (nurse) => {
-        const [taskCount] = await pool.execute(
-          `SELECT COUNT(*) as count 
-           FROM nurse_transaction nt
-           WHERE nt.performed_by_code = ? 
-           AND DATE(nt.performed_at) = CURDATE()`,
-          [nurse.code]
-        );
+        const nurseData = nurse.toJSON();
+        
+        const taskCount = await NurseTransaction.count({
+          where: {
+            performed_by_code: nurseData.code,
+            [Op.and]: sequelize.where(
+              sequelize.fn('DATE', sequelize.col('performed_at')),
+              sequelize.fn('CURDATE')
+            )
+          }
+        });
         
         return {
-          id: nurse.staff_id,
-          nurse_id: nurse.staff_id,
-          staff_id: nurse.staff_id,
-          user_id: nurse.user_id,
-          name: nurse.name,
-          username: nurse.username,
-          email: nurse.email || nurse.username,
-          register_number: nurse.code,
+          id: nurseData.staff_id,
+          nurse_id: nurseData.staff_id,
+          staff_id: nurseData.staff_id,
+          user_id: nurseData.user_id,
+          name: nurseData.name,
+          username: nurseData.User.username,
+          email: nurseData.email || nurseData.User.username,
+          register_number: nurseData.code,
           qualification: 'RN', // Default - can be extended
-          phone: nurse.phone || 'N/A',
-          status: nurse.status.toLowerCase(),
-          tasksToday: taskCount[0].count,
-          joinedDate: nurse.created_at
+          phone: nurseData.phone || 'N/A',
+          status: nurseData.status.toLowerCase(),
+          tasksToday: taskCount,
+          joinedDate: nurseData.User.created_at
         };
       })
     );
@@ -544,47 +562,43 @@ export const getAllNurses = async () => {
 
 export const getAllPharmacists = async () => {
   try {
-    const [pharmacists] = await pool.execute(
-      `SELECT 
-        s.staff_id,
-        s.user_id,
-        s.name,
-        s.code,
-        s.phone,
-        s.email,
-        s.status,
-        u.username,
-        u.created_at
-      FROM staff_details s
-      JOIN users u ON s.user_id = u.user_id
-      WHERE s.role = 'PHARMACIST'
-      ORDER BY s.name ASC`
-    );
+    const pharmacists = await StaffDetails.findAll({
+      where: { role: 'PHARMACIST' },
+      include: [{
+        model: User,
+        attributes: ['username', 'created_at']
+      }],
+      order: [['name', 'ASC']]
+    });
     
     // Get today's prescription transactions for each pharmacist
     const pharmacistsWithStats = await Promise.all(
       pharmacists.map(async (pharmacist) => {
-        const [transactionCount] = await pool.execute(
-          `SELECT COUNT(*) as count 
-           FROM prescription_transaction 
-           WHERE issued_by_code = ? 
-           AND DATE(issued_at) = CURDATE()`,
-          [pharmacist.code]
-        );
+        const pharmacistData = pharmacist.toJSON();
+        
+        const transactionCount = await PrescriptionTransaction.count({
+          where: {
+            issued_by_code: pharmacistData.code,
+            [Op.and]: sequelize.where(
+              sequelize.fn('DATE', sequelize.col('issued_at')),
+              sequelize.fn('CURDATE')
+            )
+          }
+        });
         
         return {
-          id: pharmacist.staff_id,
-          pharmacist_id: pharmacist.staff_id,
-          staff_id: pharmacist.staff_id,
-          user_id: pharmacist.user_id,
-          name: pharmacist.name,
-          username: pharmacist.username,
-          email: pharmacist.email || pharmacist.username,
-          code: pharmacist.code,
-          phone: pharmacist.phone || 'N/A',
-          status: pharmacist.status.toLowerCase(),
-          transactionsToday: transactionCount[0].count,
-          joinedDate: pharmacist.created_at
+          id: pharmacistData.staff_id,
+          pharmacist_id: pharmacistData.staff_id,
+          staff_id: pharmacistData.staff_id,
+          user_id: pharmacistData.user_id,
+          name: pharmacistData.name,
+          username: pharmacistData.User.username,
+          email: pharmacistData.email || pharmacistData.User.username,
+          code: pharmacistData.code,
+          phone: pharmacistData.phone || 'N/A',
+          status: pharmacistData.status.toLowerCase(),
+          transactionsToday: transactionCount,
+          joinedDate: pharmacistData.User.created_at
         };
       })
     );
@@ -598,43 +612,52 @@ export const getAllPharmacists = async () => {
 
 export const getAllVisits = async ({ date, status }) => {
   try {
-    let query = `
-      SELECT 
-        v.visit_id,
-        v.patient_id,
-        v.doctor_id,
-        v.visit_date,
-        v.reason,
-        v.status,
-        v.created_by_code,
-                p.name as patient_name,
-        p.gender,
-        p.phone as patient_phone,
-        d.name as doctor_name,
-        d.specialization
-      FROM visit v
-      LEFT JOIN patient p ON v.patient_id = p.patient_id
-      LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
-      WHERE 1=1
-    `;
-    
-    const params = [];
+    const whereClause = {};
     
     if (date) {
-      query += ` AND DATE(v.visit_date) = ?`;
-      params.push(date);
+      whereClause[Op.and] = sequelize.where(
+        sequelize.fn('DATE', sequelize.col('visit_date')),
+        date
+      );
     }
     
     if (status && status !== 'all') {
-      query += ` AND v.status = ?`;
-      params.push(status.toUpperCase());
+      whereClause.status = status.toUpperCase();
     }
     
-    query += ` ORDER BY v.visit_date DESC LIMIT 100`;
+    const visits = await Visit.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Patient,
+          attributes: ['name', 'gender', 'phone']
+        },
+        {
+          model: Doctor,
+          attributes: ['name', 'specialization']
+        }
+      ],
+      order: [['visit_date', 'DESC']],
+      limit: 100
+    });
     
-    const [visits] = await pool.execute(query, params);
-    
-    return visits;
+    return visits.map(visit => {
+      const visitData = visit.toJSON();
+      return {
+        visit_id: visitData.visit_id,
+        patient_id: visitData.patient_id,
+        doctor_id: visitData.doctor_id,
+        visit_date: visitData.visit_date,
+        reason: visitData.reason,
+        status: visitData.status,
+        created_by_code: visitData.created_by_code,
+        patient_name: visitData.Patient?.name,
+        gender: visitData.Patient?.gender,
+        patient_phone: visitData.Patient?.phone,
+        doctor_name: visitData.Doctor?.name,
+        specialization: visitData.Doctor?.specialization
+      };
+    });
     
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch visits: ' + error.message);
@@ -643,49 +666,42 @@ export const getAllVisits = async ({ date, status }) => {
 
 export const getMedicineInventory = async ({ status, search }) => {
   try {
-    let query = `
-      SELECT 
-        m.medicine_id,
-        m.name,
-        m.type,
-        COALESCE(SUM(mms.quantity), 0) as main_stock,
-        COALESCE(SUM(ps.quantity), 0) as pharmacy_stock,
-        COALESCE(SUM(ns.quantity), 0) as nurse_stock,
-        COALESCE(SUM(ds.quantity), 0) as dressing_stock,
-        COUNT(DISTINCT mms.batch_no) as batch_count,
-        MIN(mms.expiry) as nearest_expiry
-      FROM medicine m
-      LEFT JOIN medicine_main_stock mms ON m.medicine_id = mms.medicine_id
-      LEFT JOIN pharmacy_stock ps ON m.medicine_id = ps.medicine_id
-      LEFT JOIN nurse_stock ns ON m.medicine_id = ns.medicine_id
-      LEFT JOIN dressing_stock ds ON m.medicine_id = ds.medicine_id
-      WHERE 1=1
-    `;
-    
-    const params = [];
+    const whereClause = {};
     
     if (search) {
-      query += ` AND m.name LIKE ?`;
-      params.push(`%${search}%`);
+      whereClause.name = { [Op.like]: `%${search}%` };
     }
     
-    query += ` GROUP BY m.medicine_id, m.name, m.type ORDER BY m.name ASC`;
+    const medicines = await Medicine.findAll({
+      where: whereClause,
+      attributes: [
+        'medicine_id',
+        'name',
+        'type',
+        [sequelize.fn('COALESCE', sequelize.literal('(SELECT SUM(quantity) FROM medicine_main_stock WHERE medicine_id = Medicine.medicine_id)'), 0), 'main_stock'],
+        [sequelize.fn('COALESCE', sequelize.literal('(SELECT SUM(quantity) FROM pharmacy_stock WHERE medicine_id = Medicine.medicine_id)'), 0), 'pharmacy_stock'],
+        [sequelize.fn('COALESCE', sequelize.literal('(SELECT SUM(quantity) FROM nurse_stock WHERE medicine_id = Medicine.medicine_id)'), 0), 'nurse_stock'],
+        [sequelize.fn('COALESCE', sequelize.literal('(SELECT SUM(quantity) FROM dressing_stock WHERE medicine_id = Medicine.medicine_id)'), 0), 'dressing_stock'],
+        [sequelize.literal('(SELECT COUNT(DISTINCT batch_no) FROM medicine_main_stock WHERE medicine_id = Medicine.medicine_id)'), 'batch_count'],
+        [sequelize.literal('(SELECT MIN(expiry) FROM medicine_main_stock WHERE medicine_id = Medicine.medicine_id)'), 'nearest_expiry']
+      ],
+      order: [['name', 'ASC']],
+      raw: true
+    });
     
-    const [inventory] = await pool.execute(query, params);
-    
-    return inventory.map(item => {
-      const total_stock = item.main_stock + item.pharmacy_stock + item.nurse_stock + item.dressing_stock;
+    return medicines.map(item => {
+      const total_stock = parseInt(item.main_stock) + parseInt(item.pharmacy_stock) + parseInt(item.nurse_stock) + parseInt(item.dressing_stock);
       
       return {
         medicine_id: item.medicine_id,
         name: item.name,
         type: item.type,
-        main_stock: item.main_stock,
-        pharmacy_stock: item.pharmacy_stock,
-        nurse_stock: item.nurse_stock,
-        dressing_stock: item.dressing_stock,
+        main_stock: parseInt(item.main_stock),
+        pharmacy_stock: parseInt(item.pharmacy_stock),
+        nurse_stock: parseInt(item.nurse_stock),
+        dressing_stock: parseInt(item.dressing_stock),
         total_stock: total_stock,
-        batch_count: item.batch_count,
+        batch_count: parseInt(item.batch_count),
         nearest_expiry: item.nearest_expiry,
         status: total_stock === 0 ? 'OUT_OF_STOCK' : 
                 total_stock < 20 ? 'LOW_STOCK' : 'IN_STOCK'
@@ -714,51 +730,31 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
   try {
     console.log('📋 Fetching system logs...');
     
-    let query = `
-      SELECT
-        log_id,
-        actor_user_id,
-        actor_code,
-        actor_role,
-        action,
-        entity_type,
-        entity_id,
-        old_value,
-        new_value,
-        remarks,
-        ip_address,
-        user_agent,
-        created_at
-      FROM system_audit_log
-      WHERE 1=1
-    `;
-
-    const params = [];
+    const whereClause = {};
 
     if (startDate) {
-      query += ` AND DATE(created_at) >= ?`;
-      params.push(startDate);
+      whereClause.created_at = { [Op.gte]: startDate };
     }
 
     if (endDate) {
-      query += ` AND DATE(created_at) <= ?`;
-      params.push(endDate);
+      if (whereClause.created_at) {
+        whereClause.created_at = { ...whereClause.created_at, [Op.lte]: endDate };
+      } else {
+        whereClause.created_at = { [Op.lte]: endDate };
+      }
     }
 
-    query += `
-      ORDER BY created_at DESC
-      LIMIT 200
-    `;
-
-    console.log('Executing query:', query);
-    console.log('With params:', params);
-
-    const [rows] = await pool.execute(query, params);
+    const logs = await SystemAuditLog.findAll({
+      where: whereClause,
+      order: [['created_at', 'DESC']],
+      limit: 200,
+      raw: true
+    });
     
-    console.log(`✅ Found ${rows.length} log entries`);
+    console.log(`✅ Found ${logs.length} log entries`);
     
     // Format the logs for better readability with safe JSON parsing
-    const formattedLogs = rows.map(log => {
+    const formattedLogs = logs.map(log => {
       try {
         return {
           log_id: log.log_id,
