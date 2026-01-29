@@ -35,8 +35,8 @@ const ReceptionistDashboard = () => {
   const visits = useSelector(selectVisits);
   const visitsLoading = useSelector(selectVisitsLoading);
 
-  const [showCreateVisit, setShowCreateVisit] = useState(true);
-  const [showRecentVisits, setShowRecentVisits] = useState(true);
+  const [showRegisterPatient, setShowRegisterPatient] = useState(true);
+  const [showDoctorAvailability, setShowDoctorAvailability] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -117,70 +117,70 @@ const ReceptionistDashboard = () => {
 
           <div className={styles.gridLayout}>
 
-            {/* ✅ TOP LEFT — Register Patient */}
-            <section className={`${styles.section} ${styles.registerPatientSection}`}>
-              <RegisterPatientForm />
-            </section>
-
-            {/* ✅ TOP RIGHT — Doctor Availability */}
-            <section className={`${styles.section} ${styles.doctorAvailabilitySection}`}>
-              <DoctorAvailabilityTable doctors={doctors || []} />
-            </section>
-
-            {/* 🔽 BOTTOM LEFT — Create Visit (COLLAPSIBLE) */}
-            <div className={`${styles.collapsibleSection} ${styles.createVisit}`}>
+            {/* ✅ TOP LEFT — Register Patient (COLLAPSIBLE) */}
+            <div className={`${styles.collapsibleSection} ${styles.registerPatientSection}`}>
               <button
                 className={styles.collapsibleHeader}
-                onClick={() => setShowCreateVisit(v => !v)}
+                onClick={() => setShowRegisterPatient(v => !v)}
                 type="button"
               >
                 <div className={styles.collapsibleTitle}>
-                  <h3>Create Visit</h3>
-                  <span className={styles.subtitle}>Schedule a patient visit</span>
+                  <h3>Register Patient</h3>
+                  <span className={styles.subtitle}>Add a new patient</span>
                 </div>
                 <FontAwesomeIcon
-                  icon={showCreateVisit ? faChevronUp : faChevronDown}
+                  icon={showRegisterPatient ? faChevronUp : faChevronDown}
                   className={styles.chevronIcon}
                 />
               </button>
 
-              {showCreateVisit && (
+              {showRegisterPatient && (
                 <div className={styles.collapsibleContent}>
-                  <CreateVisitForm
-                    patients={patients || []}
-                    availableDoctors={doctors?.filter(d => d.status === 'AVAILABLE') || []}
-                  />
+                  <RegisterPatientForm />
                 </div>
               )}
             </div>
 
-            {/* 🔽 BOTTOM RIGHT — Recent Visits (COLLAPSIBLE) */}
-            <div className={`${styles.collapsibleSection} ${styles.recentVisits}`}>
+            {/* ✅ TOP RIGHT — Doctor Availability (COLLAPSIBLE) */}
+            <div className={`${styles.collapsibleSection} ${styles.doctorAvailabilitySection}`}>
               <button
                 className={styles.collapsibleHeader}
-                onClick={() => setShowRecentVisits(v => !v)}
+                onClick={() => setShowDoctorAvailability(v => !v)}
                 type="button"
               >
                 <div className={styles.collapsibleTitle}>
-                  <h3>Recent Visits</h3>
-                  <span className={styles.subtitle}>Latest visit activity</span>
+                  <h3>Doctor Availability</h3>
+                  <span className={styles.subtitle}>View available doctors</span>
                 </div>
                 <FontAwesomeIcon
-                  icon={showRecentVisits ? faChevronUp : faChevronDown}
+                  icon={showDoctorAvailability ? faChevronUp : faChevronDown}
                   className={styles.chevronIcon}
                 />
               </button>
 
-              {showRecentVisits && (
+              {showDoctorAvailability && (
                 <div className={styles.collapsibleContent}>
-                  <RecentVisitsList
-                    visits={visits || []}
-                    onRefresh={handleRefreshVisits}
-                    isLoading={visitsLoading}
-                  />
+                  <DoctorAvailabilityTable doctors={doctors || []} />
                 </div>
               )}
             </div>
+
+            {/* ✅ BOTTOM LEFT — Create Visit (SECTION) */}
+            <section className={`${styles.section} ${styles.createVisit}`}>
+              <CreateVisitForm
+                patients={patients || []}
+                availableDoctors={doctors?.filter(d => d.status === 'AVAILABLE') || []}
+              />
+            </section>
+
+            {/* ✅ BOTTOM RIGHT — Recent Visits (SECTION) */}
+            <section className={`${styles.section} ${styles.recentVisits}`}>
+              <RecentVisitsList
+                visits={visits || []}
+                onRefresh={handleRefreshVisits}
+                isLoading={visitsLoading}
+              />
+            </section>
 
           </div>
         </div>

@@ -216,9 +216,9 @@ const RegisterPatientForm = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
+      {/* <div className={styles.header}>
         <h2 className={styles.title}>Register New Patient</h2>
-      </div>
+      </div> */}
 
       <form onSubmit={handleSubmit} className={styles.form}>
         {/* Patient Type Selection */}
