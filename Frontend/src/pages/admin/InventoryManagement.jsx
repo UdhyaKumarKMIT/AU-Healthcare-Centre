@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faPlus, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faPlus, faExclamationTriangle, faBoxes } from '@fortawesome/free-solid-svg-icons';
 import { fetchInventory } from '../../store/slices/adminSlice';
 import styles from './ReceptionistManagement.module.css';
 import tableStyles from '../../components/Admin/ReceptionistTable.module.css';
@@ -57,7 +57,7 @@ const InventoryManagement = () => {
     <div className={styles.receptionistManagement}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>📦 Medicine Inventory</h1>
+          <h1 className={styles.title}><FontAwesomeIcon icon={faBoxes} /> Medicine Inventory</h1>
           <p className={styles.subtitle}>
             Manage medicine stock and suppliers
           </p>

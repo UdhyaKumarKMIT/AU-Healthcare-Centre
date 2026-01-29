@@ -15,6 +15,8 @@ import MedicineRow from "../../components/doctor/MedicineRow";
 import PatientHistoryModal from "../../components/doctor/PatientHistoryModal";
 import Header from "../../components/Header/Header";
 import { toast } from 'react-toastify';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faHospital } from '@fortawesome/free-solid-svg-icons';
 import styles from "./DoctorDashboard.module.css";
 
 const API_BASE = "http://localhost:5000";
@@ -1126,7 +1128,11 @@ const DoctorDashboard = () => {
                               minWidth: "200px",
                             }}
                           >
-                            {updateLoading ? "Saving..." : `💾 Save All (${diagnoses.length})`}
+                            {updateLoading ? "Saving..." : (
+                              <>
+                                <FontAwesomeIcon icon={faSave} /> Save All ({diagnoses.length})
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1215,7 +1221,7 @@ const DoctorDashboard = () => {
                         gap: "8px"
                       }}
                     >
-                      <span style={{ fontSize: "18px" }}>🏥</span>
+                      <FontAwesomeIcon icon={faHospital} style={{ fontSize: "18px" }} />
                       Refer to Other Hospital (Can't Handle)
                     </button>
                     <p style={{ 

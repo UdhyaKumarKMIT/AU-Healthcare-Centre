@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faPlus, faUserMd } from '@fortawesome/free-solid-svg-icons';
 import { fetchDoctors } from '../../store/slices/adminSlice';
 import ReceptionistStats from '../../components/Admin/ReceptionistStats';
 import ReceptionistTable from '../../components/Admin/ReceptionistTable';
@@ -73,7 +73,7 @@ const DoctorManagement = () => {
     <div className={styles.receptionistManagement}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>👨‍⚕️ Doctor Management</h1>
+          <h1 className={styles.title}><FontAwesomeIcon icon={faUserMd} /> Doctor Management</h1>
           <p className={styles.subtitle}>
             Manage doctors and their availability
           </p>
@@ -122,6 +122,7 @@ const DoctorManagement = () => {
             receptionists={transformedDoctors}
             onView={(id) => navigate(`/admin/doctors/${id}`)}
             onEdit={(id) => navigate(`/admin/doctors/${id}/edit`)}
+            roleLabel="Doctor"
             columnHeaders={{
               employeeId: 'Doctor ID',
               shift: 'Specialization',

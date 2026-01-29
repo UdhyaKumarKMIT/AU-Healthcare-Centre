@@ -7,41 +7,46 @@ const initialState = {
   stats: {
     totalUsers: 0,
     totalDoctors: 0,
+    totalReceptionists: 0,
+    totalNurses: 0,
+    totalPharmacists: 0,
+    totalAdministrators: 0,
     totalPatients: 0,
     todayVisits: 0,
     newPatientsToday: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+    roleDistribution: {}
   },
   patientOverview: {
     demographics: {},
     visitTrends: [],
+    patientTypes: {}
   },
   users: [],
   doctors: [],
   receptionists: [],
+  nurses: [],
+  pharmacists: [],
   visits: [],
+  inventory: [],
+  systemLogs: [],
   userStats: {
     active: 0,
     inactive: 0,
-    pending: 0,
-    suspended: 0,
     byRole: {}
   },
   loading: false,
   usersLoading: false,
   doctorsLoading: false,
   receptionistsLoading: false,
+  nursesLoading: false,
+  pharmacistsLoading: false,
   visitsLoading: false,
+  inventoryLoading: false,
+  logsLoading: false,
   error: null,
   successMessage: null,
-  nurses: [],
-pharmacists: [],
-inventory: [],
-systemLogs: [],
-nursesLoading: false,
-pharmacistsLoading: false,
-inventoryLoading: false,
-logsLoading: false,
-
 };
 
 // Helper function to get auth headers
@@ -51,6 +56,23 @@ const getAuthHeaders = () => {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
   };
+};
+
+// Helper function to safely parse JSON error responses
+const parseErrorResponse = async (response) => {
+  try {
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      return error.message || error.error || 'An error occurred';
+    } else {
+      // If response is not JSON, read as text
+      const text = await response.text();
+      return text || `HTTP ${response.status}: ${response.statusText}`;
+    }
+  } catch (e) {
+    return `HTTP ${response.status}: ${response.statusText}`;
+  }
 };
 
 // Fetch admin dashboard statistics
@@ -63,8 +85,8 @@ export const fetchAdminStats = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch stats');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -85,8 +107,8 @@ export const fetchPatientOverview = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch patient overview');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -114,8 +136,8 @@ export const fetchUsers = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch users');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -138,8 +160,8 @@ export const createUser = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create user');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -162,8 +184,8 @@ export const createDoctor = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create doctor');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -174,7 +196,7 @@ export const createDoctor = createAsyncThunk(
   }
 );
 
-// Create a new receptionist (uses createUser endpoint with role: 'RECEPTIONIST')
+// Create a new receptionist (uses createUser endpoint with role: 'NURSE_RECEPTIONIST')
 export const createReceptionist = createAsyncThunk(
   'admin/createReceptionist',
   async (receptionistData, { rejectWithValue }) => {
@@ -182,12 +204,12 @@ export const createReceptionist = createAsyncThunk(
       const response = await fetch(`${API_BASE}/api/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ ...receptionistData, role: 'RECEPTIONIST' })
+        body: JSON.stringify({ ...receptionistData, role: 'NURSE_RECEPTIONIST' })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create receptionist');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -198,7 +220,55 @@ export const createReceptionist = createAsyncThunk(
   }
 );
 
-// Update user status
+// Create a new nurse (uses createUser endpoint with role: 'NURSE_RECEPTIONIST')
+export const createNurse = createAsyncThunk(
+  'admin/createNurse',
+  async (nurseData, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ...nurseData, role: 'NURSE_RECEPTIONIST' })
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Create a new pharmacist (uses createUser endpoint with role: 'PHARMACIST')
+export const createPharmacist = createAsyncThunk(
+  'admin/createPharmacist',
+  async (pharmacistData, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ...pharmacistData, role: 'PHARMACIST' })
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Update user status (now only supports ACTIVE/INACTIVE)
 export const updateUserStatus = createAsyncThunk(
   'admin/updateUserStatus',
   async ({ userId, status, reason }, { rejectWithValue }) => {
@@ -210,8 +280,8 @@ export const updateUserStatus = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update user status');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -233,8 +303,8 @@ export const deleteUser = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete user');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       return userId;
@@ -254,8 +324,8 @@ export const fetchDoctors = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch doctors');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -276,8 +346,52 @@ export const fetchReceptionists = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch receptionists');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Fetch all nurses
+export const fetchNurses = createAsyncThunk(
+  'admin/fetchNurses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/nurses`, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Fetch all pharmacists
+export const fetchPharmacists = createAsyncThunk(
+  'admin/fetchPharmacists',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/pharmacists`, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -304,8 +418,8 @@ export const fetchVisits = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch visits');
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -315,54 +429,60 @@ export const fetchVisits = createAsyncThunk(
     }
   }
 );
-export const fetchNurses = createAsyncThunk(
-  'admin/fetchNurses',
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/nurses`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error((await res.json()).message);
-      return (await res.json()).data;
-    } catch (e) {
-      return rejectWithValue(e.message);
-    }
-  }
-);
 
-export const fetchPharmacists = createAsyncThunk(
-  'admin/fetchPharmacists',
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/pharmacists`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error((await res.json()).message);
-      return (await res.json()).data;
-    } catch (e) {
-      return rejectWithValue(e.message);
-    }
-  }
-);
-
+// Fetch medicine inventory
 export const fetchInventory = createAsyncThunk(
   'admin/fetchInventory',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/inventory`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error((await res.json()).message);
-      return (await res.json()).data;
-    } catch (e) {
-      return rejectWithValue(e.message);
+      const queryParams = new URLSearchParams();
+      if (params.status && params.status !== 'all') queryParams.append('status', params.status);
+      if (params.search) queryParams.append('search', params.search);
+      
+      const url = `${API_BASE}/api/admin/inventory${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
   }
 );
 
+// Fetch system audit logs
 export const fetchSystemLogs = createAsyncThunk(
   'admin/fetchSystemLogs',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/logs`, { headers: getAuthHeaders() });
-      if (!res.ok) throw new Error((await res.json()).message);
-      return (await res.json()).data;
-    } catch (e) {
-      return rejectWithValue(e.message);
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate);
+      if (params.endDate) queryParams.append('endDate', params.endDate);
+      if (params.action && params.action !== 'all') queryParams.append('action', params.action);
+      
+      const url = `${API_BASE}/api/admin/logs${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (error) {
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -423,10 +543,13 @@ const adminSlice = createSlice({
         state.usersLoading = false;
         state.users = action.payload;
 
-        const stats = { active: 0, inactive: 0, pending: 0, suspended: 0, byRole: {} };
+        // Calculate user stats
+        const stats = { active: 0, inactive: 0, byRole: {} };
         action.payload.forEach(user => {
-          const status = user.status || 'active';
-          stats[status]++;
+          const status = (user.status || 'ACTIVE').toLowerCase();
+          if (status === 'active') stats.active++;
+          if (status === 'inactive') stats.inactive++;
+          
           if (user.role) {
             const role = user.role.toLowerCase();
             stats.byRole[role] = (stats.byRole[role] || 0) + 1;
@@ -489,6 +612,36 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
 
+      // Create Nurse
+      .addCase(createNurse.pending, (state) => {
+        state.nursesLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(createNurse.fulfilled, (state) => {
+        state.nursesLoading = false;
+        state.successMessage = 'Nurse created successfully';
+      })
+      .addCase(createNurse.rejected, (state, action) => {
+        state.nursesLoading = false;
+        state.error = action.payload;
+      })
+
+      // Create Pharmacist
+      .addCase(createPharmacist.pending, (state) => {
+        state.pharmacistsLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(createPharmacist.fulfilled, (state) => {
+        state.pharmacistsLoading = false;
+        state.successMessage = 'Pharmacist created successfully';
+      })
+      .addCase(createPharmacist.rejected, (state, action) => {
+        state.pharmacistsLoading = false;
+        state.error = action.payload;
+      })
+
       // Update User Status
       .addCase(updateUserStatus.pending, (state) => {
         state.usersLoading = true;
@@ -499,10 +652,14 @@ const adminSlice = createSlice({
         const { userId, status } = action.payload;
         const idx = state.users.findIndex(u => u.user_id === userId);
         if (idx !== -1) {
-          const oldStatus = state.users[idx].status || 'active';
-          state.users[idx].status = status;
-          state.userStats[oldStatus]--;
-          state.userStats[status]++;
+          const oldStatus = (state.users[idx].status || 'ACTIVE').toLowerCase();
+          state.users[idx].status = status.toUpperCase();
+          
+          if (oldStatus === 'active') state.userStats.active--;
+          if (oldStatus === 'inactive') state.userStats.inactive--;
+          
+          if (status.toLowerCase() === 'active') state.userStats.active++;
+          if (status.toLowerCase() === 'inactive') state.userStats.inactive++;
         }
         state.successMessage = 'User status updated successfully';
       })
@@ -518,6 +675,17 @@ const adminSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.usersLoading = false;
+        const deletedUser = state.users.find(u => u.user_id === action.payload);
+        if (deletedUser) {
+          const status = (deletedUser.status || 'ACTIVE').toLowerCase();
+          if (status === 'active') state.userStats.active--;
+          if (status === 'inactive') state.userStats.inactive--;
+          
+          const role = deletedUser.role.toLowerCase();
+          if (state.userStats.byRole[role]) {
+            state.userStats.byRole[role]--;
+          }
+        }
         state.users = state.users.filter(u => u.user_id !== action.payload);
         state.successMessage = 'User deleted successfully';
       })
@@ -554,20 +722,6 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch Visits
-      .addCase(fetchVisits.pending, (state) => {
-        state.visitsLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchVisits.fulfilled, (state, action) => {
-        state.visitsLoading = false;
-        state.visits = action.payload;
-      })
-      .addCase(fetchVisits.rejected, (state, action) => {
-        state.visitsLoading = false;
-        state.error = action.payload;
-      })
-
       // Fetch Nurses
       .addCase(fetchNurses.pending, (state) => {
         state.nursesLoading = true;
@@ -593,6 +747,20 @@ const adminSlice = createSlice({
       })
       .addCase(fetchPharmacists.rejected, (state, action) => {
         state.pharmacistsLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch Visits
+      .addCase(fetchVisits.pending, (state) => {
+        state.visitsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchVisits.fulfilled, (state, action) => {
+        state.visitsLoading = false;
+        state.visits = action.payload;
+      })
+      .addCase(fetchVisits.rejected, (state, action) => {
+        state.visitsLoading = false;
         state.error = action.payload;
       })
 
@@ -624,7 +792,6 @@ const adminSlice = createSlice({
         state.error = action.payload;
       });
   },
-
 });
 
 export const { clearAdminStats, clearError, clearSuccessMessage } = adminSlice.actions;
