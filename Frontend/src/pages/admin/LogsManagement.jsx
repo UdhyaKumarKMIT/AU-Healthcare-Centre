@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faSync } from '@fortawesome/free-solid-svg-icons';
-import { fetchSystemLogs } from '../../store/slices/adminSlice';
+import { faSearch, faSync, faExclamationTriangle, faClipboardList, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+import { fetchSystemLogs, clearError } from '../../store/slices/adminSlice';
 import styles from './ReceptionistManagement.module.css';
 import tableStyles from '../../components/Admin/ReceptionistTable.module.css';
 
@@ -15,17 +15,42 @@ const LogsManagement = () => {
   const [actionFilter, setActionFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    // Only fetch on mount, not on filter changes
     const params = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     if (actionFilter !== 'all') params.action = actionFilter;
     
     dispatch(fetchSystemLogs(params));
-  }, [dispatch, startDate, endDate, actionFilter]);
+  }, []); // Empty dependency array - only runs once on mount
 
-  const filteredLogs = systemLogs.filter(log => {
+  // Manual refresh function
+  const handleRefresh = () => {
+    dispatch(clearError());
+    const params = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (actionFilter !== 'all') params.action = actionFilter;
+    
+    setRetryCount(prev => prev + 1);
+    dispatch(fetchSystemLogs(params));
+  };
+
+  // Apply filters without auto-fetching
+  const handleApplyFilters = () => {
+    dispatch(clearError());
+    const params = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (actionFilter !== 'all') params.action = actionFilter;
+    
+    dispatch(fetchSystemLogs(params));
+  };
+
+  const filteredLogs = (systemLogs || []).filter(log => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     return (
@@ -36,17 +61,13 @@ const LogsManagement = () => {
   });
 
   const logStats = {
-    total: systemLogs.length,
-    today: systemLogs.filter(log => {
+    total: (systemLogs || []).length,
+    today: (systemLogs || []).filter(log => {
       const logDate = new Date(log.timestamp);
       const today = new Date();
       return logDate.toDateString() === today.toDateString();
     }).length,
-    uniqueUsers: new Set(systemLogs.map(log => log.user_id)).size
-  };
-
-  const handleRefresh = () => {
-    dispatch(fetchSystemLogs({ startDate, endDate, action: actionFilter }));
+    uniqueUsers: new Set((systemLogs || []).map(log => log.user_id)).size
   };
 
   if (logsLoading) {
@@ -63,8 +84,103 @@ const LogsManagement = () => {
   if (error) {
     return (
       <div className={styles.receptionistManagement}>
-        <p>Error: {error}</p>
-        <button onClick={handleRefresh}>Retry</button>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}><FontAwesomeIcon icon={faClipboardList} /> System Logs & Audit</h1>
+            <p className={styles.subtitle}>View system activity logs and audit trails</p>
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fff3cd',
+          border: '2px solid #ffc107',
+          borderRadius: '12px',
+          padding: '32px',
+          marginTop: '24px',
+          textAlign: 'center'
+        }}>
+          <FontAwesomeIcon 
+            icon={faExclamationTriangle} 
+            style={{ fontSize: '48px', color: '#ff9800', marginBottom: '16px' }} 
+          />
+          <h2 style={{ color: '#856404', marginBottom: '12px' }}>
+            Unable to Load System Logs
+          </h2>
+          <p style={{ color: '#856404', marginBottom: '8px', fontSize: '16px' }}>
+            <strong>Error:</strong> {error}
+          </p>
+          <p style={{ color: '#856404', marginBottom: '24px', fontSize: '14px' }}>
+            The server is experiencing issues (HTTP 500 error). This typically means:
+          </p>
+          <ul style={{ 
+            textAlign: 'left', 
+            maxWidth: '600px', 
+            margin: '0 auto 24px',
+            color: '#856404',
+            fontSize: '14px'
+          }}>
+            <li>The logs endpoint on the backend may not be implemented yet</li>
+            <li>There might be a database connection issue</li>
+            <li>The backend service might be down or restarting</li>
+            <li>Required database tables might not exist</li>
+          </ul>
+          
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button 
+              className={styles.addButton}
+              onClick={handleRefresh}
+              style={{ minWidth: '140px' }}
+            >
+              <FontAwesomeIcon icon={faSync} /> Try Again
+            </button>
+            <button
+              onClick={() => dispatch(clearError())}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                background: 'white',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+          
+          {retryCount > 0 && (
+            <p style={{ 
+              marginTop: '16px', 
+              fontSize: '12px', 
+              color: '#6c757d' 
+            }}>
+              Retry attempts: {retryCount}
+            </p>
+          )}
+        </div>
+
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#e7f3ff',
+          border: '1px solid #2196f3',
+          borderRadius: '8px',
+          borderLeft: '4px solid #2196f3'
+        }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
+            <strong><FontAwesomeIcon icon={faLightbulb} /> Note:</strong> If you're a developer, check the backend logs for the 
+            <code style={{ 
+              background: '#fff', 
+              padding: '2px 6px', 
+              borderRadius: '4px',
+              margin: '0 4px'
+            }}>
+              /api/admin/logs
+            </code> 
+            endpoint. You may need to implement or fix this route.
+          </p>
+        </div>
       </div>
     );
   }
@@ -82,8 +198,9 @@ const LogsManagement = () => {
         <button
           className={styles.addButton}
           onClick={handleRefresh}
+          disabled={logsLoading}
         >
-          <FontAwesomeIcon icon={faSync} /> Refresh
+          <FontAwesomeIcon icon={faSync} spin={logsLoading} /> Refresh
         </button>
       </div>
 
@@ -193,6 +310,14 @@ const LogsManagement = () => {
           </div>
 
           <button
+            className={styles.addButton}
+            onClick={handleApplyFilters}
+            style={{ alignSelf: 'flex-end' }}
+          >
+            Apply Filters
+          </button>
+
+          <button
             className={styles.resetFiltersBtn}
             onClick={() => {
               setSearchQuery('');
@@ -281,14 +406,14 @@ const LogsManagement = () => {
       <div style={{
         marginTop: '24px',
         padding: '16px',
-        background: '#fff3e0',
-        border: '1px solid #ff9800',
+        background: '#e7f3ff',
+        border: '1px solid #2196f3',
         borderRadius: '8px',
-        borderLeft: '4px solid #ff9800'
+        borderLeft: '4px solid #2196f3'
       }}>
-        <p style={{ margin: 0, fontSize: '14px', color: '#e65100' }}>
-          <strong>Note:</strong> Currently showing visit activity logs. 
-          Full audit logging system is under development.
+        <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
+          <strong>ℹ️ Info:</strong> System logs track all major activities including user logins, 
+          visit creation, prescription issuance, and administrative actions for audit purposes.
         </p>
       </div>
     </div>

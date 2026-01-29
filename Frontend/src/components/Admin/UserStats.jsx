@@ -1,53 +1,39 @@
 // src/components/Admin/UserStats.jsx
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUsers, faCheckCircle, faPauseCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from './UserStats.module.css';
 
 const UserStats = ({ stats = {} }) => {
   const { 
     active = 0, 
-    inactive = 0, 
-    pending = 0, 
-    suspended = 0,
+    inactive = 0,
     byRole = {}
   } = stats;
 
-  const total = active + inactive + pending + suspended;
+  const total = active + inactive;
 
   const statCards = [
     {
       title: 'Total Users',
       value: total,
-      icon: '👥',
+      icon: faUsers,
       color: '#4299e1',
       description: 'All registered users',
     },
     {
       title: 'Active Users',
       value: active,
-      icon: '✅',
+      icon: faCheckCircle,
       color: '#48bb78',
       description: 'Currently active',
     },
     {
       title: 'Inactive Users',
       value: inactive,
-      icon: '⏸️',
+      icon: faPauseCircle,
       color: '#ed8936',
-      description: 'Not logged in recently',
-    },
-    {
-      title: 'Pending',
-      value: pending,
-      icon: '⏳',
-      color: '#9f7aea',
-      description: 'Awaiting approval',
-    },
-    {
-      title: 'Suspended',
-      value: suspended,
-      icon: '🚫',
-      color: '#f56565',
-      description: 'Temporarily blocked',
+      description: 'Currently inactive',
     },
   ];
 
@@ -63,7 +49,7 @@ const UserStats = ({ stats = {} }) => {
                 className={styles.statIcon}
                 style={{ backgroundColor: stat.color }}
               >
-                {stat.icon}
+                <FontAwesomeIcon icon={stat.icon} />
               </div>
               <div>
                 <h4 className={styles.statTitle}>{stat.title}</h4>
@@ -82,11 +68,13 @@ const UserStats = ({ stats = {} }) => {
           <div className={styles.roleList}>
             {Object.entries(byRole).map(([role, count]) => (
               <div key={role} className={styles.roleItem}>
-                <span className={styles.roleName}>{role}</span>
+                <span className={styles.roleName}>
+                  {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </span>
                 <div className={styles.roleBar}>
                   <div 
                     className={styles.roleBarFill}
-                    style={{ width: `${(count / total) * 100}%` }}
+                    style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }}
                   />
                 </div>
                 <span className={styles.roleCount}>{count}</span>

@@ -31,28 +31,31 @@ export const getAllUsers = async (req, res, next) => {
 
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, role, phone, specialization, qualification, register_number } = req.body;
+    const { 
+      name, 
+      username, 
+      password, 
+      role, 
+      phone, 
+      email, 
+      specialization, 
+      code,
+      is_role_specific 
+    } = req.body;
 
-    if (!name || !email || !password || !role) {
+    // Validation
+    if (!name || !username || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, password, and role are required'
+        message: 'Name, username, password, and role are required'
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format'
-      });
-    }
-
-    const validRoles = ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST'];
+    const validRoles = ['ADMIN', 'DOCTOR', 'NURSE_RECEPTIONIST', 'PHARMACIST', 'CLERICAL_ASSISTANT', 'LAB_TECHNICIAN'];
     if (!validRoles.includes(role.toUpperCase())) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid role. Must be one of: ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST'
+        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`
       });
     }
 
@@ -63,13 +66,8 @@ export const createUser = async (req, res, next) => {
       });
     }
 
+    // Role-specific validations
     if (role.toUpperCase() === 'DOCTOR') {
-      if (!specialization) {
-        return res.status(400).json({
-          success: false,
-          message: 'Specialization is required for doctors'
-        });
-      }
       if (!phone) {
         return res.status(400).json({
           success: false,
@@ -78,30 +76,25 @@ export const createUser = async (req, res, next) => {
       }
     }
 
-    if (role.toUpperCase() === 'NURSE') {
-      if (!qualification) {
+    if (role.toUpperCase() === 'NURSE_RECEPTIONIST' || role.toUpperCase() === 'PHARMACIST') {
+      if (!code) {
         return res.status(400).json({
           success: false,
-          message: 'Qualification is required for nurses'
-        });
-      }
-      if (!register_number) {
-        return res.status(400).json({
-          success: false,
-          message: 'Register number is required for nurses'
+          message: `Employee code is required for ${role.toLowerCase()}`
         });
       }
     }
 
     const user = await adminService.createUser({
       name,
-      email,
+      username,
       password,
       role,
       phone,
+      email,
       specialization,
-      qualification,
-      register_number
+      code,
+      is_role_specific: is_role_specific || false
     });
 
     res.status(201).json({
@@ -120,20 +113,26 @@ export const updateUserStatus = async (req, res, next) => {
     const { status, reason } = req.body;
 
     if (!status) {
-      return res.status(400).json({ success: false, message: 'Status required' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Status is required' 
+      });
     }
 
-    const validStatuses = ['active', 'inactive', 'suspended', 'pending'];
-    if (!validStatuses.includes(status.toLowerCase())) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
-    }
-
-    if (status.toLowerCase() === 'suspended' && !reason) {
-      return res.status(400).json({ success: false, message: 'Reason required for suspension' });
+    const validStatuses = ['ACTIVE', 'INACTIVE'];
+    if (!validStatuses.includes(status.toUpperCase())) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+      });
     }
 
     const result = await adminService.updateUserStatus(user_id, status, reason);
-    res.json({ success: true, message: 'Status updated', data: result });
+    res.json({ 
+      success: true, 
+      message: 'User status updated successfully', 
+      data: result 
+    });
   } catch (err) {
     next(err);
   }
@@ -143,12 +142,20 @@ export const deleteUser = async (req, res, next) => {
   try {
     const { user_id } = req.params;
 
+    // Prevent admin from deleting their own account
     if (req.user && req.user.user_id === user_id) {
-      return res.status(400).json({ success: false, message: 'Cannot delete own account' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      });
     }
 
     const result = await adminService.deleteUser(user_id);
-    res.json({ success: true, message: 'User deleted', data: result });
+    res.json({ 
+      success: true, 
+      message: 'User deleted successfully', 
+      data: result 
+    });
   } catch (err) {
     next(err);
   }
@@ -157,7 +164,11 @@ export const deleteUser = async (req, res, next) => {
 export const getAllDoctors = async (req, res, next) => {
   try {
     const doctors = await adminService.getAllDoctors();
-    res.json({ success: true, data: doctors, count: doctors.length });
+    res.json({ 
+      success: true, 
+      data: doctors, 
+      count: doctors.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -166,7 +177,11 @@ export const getAllDoctors = async (req, res, next) => {
 export const getAllReceptionists = async (req, res, next) => {
   try {
     const receptionists = await adminService.getAllReceptionists();
-    res.json({ success: true, data: receptionists, count: receptionists.length });
+    res.json({ 
+      success: true, 
+      data: receptionists, 
+      count: receptionists.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -175,7 +190,11 @@ export const getAllReceptionists = async (req, res, next) => {
 export const getAllNurses = async (req, res, next) => {
   try {
     const nurses = await adminService.getAllNurses();
-    res.json({ success: true, data: nurses, count: nurses.length });
+    res.json({ 
+      success: true, 
+      data: nurses, 
+      count: nurses.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -184,7 +203,11 @@ export const getAllNurses = async (req, res, next) => {
 export const getAllPharmacists = async (req, res, next) => {
   try {
     const pharmacists = await adminService.getAllPharmacists();
-    res.json({ success: true, data: pharmacists, count: pharmacists.length });
+    res.json({ 
+      success: true, 
+      data: pharmacists, 
+      count: pharmacists.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -194,7 +217,11 @@ export const getAllVisits = async (req, res, next) => {
   try {
     const { date, status } = req.query;
     const visits = await adminService.getAllVisits({ date, status });
-    res.json({ success: true, data: visits, count: visits.length });
+    res.json({ 
+      success: true, 
+      data: visits, 
+      count: visits.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -204,7 +231,11 @@ export const getMedicineInventory = async (req, res, next) => {
   try {
     const { status, search } = req.query;
     const inventory = await adminService.getMedicineInventory({ status, search });
-    res.json({ success: true, data: inventory, count: inventory.length });
+    res.json({ 
+      success: true, 
+      data: inventory, 
+      count: inventory.length 
+    });
   } catch (err) {
     next(err);
   }
@@ -229,3 +260,76 @@ export const getSystemLogs = async (req, res, next) => {
   }
 };
 
+// Additional endpoints for better admin functionality
+
+export const updateDoctor = async (req, res, next) => {
+  try {
+    const { doctor_id } = req.params;
+    const { name, specialization, phone, availability_status } = req.body;
+
+    // This would be implemented in the service
+    res.status(501).json({
+      success: false,
+      message: 'Update doctor endpoint - to be implemented'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateStaff = async (req, res, next) => {
+  try {
+    const { staff_id } = req.params;
+    const { name, phone, email, status } = req.body;
+
+    // This would be implemented in the service
+    res.status(501).json({
+      success: false,
+      message: 'Update staff endpoint - to be implemented'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserById = async (req, res, next) => {
+  try {
+    const { user_id } = req.params;
+    
+    // This would be implemented in the service
+    res.status(501).json({
+      success: false,
+      message: 'Get user by ID endpoint - to be implemented'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getInventoryStats = async (req, res, next) => {
+  try {
+    // Get comprehensive inventory statistics
+    // This would be implemented in the service
+    res.status(501).json({
+      success: false,
+      message: 'Inventory stats endpoint - to be implemented'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getVisitStats = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    // Get visit statistics for dashboard
+    // This would be implemented in the service
+    res.status(501).json({
+      success: false,
+      message: 'Visit stats endpoint - to be implemented'
+    });
+  } catch (err) {
+    next(err);
+  }
+};

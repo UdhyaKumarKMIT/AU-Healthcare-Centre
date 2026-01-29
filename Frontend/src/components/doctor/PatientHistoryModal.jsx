@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSpinner, faChevronDown, faChevronUp, faClipboardList, faPills, faChartBar, faBox } from '@fortawesome/free-solid-svg-icons';
 import styles from './PatientHistoryModal.module.css';
 
 const PatientHistoryModal = ({ history, loading, error, onClose }) => {
@@ -226,7 +226,7 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                             {visit.diagnoses && visit.diagnoses.length > 0 && (
                               <div className={styles.diagnosisBox}>
                                 <strong style={{ color: '#1a237e', fontSize: '14px' }}>
-                                  📋 Diagnoses ({visit.diagnoses.length})
+                                  <FontAwesomeIcon icon={faClipboardList} /> Diagnoses ({visit.diagnoses.length})
                                 </strong>
                                 {visit.diagnoses.map((diag, idx) => (
                                   <div 
@@ -276,7 +276,7 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                             {visit.prescriptions && visit.prescriptions.length > 0 && (
                               <div className={styles.prescriptionBox} style={{ marginTop: '16px' }}>
                                 <strong style={{ color: '#1a237e', fontSize: '14px' }}>
-                                  💊 Prescribed Medicines
+                                  <FontAwesomeIcon icon={faPills} /> Prescribed Medicines
                                 </strong>
                                 {visit.prescriptions.map((prescription, pIdx) => (
                                   <div key={pIdx} style={{ marginTop: '12px' }}>
@@ -338,7 +338,7 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                                                   borderRadius: '4px',
                                                   fontWeight: 500
                                                 }}>
-                                                  📊 Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
+                                                  <FontAwesomeIcon icon={faChartBar} /> Dosage: {med.morning ? 1 : 0} - {med.afternoon ? 1 : 0} - {med.night ? 1 : 0}
                                                   {med.food_timing && ` (${med.food_timing.charAt(0) + med.food_timing.slice(1).toLowerCase().replace('_', ' ')})`}
                                                 </span>
                                               ) : (
@@ -348,7 +348,7 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                                                   borderRadius: '4px',
                                                   fontWeight: 500
                                                 }}>
-                                                  📊 Dosage: {med.dosage_per_day} per day
+                                                  <FontAwesomeIcon icon={faChartBar} /> Dosage: {med.dosage_per_day} per day
                                                 </span>
                                               )}
                                               {med.quantity && (
@@ -358,7 +358,7 @@ const PatientHistoryModal = ({ history, loading, error, onClose }) => {
                                                   borderRadius: '4px',
                                                   fontWeight: 500
                                                 }}>
-                                                  📦 Qty: {med.quantity}
+                                                  <FontAwesomeIcon icon={faBox} /> Qty: {med.quantity}
                                                 </span>
                                               )}
                                             </div>

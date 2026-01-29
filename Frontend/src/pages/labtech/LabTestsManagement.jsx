@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faMicroscope } from '@fortawesome/free-solid-svg-icons';
 import { fetchLabTests } from '../../store/slices/labTechSlice';
 import LabTechSidebar from '../../components/labtech/LabTechSidebar';
 import Header from '../../components/Header/Header';
@@ -185,7 +185,7 @@ dispatch(fetchLabTests(query));
                       <div className={tableStyles.avatar} style={{
                         background: getStatusColor(test.status)
                       }}>
-                        🔬
+                        <FontAwesomeIcon icon={faMicroscope} />
                       </div>
                       <div>
                         <div className={tableStyles.receptionistName}>

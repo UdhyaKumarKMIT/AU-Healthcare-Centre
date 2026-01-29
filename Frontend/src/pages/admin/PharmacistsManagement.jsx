@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faPlus, faPills } from '@fortawesome/free-solid-svg-icons';
 import { fetchPharmacists } from '../../store/slices/adminSlice';
 import ReceptionistStats from '../../components/Admin/ReceptionistStats';
 import ReceptionistTable from '../../components/Admin/ReceptionistTable';
@@ -40,17 +40,24 @@ const PharmacistsManagement = () => {
   );
 
   // Transform pharmacists data to match receptionist table format
-  const transformedPharmacists = filteredPharmacists.map(pharmacist => ({
-    id: pharmacist.pharmacist_id,
-    name: pharmacist.name,
-    email: pharmacist.email,
-    employeeId: `PH-${pharmacist.pharmacist_id.toString().substring(0, 6)}`,
-    shift: pharmacist.phone || 'N/A',
-    patientsToday: pharmacist.transactionsToday || 0,
-    status: pharmacist.status,
-    phone: pharmacist.phone,
-    avatar: pharmacist.name.charAt(0).toUpperCase()
-  }));
+  const transformedPharmacists = filteredPharmacists.map(pharmacist => {
+    // Safe handling of pharmacist_id - it might be undefined, null, or a string
+    const pharmacistId = pharmacist.pharmacist_id || pharmacist.id || '';
+    const employeeId = pharmacistId 
+      ? `PH-${String(pharmacistId).substring(0, 6)}` 
+      : 'N/A';
+
+    return {
+      id: pharmacistId,
+      name: pharmacist.name || 'Unknown',
+      email: pharmacist.email || 'N/A',
+      employeeId: employeeId,
+      patientsToday: pharmacist.transactionsToday || 0,
+      status: pharmacist.status || 'active',
+      phone: pharmacist.phone || 'N/A',
+      avatar: pharmacist.name ? pharmacist.name.charAt(0).toUpperCase() : '?'
+    };
+  });
 
   if (pharmacistsLoading) {
     return (
@@ -66,8 +73,10 @@ const PharmacistsManagement = () => {
   if (error) {
     return (
       <div className={styles.receptionistManagement}>
-        <p>Error: {error}</p>
-        <button onClick={() => dispatch(fetchPharmacists())}>Retry</button>
+        <div className={styles.errorContainer}>
+          <p>Error: {error}</p>
+          <button onClick={() => dispatch(fetchPharmacists())}>Retry</button>
+        </div>
       </div>
     );
   }
@@ -76,7 +85,7 @@ const PharmacistsManagement = () => {
     <div className={styles.receptionistManagement}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>💊 Pharmacists Management</h1>
+          <h1 className={styles.title}><FontAwesomeIcon icon={faPills} /> Pharmacists Management</h1>
           <p className={styles.subtitle}>
             Manage pharmacy staff and medicine dispensing
           </p>
@@ -125,11 +134,8 @@ const PharmacistsManagement = () => {
             receptionists={transformedPharmacists}
             onView={(id) => navigate(`/admin/pharmacists/${id}`)}
             onEdit={(id) => navigate(`/admin/pharmacists/${id}/edit`)}
-            columnHeaders={{
-              employeeId: 'Employee ID',
-              shift: 'Phone',
-              patientsToday: 'Transactions Today'
-            }}
+            hideShift={true}
+            roleLabel="Pharmacist"
           />
         )}
       </section>
