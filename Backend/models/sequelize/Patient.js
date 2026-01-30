@@ -14,6 +14,14 @@ Patient.init(
             type: DataTypes.STRING(100),
             allowNull: false,
         },
+        email: {
+        type: DataTypes.STRING(255),
+        allowNull: true,        // set false if email is mandatory
+        unique: true,          // optional but recommended
+        validate: {
+            isEmail: true,       // built-in email validation
+        },
+        },  
         dob: {
             type: DataTypes.DATEONLY,
             allowNull: true,

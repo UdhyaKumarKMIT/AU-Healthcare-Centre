@@ -13,7 +13,7 @@ import NurseTask from './NurseTask.js';
 import NurseTransaction from './NurseTransaction.js';
 import Medicine from './Medicine.js';
 import Prescription from './Prescription.js';
-import PrescriptionItem from './PrescriptionItem.js';
+import PrescriptionItem from './PrescriptionItems.js';
 import PrescriptionTransaction from './PrescriptionTransaction.js';
 import MedicineMainStock from './MedicineMainStock.js';
 import StockAssignmentLog from './StockAssignmentLog.js';

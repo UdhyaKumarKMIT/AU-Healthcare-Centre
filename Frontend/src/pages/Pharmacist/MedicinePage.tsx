@@ -1,33 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-import { Plus, Activity, PillBottle, Trash2 } from "lucide-react";
+import { ChartColumnIncreasing } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import CustomModal from "./CustomModal";
 
 /* ---------- Component ---------- */
 const MedicinePage = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const pharmacistId = user?.pharmacist_id;
 
-  const [medicine, setMedicine] = useState<any>({});
+  const [medicine, setMedicine] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<"all" | "name">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [quickFilter, setQuickFilter] = useState<
-    "none" | "out" | "exp3" | "exp1"
+    "none" | "out" | "exp3" | "exp1" | "withStock"
   >("none");
-
-  const [showAddMedicine, setShowAddMedicine] = useState(false);
-
-const [newMed, setNewMed] = useState({
-  name: "",
-  type: "",
-  batch_id: "",
-  expiry_date: "",
-  in_stock: "",
-});
-
+  
   useEffect(() => {
     if (!pharmacistId) {
       navigate("/login/pharmacist");
@@ -36,12 +31,12 @@ const [newMed, setNewMed] = useState({
 
     const loadMedicineDetails = async () => {
       try {
-        const res = await api.get("/pharmacy/medicine", {
-          params: { pharmacist_id: pharmacistId }
-        });
-        setMedicine(res.data.medicines);
+        const res = await api.get("/pharmacy/medicine");
+        console.log(res.data.medicines)
+        setMedicine(res.data.medicines);  
       } catch (err) {
-        alert("Failed to load medicine details");
+        setModalMessage("Failed to load medicine details");
+        setModalOpen(true);
         console.error(err);
       }
     };
@@ -75,67 +70,8 @@ const [newMed, setNewMed] = useState({
     }
 
     return { expired: false, years, months, days };
-  };
-
-  const handleAddMedicine = async () => {
-  try {
-    await api.post("/pharmacy/addMedicine", {
-      pharmacist_id: pharmacistId,
-      ...newMed,
-      in_stock: Number(newMed.in_stock),
-    });
-
-    alert("Medicine added successfully");
-
-    setShowAddMedicine(false);
-    setNewMed({
-      name: "",
-      type: "",
-      batch_id: "",
-      expiry_date: "",
-      in_stock: "",
-    });
-
-    // reload medicines
-    const res = await api.get("/pharmacy/medicine", {
-      params: { pharmacist_id: pharmacistId }
-    });
-    setMedicine(res.data.medicines);
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to add medicine");
-  }
-};
-
-const handleDeleteBatch = async (batchId: string) => {
-  const confirmDelete = window.confirm(
-    `Are you sure you want to delete batch ${batchId}?`
-  );
-
-  if (!confirmDelete) return;
-
-  try {
-    // Call backend API to delete batch
-    await api.delete(`/pharmacy/medicine/deleteStock/${batchId}`, {
-      params: { pharmacist_id: pharmacistId }
-    });
-
-    alert("Medicine Batch deleted successfully");
-
-    // Reload medicine list after deletion
-    const res = await api.get("/pharmacy/medicine", {
-      params: { pharmacist_id: pharmacistId }
-    });
-    setMedicine(res.data.medicines);
-
-  } catch (err) {
-    console.error("Failed to delete batch:", err);
-    alert("Failed to delete batch. Please try again.");
-  }
-};
-
-
+  }; 
+ 
 const toTitleCase = (str: string) =>
   str.replace(/\w\S*/g, (txt) =>
     txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
@@ -150,40 +86,56 @@ const toTitleCase = (str: string) =>
     return expiry >= now && expiry <= limit;
   };
 
-  const filteredMedicine = Object.fromEntries(
-    Object.entries(medicine).filter(([name, details]: [string, any]) => {
-      let passesQuickFilter = true;
-      let passesSearchFilter = true;
+  const filteredMedicine = medicine.filter((med: any) => {
+  let passesQuickFilter = true;
+  let passesSearchFilter = true;
+  
+  if (quickFilter === "withStock") {
+    passesQuickFilter = med.batches.some((b: any) => b.in_stock > 0);
+  }
+  
+  if (quickFilter === "out") {
+    passesQuickFilter =
+      med.batches.length === 0 ||
+      med.batches.every((b: any) => b.in_stock === 0);
+  }
 
-      if (quickFilter === "out") {
-        passesQuickFilter =
-          details.batches.length === 0 ||
-          details.batches.every((b: any) => b.in_stock === 0);
-      }
+  if (quickFilter === "exp3") {
+    passesQuickFilter = med.batches.some((b: any) =>
+      isExpiringWithin(b.expiry_date, 3)
+    );
+  }
 
-      if (quickFilter === "exp3") {
-        passesQuickFilter = details.batches.some((b: any) =>
-          isExpiringWithin(b.expiry_date, 3)
-        );
-      }
+  if (quickFilter === "exp1") {
+    passesQuickFilter = med.batches.some((b: any) =>
+      isExpiringWithin(b.expiry_date, 1)
+    );
+  }
 
-      if (quickFilter === "exp1") {
-        passesQuickFilter = details.batches.some((b: any) =>
-          isExpiringWithin(b.expiry_date, 1)
-        );
-      }
+  if (filterType === "name" && searchTerm.trim() !== "") {
+    passesSearchFilter = med.medicine_name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  }
 
-      if (filterType === "name" && searchTerm.trim() !== "") {
-        passesSearchFilter = name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      }
+  return passesQuickFilter && passesSearchFilter;
+});
 
-      return passesQuickFilter && passesSearchFilter;
-    })
-  );
 
   return (
+    <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalConfirmCallback(null);
+        setModalOpen(false);
+      }}
+    />
+
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* HEADER */}
       <header
@@ -192,257 +144,116 @@ const toTitleCase = (str: string) =>
           color: "white",
         }}
       >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <Activity />
-            <div>
-              <h2 style={{ margin: 0 }}>MIT Pharmacy</h2>
-              <small>Medicine Inventory</small>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      </header> 
       {/* MAIN */}
       <main
         style={{
-          maxWidth: 1000,
+          maxWidth: 1200,
           margin: "auto",
-          padding: "2rem",
+          padding: "1rem",
           color: "black",
         }}
       >
         <div style={pageCardStyle}>
           {/* TITLE */}
           <h2 style={{ color: "#1e40af", margin: 0 }}>
-            <PillBottle /> Medicine Stock Details
-          </h2>
+            <ChartColumnIncreasing /> Stock Analytics
+          </h2><br />
 
-           {/* ADD NEW MEDICINE BUTTON */}
-          <div style={{ marginTop: "0.75rem", marginBottom: "1rem" }}>
-            <button
-              onClick={() => setShowAddMedicine(!showAddMedicine)}
-              style={addNewMedicineButtonStyle}
-            >
-              <Plus size={16} /> Add New Medicine
-            </button>
-          </div>
+          {/* FILTER BAR */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.6rem",
+    flexWrap: "wrap",
+    marginBottom: "1.5rem",
+    padding: "0.75rem",
+    borderRadius: "8px"
+  }}
+>
+  {/* SEARCH BAR */}
+  <input
+    type="text"
+    placeholder="Search medicine name"
+    value={searchTerm}
+    onChange={(e) => {
+      setFilterType("name");
+      setSearchTerm(e.target.value);
+    }}
+    style={searchBarStyle}
+  />
 
-          {/* ADD MEDICINE INLINE FORM */}
-          {/* ADD MEDICINE INLINE FORM */}
-{showAddMedicine && (
-  <div style={inlineFormStyle}>
-    {/* Medicine Name */}
-    <div>
-      <label htmlFor="newMedName" style={labelStyle}>
-        <b>Medicine Name</b>
-      </label>
-      <input
-        id="newMedName"
-        placeholder="Enter medicine name"
-        value={newMed.name}
-        onChange={(e) => setNewMed({ ...newMed, name: e.target.value })}
-        style={filterInputStyle}
-        required
-      />
-    </div>
-
-    {/* Medicine Type */}
-    <div>
-  <label htmlFor="newMedType" style={labelStyle}>
-    <b>Medicine Type</b>
-  </label>
-  <select
-    id="newMedType"
-    value={newMed.type}
-    onChange={(e) => setNewMed({ ...newMed, type: e.target.value })}
-    style={selectInputStyle}
-    required
+  {/* QUICK FILTERS */}
+  <button
+    onClick={() => setQuickFilter("withStock")}
+    style={quickFilterButton(quickFilter === "withStock")}
   >
-    <option value="" disabled>
-      Select medicine type
-    </option>
-    <option value="capsule">Capsule</option>
-    <option value="syrup">Syrup</option>
-    <option value="tablet">Tablet</option>
-    <option value="injection">Injection</option>
-    <option value="ointment">Ointment</option>
-    <option value="drops">Drops</option>
-  </select>
+    With Stock
+  </button>
+
+  <button
+    onClick={() => setQuickFilter("out")}
+    style={quickFilterButton(quickFilter === "out")}
+  >
+    Out of Stock
+  </button>
+
+  <button
+    onClick={() => setQuickFilter("exp3")}
+    style={quickFilterButton(quickFilter === "exp3")}
+  >
+    Expiring in 3 months
+  </button>
+
+  <button
+    onClick={() => setQuickFilter("exp1")}
+    style={quickFilterButton(quickFilter === "exp1")}
+  >
+    Expiring in 1 month
+  </button> 
+  
+  <button
+    onClick={() => {
+      setQuickFilter("none");
+      setSearchTerm("");
+      setFilterType("all");
+    }}
+    style={clearFilterButtonStyle}
+  >
+    Clear
+  </button>
+
 </div>
-    {/* Batch ID */}
-    <div>
-      <label htmlFor="newBatchId" style={labelStyle}>
-        <b>Batch ID</b>
-      </label>
-      <input
-        id="newBatchId"
-        placeholder="Enter unique batch ID"
-        value={newMed.batch_id}
-        onChange={(e) => setNewMed({ ...newMed, batch_id: e.target.value })}
-        style={filterInputStyle}
-        required
-      />
-    </div>
 
-    {/* Expiry Date */}
-    <div>
-      <label htmlFor="newExpiryDate" style={labelStyle}>
-        <b>Expiry Date</b>
-      </label>
-      <input
-        id="newExpiryDate"
-        type="date"
-        value={newMed.expiry_date}
-        onChange={(e) => setNewMed({ ...newMed, expiry_date: e.target.value })}
-        style={filterInputStyle}
-        required
-        min={new Date(new Date().setMonth(new Date().getMonth() + 1))
-          .toISOString()
-          .split("T")[0]} // sets min date 1 month ahead
-      />
-    </div>
-
-    {/* Quantity / In Stock */}
-    <div>
-      <label htmlFor="newInStock" style={labelStyle}>
-        <b>Quantity in Stock</b>
-      </label>
-      <input
-        id="newInStock"
-        type="number"
-        placeholder="Enter quantity"
-        min={1}
-        value={newMed.in_stock}
-        onChange={(e) => setNewMed({ ...newMed, in_stock: e.target.value })}
-        style={filterInputStyle}
-        required
-      />
-    </div>
-
-    {/* Save / Cancel */}
-    <div style={{ display: "flex", gap: "0.5rem" }}>
-      <button onClick={handleAddMedicine} style={addButtonStyle}>
-        Save
-      </button>
-      <button
-        onClick={() => setShowAddMedicine(false)}
-        style={clearFilterButtonStyle}
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-)}
-
-
-
-          {/* QUICK FILTERS */}
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-              marginBottom: "1rem",
-            }}
-          >
-            <button
-              onClick={() => setQuickFilter("out")}
-              style={quickFilterButton(quickFilter === "out")}
-            >
-              Out of Stock
-            </button>
-
-            <button
-              onClick={() => setQuickFilter("exp3")}
-              style={quickFilterButton(quickFilter === "exp3")}
-            >
-              Expiring in 3 Months
-            </button>
-
-            <button
-              onClick={() => setQuickFilter("exp1")}
-              style={quickFilterButton(quickFilter === "exp1")}
-            >
-              Expiring in 1 Month
-            </button>
-
-            {quickFilter !== "none" && (
-              <button
-                onClick={() => setQuickFilter("none")}
-                style={clearFilterButtonStyle}
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* SEARCH */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-start",
-              gap: "0.5rem",
-              marginBottom: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <select
-              value={filterType}
-              onChange={(e) =>
-                setFilterType(e.target.value as "all" | "name")
-              }
-              style={filterSelectStyle}
-            >
-              <option value="all">All</option>
-              <option value="name">Medicine Name</option>
-            </select>
-
-            {filterType === "name" && (
-              <input
-                type="text"
-                placeholder="Search by medicine name"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={filterInputStyle}
-              />
-            )}
-          </div>
 
           {/* LIST */}
           {Object.keys(filteredMedicine).length === 0 ? (
             <p>No medicines found.</p>
           ) : (
-            Object.entries(filteredMedicine).map(
-              ([name, details]: [string, any]) => (
-                <div key={name} style={medicineCardStyle}>
+            filteredMedicine.map((med: any) => (
+                <div key={med.medicine_id} style={medicineCardStyle}>
                   <div style={medicineHeaderStyle}>
                     <h3 style={{ margin: 0 }}>
-                      {toTitleCase(name)}{" "}
+                      {toTitleCase(med.medicine_name)}{" "}
                       <span style={{ color: "#555", fontWeight: 500 }}>
-                        ({toTitleCase(details.type)})
+                        ({toTitleCase(med.type)})
                       </span>
                     </h3>
 
-                    <button
-                      onClick={() => navigate(`/pharmacist/addMedicineStock/${name}`)}
-                      style={addButtonStyle}
-                    >
-                      <Plus size={16} /> Add Stock
-                    </button>
                   </div>
 
-                  {details.batches.length === 0 ? (
-                    <p>Out of stock</p>
+                  {med.batches.length === 0 ? (
+                    <p style={{fontFamily: "verdana"}}>Out of stock</p>
                   ) : (
-                    details.batches.map((batch: any) => {
+                    med.batches.map((batch: any) => {
                       const remaining = getRemainingTime(batch.expiry_date);
 
                       return (
-                        <div key={batch.batch_id} style={batchCardStyle}>
-                          <div><strong>Batch ID:</strong> {batch.batch_id}</div>
-                          <div><strong>In Stock:</strong> {batch.in_stock} units</div>
-                          <div>
+                        <div key={batch.batch_id} style={{...batchCardStyle, fontFamily: "verdana"}}>
+                          <div style={{paddingBottom: "2px"}}><strong>Batch ID:</strong> {batch.batch_id}</div>
+                          <div style={{paddingBottom: "2px"}}><strong>In Stock:</strong> {batch.in_stock} units</div>
+                          <div style={{paddingBottom: "2px"}}>
                             <strong>Expiry:</strong>{" "}
                             {new Date(batch.expiry_date).toLocaleDateString()}
                           </div>
@@ -466,13 +277,7 @@ const toTitleCase = (str: string) =>
                     justifyContent: "flex-start",
                     marginTop: "0.6rem",
                   }}
-                >
-                  <button
-                    onClick={() => handleDeleteBatch(batch.batch_id)}
-                    style={deleteButtonStyle}
-                  >
-                    <Trash2 size={12} /> Delete
-                  </button>
+                > 
                 </div>
                         </div>
                       );
@@ -485,6 +290,7 @@ const toTitleCase = (str: string) =>
         </div>
       </main>
     </div>
+    </>
   );
 };
 
@@ -494,22 +300,10 @@ const pageCardStyle: React.CSSProperties = {
   background: "#ffffff",
   borderRadius: "12px",
   padding: "2rem",
-  border: "1px solid #2563eb",
+  border: "1px solid #cbd5e1",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
 };
-
-const addNewMedicineButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.4rem",
-  background: "#ffffff",
-  color: "black",
-  border: "1px solid #2563eb",
-  borderRadius: "6px",
-  padding: "0.45rem 0.85rem",
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
+ 
 const medicineCardStyle: React.CSSProperties = {
   background: "#f3f8ff",
   borderRadius: "10px",
@@ -531,90 +325,33 @@ const batchCardStyle: React.CSSProperties = {
   padding: "0.75rem",
   border: "1px solid #2563eb",
   marginBottom: "0.5rem",
-};
-
-const addButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.3rem",
-  background: "#2563eb",
-  color: "white",
-  border: "none",
-  borderRadius: "6px",
-  padding: "0.4rem 0.75rem",
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
-const filterSelectStyle: React.CSSProperties = {
-  padding: "0.4rem",
-  borderRadius: "6px",
-  border: "1px solid #2563eb",
-  background: "white",
-  color: "black",
-  fontWeight: "bold"
-};
-
-const filterInputStyle: React.CSSProperties = {
-  padding: "0.4rem",
-  borderRadius: "6px",
-  border: "1px solid #2563eb",
-  background: "white",
-  color: "black",
-  fontWeight: "bold"
-};
-
-const selectInputStyle: React.CSSProperties = {
-  padding: "0.4rem",
-  borderRadius: "6px",
-  border: "1px solid #2563eb",
-  background: "white",
-  color: "#302f39ff",
-  fontWeight: "bold"
-};
-
+}; 
+ 
 const quickFilterButton = (active: boolean): React.CSSProperties => ({
   padding: "0.4rem",
   background: active ? "#2563eb" : "white",
   color: active ? "white" : "black",
+  borderRadius: "5px",
+  fontWeight: "500",
   border: "1px solid #2563eb",
 });
 
 const clearFilterButtonStyle: React.CSSProperties = {
-  padding: "0.4rem",
+  padding: "0.4rem", 
   background: "white",
-  color: "#dc2626",
+  color: "#b80a0a",
+  borderRadius: "5px",
+  fontWeight: "500",
   border: "1px solid #dc2626",
-};
+}; 
 
-const inlineFormStyle = {
-  border: "1px solid #2563eb",
-  padding: "1rem",
-  borderRadius: "8px",
-  marginBottom: "1.5rem",
-  display: "grid",
-  gap: "0.5rem",
-};
-
-const deleteButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.25rem",
-  background: "#dc2626",      // red for delete
-  color: "white",
-  border: "none",
+const searchBarStyle: React.CSSProperties = {
+  padding: "0.45rem 0.6rem",
   borderRadius: "6px",
-  padding: "0.35rem 0.6rem",
-  cursor: "pointer",
+  border: "1px solid #2563eb",
   fontWeight: 600,
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  marginBottom: "0.25rem",
-  fontWeight: 450,
-  color: "#1e40af", // deep blue for visibility
-  fontSize: "0.9rem",
+  width: "320px",
+  background: "white",
 };
 
 export default MedicinePage;

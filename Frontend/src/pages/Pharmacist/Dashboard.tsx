@@ -1,232 +1,190 @@
-import { useEffect, useState } from "react";
-import { Activity, PillBottle, FileScan, ShieldX, FileCheck } from "lucide-react";
-import api from "../../api/axios";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-
-/* ---------- Helpers ---------- */
-function toTitleCase(str: string) {
-  if (!str) return "";
-  return str.replace(/\w\S*/g, (txt) =>
-    txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-  );
-}
-
+import AULogo from "../../assets/AULogo.jpg";
+import { ChartNoAxesColumn, FileScan, ShieldX, FileCheck, LucideLogOut, CircleUser, LucideHome, PillBottleIcon } from "lucide-react";
+import { useNavigate, Outlet, useLocation} from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; 
+ 
 
 /* ---------- Component ---------- */
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth(); 
+  const location = useLocation();
 
-  const [message, setMessage] = useState(""); 
-  const [profileOpen, setProfileOpen] = useState(false); 
-  const [loading, setLoading] = useState(true);
+  const pharmacistId = user?.pharmacist_id;  
+  const isActive = (path: string) => {
+  if (path === "/pharmacist/pendingPrescription") {
+    return (
+      location.pathname === "/pharmacist/pendingPrescription" ||
+      location.pathname === "/pharmacist/prescriptionsDetails"
+    );
+  }
 
-  // Get pharmacist_id from AuthContext (same pattern as doctor/receptionist)
-  const pharmacistId = user?.pharmacist_id;
-  const userName = user?.name || "";
+  return location.pathname === path;
+};
 
-  /* ---------- AUTH + INITIAL LOAD ---------- */
-  useEffect(() => {
-    if (!user || !pharmacistId) {
-      navigate("/login/pharmacist");
-      return;
-    }
 
-    // Fetch initial data if needed
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/pharmacy/pharmacistDetails", {
-          params: { pharmacist_id: pharmacistId }
-        });
-        setMessage("The system is operational!");
-      } catch (err) {
-        console.error(err);
-        alert("Failed to fetch profile. Please login again.");
-        navigate("/login/pharmacist");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const activeNavButtonStyle = (path: string): React.CSSProperties => ({
+    ...navButtonStyle,
+    background: isActive(path) ? "#00408e" : "#2563eb",
+  });
 
-    fetchProfile();
-  
-  }, [navigate, user, pharmacistId]); 
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login/pharmacist");
+    navigate("/");
   };
-
-  
 
   /* ---------- UI ---------- */
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* HEADER */}
-      <header
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "auto", padding: "1rem" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-              <Activity />
-              <div>
-                <h2 style={{ margin: 0 }}>Anna University Pharmacy</h2>
-                <small>Pharmacist Dashboard</small>
-              </div>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
+      {/* SIDEBAR */}
+      <aside
+      style={{
+        width: "250px",
+        background: "#1e40af",
+        color: "white",
+        padding: "1rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+        position: "fixed",       // 👈 keeps sidebar static
+        top: 0,
+        left: 0,
+        bottom: 0,
+        height: "100vh",         // full height
+      }}
+    >
+
+        <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            marginBottom: "2rem" 
+          }}>
+            {/* Logo inside circle */}
+            <div 
+              style={{ 
+                width: "80px", 
+                height: "80px", 
+                borderRadius: "50%", 
+                overflow: "hidden", 
+                background: "white",   // optional background
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                marginBottom: "0.75rem" 
+              }}
+            >
+              <img 
+                src={AULogo}   // if placed in public folder
+                alt="Anna University Logo" 
+                style={{ width: "90%", height: "90%", objectFit: "cover" }} 
+              />
             </div>
 
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "#2f8ffdff",
-                  border: "none",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                {userName ? userName.charAt(0).toUpperCase() : "?"}
-              </button>
-
-              {profileOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 50,
-                    background: "white",
-                    color: "#000000",
-                    borderRadius: 10,
-                    width: 180,
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-                  }}
-                >
-                  <button style={dropdownItemStyle} onClick={() => navigate("/pharmacist/profile", { state: { pharmacist_id: pharmacistId } })}>👤 View Profile</button>
-                  <button
-                    style={{ ...dropdownItemStyle, color: "#dc2626" }}
-                    onClick={handleLogout}
-                  >
-                    🚪 Logout
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Text below logo */}
+            <h2 style={{ margin: 0, fontSize: "1.2rem", color: "white" }}>Anna University</h2>
+            <h3 style={{ margin: 0, fontSize: "1rem", color: "#e0e7ff", fontWeight: 400 }}>
+              Pharmacy System
+            </h3>
           </div>
-        </div>
-      </header>
+        
+        <button
+          style={activeNavButtonStyle("/pharmacist/dashboard")}
+          onClick={() => navigate("/pharmacist/dashboard")}
+        >
+          <LucideHome size={20} /> Dashboard
+        </button>
 
-      {/* MAIN */}
+        <button
+          style={activeNavButtonStyle("/pharmacist/pendingPrescription")}
+          onClick={() => navigate("/pharmacist/pendingPrescription")}
+        >
+          <FileScan size={20} /> Pending Prescriptions
+        </button>
+
+        <button
+          style={activeNavButtonStyle("/pharmacist/medicineStock")}
+          onClick={() => navigate("/pharmacist/medicineStock")}
+        >
+          <ChartNoAxesColumn size={20} /> Stock Analysis
+        </button>
+
+        <button
+          style={activeNavButtonStyle("/pharmacist/issuedMedicines")}
+          onClick={() => navigate("/pharmacist/issuedMedicines")}
+        >
+          <PillBottleIcon size={20} /> Issued Medicines
+        </button>
+
+        <button
+          style={activeNavButtonStyle("/pharmacist/expiredStock")}
+          onClick={() => navigate("/pharmacist/expiredStock")}
+        >
+          <ShieldX size={20} /> Expired Medicine
+        </button>
+
+        <button
+          style={activeNavButtonStyle("/pharmacist/pastPrescription")}
+          onClick={() => navigate("/pharmacist/pastPrescription")}
+        >
+          <FileCheck size={20} /> Past Prescriptions
+        </button>
+              
+        
+        {/* Profile + Logout Section */}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <button
+            style={{
+              ...navButtonStyle,
+              background: isActive("/pharmacist/profile") ? "#1e3a8a" : "#3b82f6",
+            }}
+            onClick={() =>
+              navigate("/pharmacist/profile", { state: { pharmacist_id: pharmacistId } })
+            }
+          >
+            <CircleUser /> View Profile
+          </button>
+
+          <button
+            style={{ ...navButtonStyle, background: "#162645" }}
+            onClick={handleLogout}
+          >
+            <LucideLogOut /> Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
       <main
-        style={{
-          maxWidth: 1400,
-          margin: "auto",
-          padding: "2rem",
-          color: "black",
-        }}
-      >
-        <h1 style={{ fontSize: "2.3rem", fontWeight: 700 }}>
-          Welcome back, {toTitleCase(userName)} 👋
-        </h1>
-        <p><b>{message}</b></p>
- 
-        <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "2rem", marginTop:"1rem"}}>
-      
-        <div style={sectionCardStyle} className="card">
-          <div style={sectionHeaderStyle}>
-            <FileScan size={22} /> Pending Prescriptions </div>
-            <button style={loadButtonStyle} onClick={() => window.open("pendingPrescription","_blank")} > View </button>
-        </div>
-        
-         <div style={sectionCardStyle} className="card">
-          <div style={sectionHeaderStyle}>
-            <PillBottle size={22} /> Medicine Stock </div>
-            <button style={loadButtonStyle} onClick={() => window.open("medicineStock","_blank")} > View </button>
-        </div>
-
-        </div>
-
-        <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "2rem", marginTop:"2rem"}}>
- 
-        <div style={sectionCardStyle} className="card">
-          <div style={sectionHeaderStyle}>
-            <ShieldX size={22} /> Expired Medicine </div>
-            <button style={loadButtonStyle} onClick={() => window.open("expiredStock","_blank")} > View </button>
-        </div>
-        
-        <div style={sectionCardStyle} className="card">
-          <div style={sectionHeaderStyle}>
-            <FileCheck size={22} /> Past Prescriptions</div>
-            <button style={loadButtonStyle} onClick={() => window.open("/pharmacist/pastPrescription", "_blank")} > View </button>
-        </div> 
-
-        </div>
+      style={{
+        flex: 1,
+        padding: "2rem",
+        marginLeft: "250px",     // 👈 offset for sidebar width
+        overflowY: "auto",       // 👈 makes right side scrollable
+        height: "100vh",         // ensures scroll works
+      }}
+    >
+        <Outlet />
       </main>
     </div>
   );
 };
 
 /* ---------- STYLES ---------- */
-const dropdownItemStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.75rem 1rem",
-  border: "none",
-  background: "#f0f4ff",
-  color: "#1e3a8a",
-  textAlign: "left",
-  cursor: "pointer",
-  fontSize: "0.95rem",
-  fontWeight: 600,
-};
-
-const sectionCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  borderRadius: "10px",
-  padding: "1.5rem",
-  margin: "0.75rem",
-  border: "1px solid #cbd5e1",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-  display: "inline-block",
-  width: "calc(25% - 1.5rem)",
-  verticalAlign: "top",
-  transition: "transform 0.2s ease, box-shadow 0.2s ease",
-};
-
-const sectionHeaderStyle: React.CSSProperties = {
+const navButtonStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "0.5rem",
-  fontSize: "1.3rem",
-  fontWeight: 700,
-  color: "#1e40af",
-  marginBottom: "1rem",
-};
-
-const loadButtonStyle: React.CSSProperties = {
-  padding: "0.75rem 1.25rem",
-  background: "#1e40af",
-  color: "white",
-  borderRadius: "6px",
+  gap: "0.75rem",
+  fontWeight: "bold",
+  padding: "0.75rem 1rem",
+  background: "#2563eb",
   border: "none",
-  cursor: "pointer",
-  fontWeight: 600,
-  fontSize: "0.95rem",
-  transition: "background 0.3s ease",
-}; 
-
-
+  borderRadius: "6px",
+  color: "white",
+  cursor: "pointer",  
+  textAlign: "left",
+};
+ 
 export default Dashboard;

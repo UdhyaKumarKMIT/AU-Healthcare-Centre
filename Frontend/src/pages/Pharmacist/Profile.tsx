@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, X } from "lucide-react";
+import { Pencil, X, Phone, Mail} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
+import CustomModal from "./CustomModal";
 
+/* ---------- Helpers ---------- */ 
 const Profile = () => {
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -36,7 +43,8 @@ const Profile = () => {
         setFormData(res.data);
       } catch (err) {
         console.error(err);
-        alert("Failed to fetch profile. Please login again.");
+        setModalMessage("Failed to fetch profile. Please login again.");
+        setModalOpen(true);
         navigate("/login/pharmacist");
       } finally {
         setLoading(false);
@@ -65,10 +73,12 @@ const Profile = () => {
 
     // Do NOT update local profile immediately
     setIsEditing(false);
-    alert("Request for changes sent to Admin");
+    setModalMessage("Request for changes sent to Admin");
+    setModalOpen(true);
   } catch (err) {
     console.error(err);
-    alert("Failed to send request for changes.");
+    setModalMessage("Failed to send request for changes.");
+    setModalOpen(true);
   } finally {
     setSaving(false);
   }
@@ -83,27 +93,26 @@ const Profile = () => {
   if (loading) return <p style={{ textAlign: "center" }}>Loading...</p>;
 
   return (
+     <> 
+      <CustomModal
+      isOpen={modalOpen}
+      title="Alert"
+      message={modalMessage}
+      confirmText="OK"
+      onConfirm={modalConfirmCallback ?? undefined}
+      onClose={() => {
+        setModalConfirmCallback(null);
+        setModalOpen(false);
+      }}
+    />
+
     <div style={{ minHeight: "100vh", background: "#f9fafb", padding: "2rem" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem",
-            marginBottom: "2rem",
-          }}
-        >
-          <button
-            onClick={() => navigate("/pharmacist/dashboard", {replace: true})}
-            style={iconButtonStyle}
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 style={{ margin: 0, color: "#1e293b", fontWeight: 700 }}>
-            My Profile
-          </h1>
-        </div>
+      <div  style={{
+          maxWidth: 1200,
+          margin: "auto",
+          padding: "1rem",
+          color: "black",
+        }}> 
 
         {/* Profile Card */}
         <div
@@ -141,13 +150,19 @@ const Profile = () => {
                   justifyContent: "center",
                   boxShadow: "0 6px 16px rgba(37,99,235,0.4)",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               >
                 {profile.name.charAt(0).toUpperCase() }
               </div>
               <div>
-                <h2 style={{ margin: 0, color: "#111827", fontWeight: 600 }}>
-                  {toTitleCase(profile.name)}
+                <h2 style={{ margin: 0, color: "#111827", fontWeight: "bolder" }}>
+                  {toTitleCase(profile.name)} 
                 </h2> 
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                <span style={roleBadgeStyle}>Pharmacist</span>
+                <span style={statusBadgeStyle}>Active</span>
               </div>
             </div>
 
@@ -157,16 +172,23 @@ const Profile = () => {
               </button>
             )}
           </div>
+          <hr style={{
+            border: "none",
+            borderTop: "1px solid #e5e7eb",
+            margin: "1.5rem 0"
+          }} />
 
           {/* Profile Details / Form */}
           <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem",
-            color: "black"
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "1.5rem",
+            fontFamily: "verdana",
+            paddingBottom: "2px"
           }}
-
+          onFocus={(e) => (e.target.style.border = "1px solid #2563eb")}
+          onBlur={(e) => (e.target.style.border = "1px solid #e2e8f0")}
           >
             {isEditing ? (
               <>
@@ -194,9 +216,33 @@ const Profile = () => {
               </>
             ) : (
               <>
-                <LabelField label="Full Name" value={toTitleCase(profile.name)} />
-                <LabelField label="Email" value={profile.email} />
-                <LabelField label="Phone" value={profile.phone} />
+                <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "1.25rem",
+    fontFamily: "verdana"
+  }}
+>
+  <InfoCard
+    icon={<Pencil size={20} />}
+    label="Full Name"
+    value={toTitleCase(profile.name)}
+  />
+
+  <InfoCard
+    icon={<Mail size={20} />}
+    label="Email Address"
+    value={profile.email}
+  />
+
+  <InfoCard
+    icon={<Phone size={20} />}
+    label="Contact Number"
+    value={profile.phone}
+  />
+</div>
+
               </>
             )}
           </div>
@@ -216,22 +262,23 @@ const Profile = () => {
                 <X size={18} /> Cancel
               </button>
               <button
-  onClick={handleSave}
-  disabled={saving}
-  style={{
-    ...primaryButtonStyle,
-    opacity: saving ? 0.7 : 1,
-  }}
-  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
->
-  {saving ? "Saving..." : "Request for Changes"}
-</button>
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  ...primaryButtonStyle,
+                  opacity: saving ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                {saving ? "Saving..." : "Submit Update Request"}
+              </button>
             </div>
           )}
         </div>
       </div>
     </div>
+  </>
   );
 };
 
@@ -347,6 +394,84 @@ const cancelButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   transition: "transform 0.2s ease, background 0.2s ease",
 };
+
+const roleBadgeStyle: React.CSSProperties = {
+  background: "#e0f2fe",
+  color: "#0369a1",
+  padding: "0.2rem 0.6rem",
+  borderRadius: "999px",
+  fontSize: "0.75rem",
+  fontWeight: 600,
+};
+
+const statusBadgeStyle: React.CSSProperties = {
+  background: "#dcfce7",
+  color: "#166534",
+  padding: "0.2rem 0.6rem",
+  borderRadius: "999px",
+  fontSize: "0.75rem",
+  fontWeight: 600,
+};
+
+const InfoCard = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "1rem",
+      padding: "1rem 1.25rem",
+      background: "#f8fafc",
+      borderRadius: "14px",
+      border: "1px solid #e5e7eb",
+      transition: "all 0.25s ease",
+    }}
+    onMouseEnter={(e) =>
+      (e.currentTarget.style.background = "#f1f5f9")
+    }
+    onMouseLeave={(e) =>
+      (e.currentTarget.style.background = "#f8fafc")
+    }
+  >
+    <div
+      style={{
+        width: 42,
+        height: 42,
+        borderRadius: "50%",
+        background: "#e0e7ff",
+        color: "#1e40af",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {icon}
+    </div>
+
+    <div>
+      <p style={{ margin: 0, fontSize: "1rem", color: "#000000", paddingBottom: "3px", fontWeight: "700"}}>
+        {label}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: "1.1rem",
+          fontWeight: 400,
+          color: "#111827",
+        }}
+      >
+        {value || "—"}
+      </p>
+    </div>
+  </div>
+);
 
 
 export default Profile;

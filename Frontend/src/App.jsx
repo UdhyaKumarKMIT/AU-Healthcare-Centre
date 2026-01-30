@@ -13,13 +13,22 @@ import SelectRole from './pages/Login/SelectRole.jsx';
 
 // Pharmacist Pages
 import Dashboard from './pages/Pharmacist/Dashboard.tsx';
+import Home from './pages/Pharmacist/Home.tsx';
 import Profile from './pages/Pharmacist/Profile.tsx';
 import PrescriptionDetailsPage from './pages/Pharmacist/PrescriptionDetailsPage.jsx';
 import MedicinePage from './pages/Pharmacist/MedicinePage.jsx';
-import AddMedicineStockPage from './pages/Pharmacist/AddMedicineStockPage.jsx';
 import ExpiredStockPage from './pages/Pharmacist/ExpiredStock.jsx';
 import PendingPrescriptions from './pages/Pharmacist/PendingPrescriptions.jsx';
 import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.jsx';
+import MedicineVerification from './pages/Pharmacist/MedicineVerification.jsx';
+
+// Clerical Assistant Pages
+import CA_dashboard from './pages/Clerical_Assistant/Dashboard.tsx';
+import CA_home from './pages/Clerical_Assistant/Home.tsx';
+import CA_expiredStock from './pages/Clerical_Assistant/ExpiredStock.tsx';
+import CA_addStock from './pages/Clerical_Assistant/AddMedicineStockPage.tsx';
+import CA_issueStock from './pages/Clerical_Assistant/RequestDetails.tsx';
+import CA_stockAnalytics from './pages/Clerical_Assistant/StockAnalytics.tsx';
 
 // Admin Layout & Pages
 import AdminLayout from './components/Admin/AdminLayout.jsx';
@@ -55,10 +64,8 @@ import LabTestReport from './pages/labtech/LabTestReport';
 // Nurse Pages
 import NurseDashboard from './pages/Nurse/NurseDashboard.jsx';
 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
     <Provider store={store}>
@@ -72,15 +79,29 @@ function App() {
 
             {/* Pharmacist Routes */}
             <Route element={<ProtectedRoute allowedRoles={['PHARMACIST']} />}>
-              <Route path="/pharmacist/dashboard" element={<Dashboard />} />
-              <Route path="/pharmacist/profile" element={<Profile />} />
-              <Route path="/pharmacist/prescriptionsDetails" element={<PrescriptionDetailsPage />} />
-              <Route path="/pharmacist/addMedicineStock/:name" element={<AddMedicineStockPage />} />
-              <Route path="/pharmacist/medicineStock" element={<MedicinePage />} />
-              <Route path="/pharmacist/medicine/add/:name" element={<Dashboard />} />
-              <Route path="/pharmacist/expiredStock" element={<ExpiredStockPage />} />
-              <Route path="/pharmacist/pendingPrescription" element={<PendingPrescriptions />} />
-              <Route path="/pharmacist/pastPrescription" element={<PastPrescriptions />} />
+              <Route path="/pharmacist" element={<Dashboard />}>
+                <Route path="dashboard" element={<Home />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="issuedMedicines" element={<MedicineVerification />} />
+                <Route path="prescriptionsDetails" element={<PrescriptionDetailsPage />} />
+                <Route path="medicineStock" element={<MedicinePage />} />
+                <Route path="expiredStock" element={<ExpiredStockPage />} />
+                <Route path="pendingPrescription" element={<PendingPrescriptions />} />
+                <Route path="pastPrescription" element={<PastPrescriptions />} />
+
+              </Route>
+            </Route>
+
+            {/* Clerical Assistant Routes*/}
+            <Route element={<ProtectedRoute allowedRoles={['CLERICAL_ASSISTANT']} />}>
+              <Route path="/clerical_assistant" element={<CA_dashboard />}>
+                <Route path="dashboard" element={<CA_home />} />
+                <Route path="expiryMedicine" element={<CA_expiredStock />} />
+                <Route path="addMedicineStock/:name" element={<CA_addStock />} />
+                <Route path="issueStock" element={<CA_issueStock />} />
+                <Route path="stockAnalytics" element={<CA_stockAnalytics />} />
+
+              </Route>
             </Route>
 
             {/* Admin Routes */}
@@ -92,7 +113,7 @@ function App() {
                 <Route path="/admin/users/:userId/edit" element={<UserForm mode="edit" />} />
                 <Route path="/admin/doctors" element={<DoctorManagement />} />
                 <Route path="/admin/nurses" element={<NursesManagement />} />
-                <Route path="/admin/pharmacists" element={<PharmacistsManagement/>} />
+                <Route path="/admin/pharmacists" element={<PharmacistsManagement />} />
                 <Route path="/admin/receptionists" element={<ReceptionistManagement />} />
                 <Route path="/admin/inventory" element={<InventoryManagement />} />
                 <Route path="/admin/visits" element={<VisitManagement />} />
