@@ -1,10 +1,7 @@
 import nodemailer from "nodemailer";
-import fs from "fs";
 
-export const sendEmailWithPDF = async (email, pdfPath) => {
-  if (!fs.existsSync(pdfPath)) {
-    throw new Error("PDF file does not exist: " + pdfPath);
-  }
+export const sendEmailWithPDFStream = async (email, pdfStream) => {
+  if (!pdfStream) throw new Error("Invalid PDF stream");
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -17,23 +14,18 @@ export const sendEmailWithPDF = async (email, pdfPath) => {
   try {
     const info = await transporter.sendMail({
       from: `"Anna University HealthCenter" <${process.env.EMAIL_USER}>`,
-      to: "r.sooryaprakash2704@gmail.com",
+      to: email,
       subject: "Prescription from Anna University HealthCenter",
       text: "Please find your prescription attached.",
       attachments: [
         {
-          filename: `prescription.pdf`,
-          path: pdfPath,
+          filename: "prescription.pdf",
+          content: pdfStream, // stream directly
+          contentType: "application/pdf",
         },
       ],
     });
 
-    // Nodemailer returns accepted/rejected arrays
-    if (info.rejected.length > 0) {
-      throw new Error(`Email rejected for recipients: ${info.rejected.join(", ")}`);
-    }
-
-    // Email successfully sent
     console.log("Email sent successfully:", info.messageId);
     return info.messageId;
 

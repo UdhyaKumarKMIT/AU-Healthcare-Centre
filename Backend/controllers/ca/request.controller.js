@@ -1,18 +1,4 @@
-import { getRequestsService, getRequestDetailsService } from "../../services/ca/request.service.js";
-
-export const getRequests = async (req, res) => {
-  try {
-    const requests = await getRequestsService();
-
-    res.status(200).json(requests);
-  } catch (err) {
-    console.error("Fetch pending prescriptions error:", err);
-    res.status(500).json({
-      requests: [], // safe fallback
-      message: "Unable to fetch prescriptions",
-    });
-  }
-};
+import { getRequestDetailsService } from "../../services/ca/request.service.js";
 
 export const getRequestDetails = async (req, res) => {
   const { id } = req.query; // medicine_id

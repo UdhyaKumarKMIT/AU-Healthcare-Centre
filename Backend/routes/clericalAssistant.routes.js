@@ -6,32 +6,13 @@ import ROLES from "../constants/roles.js";
 
 // ✅ Separate controllers (NO logic change, only separation) 
 import * as RequestController from "../controllers/ca/request.controller.js";
-import * as IssueController from "../controllers/ca/issue.controller.js";
-import * as TransactionController from "../controllers/ca/transaction.controller.js";
+import * as IssueController from "../controllers/ca/issue.controller.js"; 
 import * as InventoryController from "../controllers/ca/inventory.controller.js";
 import * as DashboardController from "../controllers/ca/dashboard.controller.js";
 
 const router = express.Router();
 
 /* ===================== REQUESTS ===================== */
-/**
- * @swagger
- * /api/clerical_assistant/requests:
- *   get:
- *     summary: Get all medicine requests
- *     tags: [Clerical Assistant]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200: { description: Requests fetched successfully }
- *       401: { description: Unauthorized }
- */
-router.get(
-  "/requests",
-  authenticate,
-  authorize(ROLES.CLERICAL_ASSISTANT),
-  RequestController.getRequests
-);
 
 /**
  * @swagger
@@ -91,49 +72,6 @@ router.post(
   authenticate,
   authorize(ROLES.CLERICAL_ASSISTANT),
   IssueController.issueMedicine
-);
-
-/* ===================== TRANSACTIONS ===================== */
-/**
- * @swagger
- * /api/clerical_assistant/transactions:
- *   get:
- *     summary: Get all transactions
- *     tags: [Clerical Assistant]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200: { description: Transactions fetched }
- */
-router.get(
-  "/transactions",
-  authenticate,
-  authorize(ROLES.CLERICAL_ASSISTANT),
-  TransactionController.getTransactions
-);
-
-/**
- * @swagger
- * /api/clerical_assistant/transactionDetails/{id}:
- *   get:
- *     summary: Get transaction details
- *     tags: [Clerical Assistant]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Transaction details fetched }
- *       404: { description: Not found }
- */
-router.get(
-  "/transactionDetails/:id",
-  authenticate,
-  authorize(ROLES.CLERICAL_ASSISTANT),
-  TransactionController.getTransactionDetails
 );
 
 /* ===================== INVENTORY ===================== */

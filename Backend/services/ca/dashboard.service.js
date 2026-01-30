@@ -1,28 +1,24 @@
-import pool from "../../config/db.js";
+import sequelize from "../../config/sequelize.js";
+import { QueryTypes } from "sequelize";
 
+/* ============================
+   Dashboard counts
+============================ */
 export const getDashboardCounts = async () => {
-  try {
-    // 1️⃣ Substock counts
-    const [[substockCounts]] = await pool.query(`
-      SELECT
-        COALESCE(SUM(mms.dressing_substock), 0) AS dressing_substock_count,
-        COALESCE(SUM(mms.labtech_substock), 0) AS labtech_substock_count,
-        COALESCE(SUM(mms.nurse_substock), 0) AS nurse_substock_count,
-        COALESCE(SUM(mms.pharmacy_substock), 0) AS pharmacy_substock_count
-      FROM medicine m
-      LEFT JOIN stock_request mms
-        ON m.medicine_id = mms.medicine_id;
-    `);
-
-    // 2️⃣ Expired stock
-    const [[expiredStockCount]] = await pool.query(`
+  try { 
+    // Expired stock
+    const expiredStockRows = await sequelize.query(
+      `
       SELECT COUNT(*) AS expired_stock_count
       FROM medicine_main_stock
       WHERE status = 'EXPIRED';
-    `);
+      `,
+      { type: QueryTypes.SELECT }
+    );
 
-    // 3️⃣ Out-of-stock
-    const [[outofStockCount]] = await pool.query(`
+    // Out-of-stock
+    const outOfStockRows = await sequelize.query(
+      `
       SELECT COUNT(*) AS out_of_stock_count
       FROM medicine m
       WHERE NOT EXISTS (
@@ -31,40 +27,45 @@ export const getDashboardCounts = async () => {
         WHERE ms.medicine_id = m.medicine_id
           AND ms.status = 'ACTIVE'
       );
-    `);
+      `,
+      { type: QueryTypes.SELECT }
+    );
 
-    // 4️⃣ Low stock (<=30 units)
-    const [[lowStockCount]] = await pool.query(`
+    // Low stock (<= 30 units)
+    const lowStockRows = await sequelize.query(
+      `
       SELECT COUNT(*) AS low_stock_count
       FROM medicine m
       JOIN (
-          SELECT medicine_id, SUM(quantity) AS total_quantity
-          FROM medicine_main_stock
-          WHERE status = 'ACTIVE'
-          GROUP BY medicine_id
-      ) ms_total ON m.medicine_id = ms_total.medicine_id
+        SELECT medicine_id, SUM(quantity) AS total_quantity
+        FROM medicine_main_stock
+        WHERE status = 'ACTIVE'
+        GROUP BY medicine_id
+      ) ms_total
+        ON m.medicine_id = ms_total.medicine_id
       WHERE ms_total.total_quantity <= 30;
-    `);
+      `,
+      { type: QueryTypes.SELECT }
+    );
 
-    // Convert all values to numbers to avoid string issues
     return {
-      dressing_substock_count: Number(substockCounts.dressing_substock_count),
-      labtech_substock_count: Number(substockCounts.labtech_substock_count),
-      nurse_substock_count: Number(substockCounts.nurse_substock_count),
-      pharmacy_substock_count: Number(substockCounts.pharmacy_substock_count),
-      expired_stock_count: Number(expiredStockCount.expired_stock_count),
-      out_of_stock_count: Number(outofStockCount.out_of_stock_count),
-      low_stock_count: Number(lowStockCount.low_stock_count),
+      expired_stock_count: Number(expiredStockRows[0].expired_stock_count),
+      out_of_stock_count: Number(outOfStockRows[0].out_of_stock_count),
+      low_stock_count: Number(lowStockRows[0].low_stock_count)
     };
   } catch (err) {
     console.error("Dashboard counts service error:", err);
-    throw err; // Let controller handle response
+    throw err;
   }
-}; 
+};
 
+/* ============================
+   Medicine total stock
+============================ */
 export const getMedicineTotalStock = async () => {
   try {
-    const [rows] = await pool.query(`
+    const rows = await sequelize.query(
+      `
       SELECT
         m.medicine_id,
         m.name AS medicine_name,
@@ -79,23 +80,27 @@ export const getMedicineTotalStock = async () => {
         m.name,
         m.type
       ORDER BY m.name;
-    `);
+      `,
+      { type: QueryTypes.SELECT }
+    );
 
-    // Convert total_stock to Number
-    return rows.map((med) => ({
+    return rows.map(med => ({
       medicine_id: med.medicine_id,
       medicine_name: med.medicine_name,
-      total_stock: Number(med.total_stock),
+      total_stock: Number(med.total_stock)
     }));
   } catch (err) {
     console.error("Medicine total stock service error:", err);
-    throw err; // Let controller handle HTTP response
+    throw err;
   }
 };
 
+/* ============================
+   All stock details
+============================ */
 export const getAllStockDetails = async () => {
   try {
-    // Helper function to query a substock table
+    // Helper to fetch substock
     const fetchSubstock = async (substockType) => {
       const query = `
         SELECT 
@@ -120,8 +125,10 @@ export const getAllStockDetails = async () => {
         GROUP BY m.medicine_id, m.name
         ORDER BY m.name;
       `;
-      const [rows] = await pool.query(query);
-      return rows;
+
+      return await sequelize.query(query, {
+        type: QueryTypes.SELECT
+      });
     };
 
     const pharmacy = await fetchSubstock("pharmacy_stock");
@@ -133,6 +140,6 @@ export const getAllStockDetails = async () => {
     return { pharmacy, labtech, nurse, dressing, mainStock };
   } catch (err) {
     console.error("getAllStockDetails service error:", err);
-    throw err; // Controller handles the response
+    throw err;
   }
 };

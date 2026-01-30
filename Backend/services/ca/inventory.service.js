@@ -1,31 +1,37 @@
 // services/ca/inventory.service.js
-import pool from "../../config/db.js";
+import sequelize from "../../config/sequelize.js";
+import { QueryTypes } from "sequelize";
 import { randomUUID } from "crypto";
 
+/* ============================
+   Add medicine batch
+============================ */
 export const addMedicineBatch = async (batchData) => {
   const { batch_id, medicine_name, expiry_date, in_stock } = batchData;
 
-  const [result] = await pool.query(
+  const [result] = await sequelize.query(
     `
     INSERT INTO medicine_main_stock (
-        main_stock_id,
-        batch_no,
-        medicine_id,
-        expiry,
-        quantity,
-        mfd
+      main_stock_id,
+      batch_no,
+      medicine_id,
+      expiry,
+      quantity,
+      mfd
     )
     SELECT
-        UUID(),
-        ?,
-        m.medicine_id,
-        ?,
-        ?,
-        NOW()
+      UUID(),
+      ?,
+      m.medicine_id,
+      ?,
+      ?,
+      NOW()
     FROM medicine m
     WHERE m.name = ?;
     `,
-    [batch_id, expiry_date, in_stock, medicine_name]
+    {
+      replacements: [batch_id, expiry_date, in_stock, medicine_name]
+    }
   );
 
   if (result.affectedRows === 0) {
@@ -33,24 +39,20 @@ export const addMedicineBatch = async (batchData) => {
   }
 
   return { message: "Medicine batch added successfully" };
-}; 
+};
 
+/* ============================
+   Delete medicine batch
+============================ */
 export const deleteMedicineBatch = async (batch_id) => {
-  if (!batch_id) {
-    throw new Error("Invalid or missing batch ID");
-  }
+  if (!batch_id) throw new Error("Invalid or missing batch ID");
 
-  const connection = await pool.getConnection();
-
-  try {
-    await connection.beginTransaction();
-
-    // 1️⃣ Log the batch before deleting
-    const [insertResult] = await connection.query(
+  return await sequelize.transaction(async (transaction) => {
+    const [insertResult] = await sequelize.query(
       `
       INSERT INTO main_medicine_log (
         medicine_id,
-        batch_no, 
+        batch_no,
         main_stock_id,
         expiry,
         quantity
@@ -64,46 +66,39 @@ export const deleteMedicineBatch = async (batch_id) => {
       FROM medicine_main_stock
       WHERE batch_no = ?;
       `,
-      [batch_id]
+      {
+        replacements: [batch_id],
+        transaction
+      }
     );
 
     if (insertResult.affectedRows === 0) {
-      await connection.rollback();
       throw new Error("Batch not found");
     }
 
-    // 2️⃣ Delete from main stock
-    await connection.query(
+    await sequelize.query(
       `
       DELETE FROM medicine_main_stock
       WHERE batch_no = ?;
       `,
-      [batch_id]
+      {
+        replacements: [batch_id],
+        transaction
+      }
     );
-
-    await connection.commit();
 
     return { message: "Medicine batch deleted and logged successfully" };
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
+/* ============================
+   Clear medicine batch
+============================ */
 export const clearMedicineBatch = async (batch_id) => {
-  if (!batch_id) {
-    throw new Error("Invalid or missing batch ID");
-  }
+  if (!batch_id) throw new Error("Invalid or missing batch ID");
 
-  const connection = await pool.getConnection();
-
-  try {
-    await connection.beginTransaction();
-
-    // 1️⃣ Log the batch before clearing
-    const [insertResult] = await connection.query(
+  return await sequelize.transaction(async (transaction) => {
+    const [insertResult] = await sequelize.query(
       `
       INSERT INTO main_medicine_log (
         batch_no,
@@ -121,34 +116,34 @@ export const clearMedicineBatch = async (batch_id) => {
       FROM medicine_main_stock
       WHERE batch_no = ?;
       `,
-      [batch_id]
+      {
+        replacements: [batch_id],
+        transaction
+      }
     );
 
     if (insertResult.affectedRows === 0) {
-      await connection.rollback();
       throw new Error("Batch not found");
     }
 
-    // 2️⃣ Delete the batch from main stock
-    await connection.query(
+    await sequelize.query(
       `
       DELETE FROM medicine_main_stock
       WHERE batch_no = ?;
       `,
-      [batch_id]
+      {
+        replacements: [batch_id],
+        transaction
+      }
     );
 
-    await connection.commit();
-
     return { message: "Medicine batch cleared and logged successfully" };
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
+/* ============================
+   Add medicine + first batch
+============================ */
 export const addMedicine = async (medicineData) => {
   const { name, type, batch_id, expiry_date, in_stock } = medicineData;
 
@@ -156,47 +151,49 @@ export const addMedicine = async (medicineData) => {
     throw new Error("Missing required fields");
   }
 
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-
-    const medicine_id = randomUUID();
-
-    // 1️⃣ Insert new medicine
-    const [medicineResult] = await connection.query(
-      `INSERT INTO medicine (medicine_id, name, type)
-       VALUES (?, ?, ?)`,
-      [medicine_id, name, type]
-    );
-
-    if (medicineResult.affectedRows !== 1) {
-      throw new Error("Medicine already exist!");
+  return await sequelize.transaction(async (transaction) => {
+    const medicine_id = randomUUID(); 
+    // Insert new medicine with custom error handling
+    try {
+      await sequelize.query(
+        `INSERT INTO medicine (medicine_id, name, type) VALUES (?, ?, ?);`,
+        {
+          replacements: [medicine_id, name, type],
+          transaction
+        }
+      );
+    } catch (err) {
+      // If database throws a duplicate key error
+      if (err.original && (err.original.code === "ER_DUP_ENTRY" || err.original.errno === 1062)) {
+        throw new Error("Medicine already exist!");
+      }
+      throw err; // re-throw any other errors
     }
 
-    // 2️⃣ Insert first batch
-    await connection.query(
-      `INSERT INTO medicine_main_stock
-       (main_stock_id, batch_no, medicine_id, expiry, quantity, status, mfd)
-       VALUES (UUID(), ?, ?, ?, ?, 'ACTIVE', NOW())`,
-      [batch_id, medicine_id, expiry_date, in_stock]
+    await sequelize.query(
+      `
+      INSERT INTO medicine_main_stock
+      (main_stock_id, batch_no, medicine_id, expiry, quantity, status, mfd)
+      VALUES (UUID(), ?, ?, ?, ?, 'ACTIVE', NOW());
+      `,
+      {
+        replacements: [batch_id, medicine_id, expiry_date, in_stock],
+        transaction
+      }
     );
-
-    await connection.commit();
 
     return {
       message: "Medicine and stock added successfully",
       medicine_id
     };
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
+/* ============================
+   Expired medicine batches
+============================ */
 export const getExpiredMedicineBatches = async () => {
-  const [rows] = await pool.query(
+  const rows = await sequelize.query(
     `
     SELECT
       mb.batch_no AS batch_id,
@@ -208,10 +205,10 @@ export const getExpiredMedicineBatches = async () => {
       ON mb.medicine_id = m.medicine_id
     WHERE mb.status = 'EXPIRED'
     ORDER BY mb.expiry ASC;
-    `
+    `,
+    { type: QueryTypes.SELECT }
   );
 
-  // Map DB rows to consistent API format
   return rows.map(row => ({
     batch_id: row.batch_id,
     medicine_name: row.medicine_name,
@@ -219,68 +216,59 @@ export const getExpiredMedicineBatches = async () => {
     in_stock: row.in_stock
   }));
 };
-
-export const getOutOfStock = async () => {
-  const [rows] = await pool.query(`
-    SELECT
-      m.medicine_id,
-      m.name AS medicine_name,
-      m.type AS type
-    FROM medicine m
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM medicine_main_stock ms
-      WHERE ms.medicine_id = m.medicine_id
-        AND ms.status = 'ACTIVE'
-        AND (ms.expiry IS NULL OR ms.expiry > NOW())
-    )
-    ORDER BY m.name;
-  `);
-
-  return rows;
-};
-
+ 
+/* ============================
+   Get batches (allocation logic)
+============================ */
 export const getBatches = async ({ medicine_name, total_days, quantity }) => {
   if (!medicine_name || !total_days || quantity == null) {
     throw new Error("Missing parameters");
   }
 
-  const conn = await pool.getConnection();
-
-  try {
-    // 1️⃣ Get medicine_id
-    const [medicineRows] = await conn.query(
+  return await sequelize.transaction(async (transaction) => {
+    const medicineRows = await sequelize.query(
       `SELECT medicine_id FROM medicine WHERE name = ?`,
-      [medicine_name]
+      {
+        replacements: [medicine_name],
+        type: QueryTypes.SELECT,
+        transaction
+      }
     );
 
-    if (medicineRows.length === 0) {
+    if (!medicineRows.length) {
       throw new Error("Medicine not found");
     }
 
     const medicine_id = medicineRows[0].medicine_id;
 
-    // 2️⃣ Fetch batches sorted by expiry: near, mid, long
-    const fetchBatchQuery = (minMonths = 0, maxMonths = null) => {
+    const fetchBatchQuery = async (minMonths = 0, maxMonths = null) => {
       let condition = `expiry > DATE_ADD(CURDATE(), INTERVAL ${minMonths} MONTH)`;
       if (maxMonths !== null) {
         condition += ` AND expiry <= DATE_ADD(CURDATE(), INTERVAL ${maxMonths} MONTH)`;
       }
-      return conn.query(
+
+      return await sequelize.query(
         `
-        SELECT batch_no AS batch_id, quantity AS in_stock, expiry AS expiry_date
+        SELECT
+          batch_no AS batch_id,
+          quantity AS in_stock,
+          expiry AS expiry_date
         FROM pharmacy_stock
         WHERE medicine_id = ?
           AND quantity > 0
           AND status = 'ACTIVE'
           ${minMonths > 0 || maxMonths !== null ? `AND ${condition}` : ""}
-        ORDER BY expiry ASC
+        ORDER BY expiry ASC;
         `,
-        [medicine_id]
+        {
+          replacements: [medicine_id],
+          type: QueryTypes.SELECT,
+          transaction
+        }
       );
     };
 
-    const [[nearExpiry], [midExpiry], [longExpiry]] = await Promise.all([
+    const [nearExpiry, midExpiry, longExpiry] = await Promise.all([
       fetchBatchQuery(0, 1),
       fetchBatchQuery(1, 3),
       fetchBatchQuery(3, null)
@@ -288,7 +276,6 @@ export const getBatches = async ({ medicine_name, total_days, quantity }) => {
 
     const batches = [...nearExpiry, ...midExpiry, ...longExpiry];
 
-    // 3️⃣ Allocate requested quantity across batches
     let remainingQty = Number(quantity);
     const selectedBatches = [];
 
@@ -311,7 +298,5 @@ export const getBatches = async ({ medicine_name, total_days, quantity }) => {
     }
 
     return selectedBatches;
-  } finally {
-    conn.release();
-  }
+  });
 };

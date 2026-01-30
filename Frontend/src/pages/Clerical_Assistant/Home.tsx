@@ -51,11 +51,7 @@ const Home = () => {
   const { user } = useAuth();  
   const userName = user?.name || "";
 
-  const [dashboardCounts, setDashboardCounts] = useState({
-    dressing_substock_count: 0,
-    labtech_substock_count: 0,
-    nurse_substock_count: 0,
-    pharmacy_substock_count: 0,
+  const [dashboardCounts, setDashboardCounts] = useState({ 
     expired_stock_count: 0,
     out_of_stock_count: 0,
     low_stock_count: 0,
@@ -126,10 +122,7 @@ const Home = () => {
       </p>
       <br />
       <br />
-
-      
-      
-      {/* --- Substock Requests Full Width --- */}
+ 
   <h2
   style={{
     fontSize: "2rem",
@@ -166,50 +159,6 @@ const Home = () => {
     <p style={{ ...statsValueStyle, color: "#055b86" }}>{dashboardCounts.expired_stock_count}</p>
   </div>
 </div>
-
-  {/* <h2
-  style={{
-    fontSize: "2rem",
-    fontWeight: 700,
-    textAlign: "center",
-    background: "linear-gradient(90deg, #1e40af, #3b82f6)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    marginBottom: "1.5rem",
-    letterSpacing: "1px",
-  }}
-  >
-  Request from Substock(s)
-  </h2>
-
-<div style={{ 
-  display: "grid", 
-  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
-  gap: "1.5rem", 
-  marginBottom: "2rem" 
-}}>
-  {[
-    { label: "Pharmacy", value: dashboardCounts.pharmacy_substock_count, color: "#0033a0", icon: "💊" },
-    { label: "Labtech", value: dashboardCounts.labtech_substock_count, color: "#0033a0", icon: "🧪" },
-    { label: "Nurse", value: dashboardCounts.nurse_substock_count, color: "#0033a0", icon: "🩺" },
-    { label: "Dressing", value: dashboardCounts.dressing_substock_count, color: "#0033a0", icon: "🩹" },
-  ].map((substock) => (
-    <div key={substock.label} style={{
-      borderRadius: "12px",
-      padding: "1.2rem",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-      transition: "transform 0.2s ease",
-    }}>
-      <h3 style={{ marginBottom: "0.8rem", color: substock.color }}>
-        {substock.icon} {substock.label}
-      </h3>
-      <p style={{ fontSize: "2rem", fontWeight: "600", color: substock.color }}>
-        {substock.value}
-      </p>
-    </div>
-  ))}
-</div> 
-*/}
 
       <br />
 

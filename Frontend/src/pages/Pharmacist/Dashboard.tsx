@@ -1,5 +1,5 @@
 import AULogo from "../../assets/AULogo.jpg";
-import { ChartNoAxesColumn, FileScan, ShieldX, FileCheck, LucideLogOut, CircleUser, LucideHome } from "lucide-react";
+import { ChartNoAxesColumn, FileScan, ShieldX, FileCheck, LucideLogOut, CircleUser, LucideHome, PillBottleIcon } from "lucide-react";
 import { useNavigate, Outlet, useLocation} from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext"; 
  
@@ -109,6 +109,13 @@ const Dashboard = () => {
           onClick={() => navigate("/pharmacist/medicineStock")}
         >
           <ChartNoAxesColumn size={20} /> Stock Analysis
+        </button>
+
+        <button
+          style={activeNavButtonStyle("/pharmacist/issuedMedicines")}
+          onClick={() => navigate("/pharmacist/issuedMedicines")}
+        >
+          <PillBottleIcon size={20} /> Issued Medicines
         </button>
 
         <button

@@ -19,7 +19,16 @@ PharmacyStock.init(
     batch_no: { type: DataTypes.STRING(50), allowNull: false },
     expiry: { type: DataTypes.DATE, allowNull: true },
     quantity: { type: DataTypes.INTEGER, allowNull: false },
-    status: { type: DataTypes.ENUM('ACTIVE', 'EXPIRED'), defaultValue: 'ACTIVE' },
+    status: { 
+      type: DataTypes.ENUM('ACTIVE', 'EXPIRED'), 
+      allowNull: false,
+      defaultValue: 'ACTIVE' 
+    },
+    verification: {
+      type: DataTypes.ENUM('done', 'waiting'),
+      allowNull: false,
+      defaultValue: 'waiting'
+    },
   },
   {
     sequelize,

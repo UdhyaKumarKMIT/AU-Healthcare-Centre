@@ -6,12 +6,29 @@ class PrescriptionTransaction extends Model {}
 
 PrescriptionTransaction.init(
   {
-    transaction_id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-    prescription_id: { type: DataTypes.UUID, allowNull: false, references: { model: 'prescription', key: 'prescription_id' } },
-    transaction_date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-    total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-    payment_status: { type: DataTypes.ENUM('PENDING', 'PAID', 'CANCELLED'), defaultValue: 'PENDING' },
-    payment_method: { type: DataTypes.STRING(50), allowNull: true },
+    txn_id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    prescription_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'prescription', key: 'prescription_id' },
+    },
+    issued_by_code: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    issued_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    issued_days: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
   },
   {
     sequelize,

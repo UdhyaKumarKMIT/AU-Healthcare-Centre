@@ -18,9 +18,12 @@ import CustomModal from "./CustomModal";
 interface PrescriptionItem {
   medicine_name: string;
   medicine_type: string;
-  total_days: number; 
+  total_days: number;
   dosage_per_day: number;
+  timing_flags: [number, number, number]; // [morning, afternoon, night]
+  food_timing: 'BEFORE' | 'AFTER' | 'WITH' | 'EMPTY_STOMACH' | null;
 }
+
 
 interface AllocatedBatch {
   batch_id: string;
@@ -179,7 +182,7 @@ const PrescriptionDetailsPage = () => {
   /* ---------- HELPERS ---------- */
 
   function toTitleCase(str: string) {
-    return str.replace(/\w\S*/g, (txt) =>
+    return str.replace(/_/g, " ").replace(/\w\S*/g, (txt) =>
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
     );
   }
@@ -231,21 +234,50 @@ const PrescriptionDetailsPage = () => {
 
           {/* MEDICINES */}
           {items.map((item) => (
-            <div key={item.medicine_name} style={medicinePreviewItem}>
-              <div style={medicineNameRow}>
-                <DotIcon size={18} />
-                <strong>
-                  {toTitleCase(item.medicine_name)} (
-                  {toTitleCase(item.medicine_type)})
-                </strong>
-              </div>
+            <div key={item.medicine_name} style={medicineCardStyle}>
+  <div style={{...medicineHeaderStyle, fontFamily: "verdana"}}>
+    <PillBottle />
+    <strong>{toTitleCase(item.medicine_name)}</strong>
+    <span>({toTitleCase(item.medicine_type)})</span>
+  </div>
 
-              <div style={medicineDetails}>
-                <span>Dosage/day: {item.dosage_per_day}</span>
-                <span>Qty: {item.dosage_per_day * issuedDays}</span>
-              </div>
-            </div>
-          ))}
+  <div style={medicineGridStyle}> 
+    {/* --- Dosage & Quantity --- */}
+    <div style={{...rowStyle, fontFamily: "verdana"}}>
+      <span style={labelStyle}>Dosage/day:</span>
+      <span>{item.dosage_per_day}</span>
+      <span style={labelStyle}>Quantity:</span>
+      <span>{item.dosage_per_day * issuedDays}</span>
+    </div>
+
+    {/* --- Food Timing --- */}
+    {item.food_timing && (
+      <div style={{ marginTop: 6 , fontFamily: "verdana"}}>
+        <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
+      </div>
+    )}
+
+    {/* --- Timing Checkboxes --- */}
+    <div style={{ marginTop: 6, display: "flex", gap: 12 , fontFamily: "verdana"}}>
+      <label>
+        <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
+        Morning
+      </label>
+      <label>
+        <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
+        Afternoon
+      </label>
+      <label>
+        <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
+        Night
+      </label>
+    </div> 
+  </div>
+</div>
+
+))}
+
+
 
           <hr />
 
@@ -255,7 +287,7 @@ const PrescriptionDetailsPage = () => {
             <p key={item.medicine_name}>
               <strong><span style={{fontFamily: "verdana", fontSize: "0.86rem"}}>{toTitleCase(item.medicine_name)}:</span></strong>{" "}
               {allocatedBatches[item.medicine_name].map((b) => (
-                <span key={b.batch_id} style={{fontFamily: "verdana", fontSize: "0.8rem"}}>
+                <span key={b.batch_id} style={{fontFamily: "verdana", fontSize: "0.9rem"}}>
                   {b.batch_id} ({b.used} units){" "}
                 </span>
               ))}
@@ -356,71 +388,92 @@ const PrescriptionDetailsPage = () => {
           <br />
 
           {items.map((item) => (
-            <div key={item.medicine_name} style={medicineCardStyle}>
-              <div style={medicineHeaderStyle}>
-                <PillBottle />
-                <strong>{toTitleCase(item.medicine_name)}</strong>
-                <span>({toTitleCase(item.medicine_type)})</span>
-              </div>
+  <div key={item.medicine_name} style={medicineCardStyle}>
+    <div style={medicineHeaderStyle}>
+      <PillBottle />
+      <strong>{toTitleCase(item.medicine_name)}</strong>
+      <span>({toTitleCase(item.medicine_type)})</span>
+    </div>
 
-              <div style={medicineGridStyle}> 
+    <div style={medicineGridStyle}> 
 
-                <div style={rowStyle}>
-                  <span style={labelStyle}>Dosage per day:</span>
-                  <span>{item.dosage_per_day} days</span>
-                </div>
+      <div style={rowStyle}>
+        <span style={labelStyle}>Dosage per day:</span>
+        <span>{item.dosage_per_day} days</span>
+      </div>
 
-                <div style={{ marginTop: 6 }}>
-                  <Layers size={18} color="#0039caff" />{" "}
-                  <strong style={{ color: "#0039caff" }}>Quantity</strong>
+      {/* --- Food Timing --- */}
+      {item.food_timing && (
+        <div style={{ marginTop: 6 }}>
+          <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
+        </div>
+      )}
+      
+      {/* --- Timing Checkboxes --- */}
+      <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+        <label>
+          <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
+           Morning
+        </label>
+        <label>
+          <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
+           Afternoon
+        </label>
+        <label>
+          <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
+           Night
+        </label>
+      </div>
+      
 
-                  <input
-                    type="number"
-                    value={
-                      (item.dosage_per_day || 0) *
-                      (issuedDays || 0)
-                    } 
-                    
-                    readOnly
-                    style={{
-                      ...inputStyle,
-                      backgroundColor: "#f3f3f3",
-                      cursor: "not-allowed",
-                    }}
-                  />
+      <div style={{ marginTop: 6 }}>
+        <Layers size={18} color="#0039caff" />{" "}
+        <strong style={{ color: "#0039caff" }}>Quantity</strong>
 
-                  <br />
+        <input
+          type="number"
+          value={(item.dosage_per_day || 0) * (issuedDays || 0)}
+          readOnly
+          style={{
+            ...inputStyle,
+            backgroundColor: "#f3f3f3",
+            cursor: "not-allowed",
+          }}
+        />
 
-                  <button
-                    onClick={() => handleGetBatches(item)}
-                    style={{
-                      ...secondaryButtonStyle,
-                      padding: "4px 10px",
-                      fontSize: 12,
-                      height: 28,
-                      marginTop: 6,
-                    }}
-                  >
-                    Get Batches
-                  </button>
-                </div>
+        <br />
 
+        <button
+          onClick={() => handleGetBatches(item)}
+          style={{
+            ...secondaryButtonStyle,
+            padding: "4px 10px",
+            fontSize: 12,
+            height: 28,
+            marginTop: 6,
+          }}
+        >
+          Get Batches
+        </button>
+      </div>
 
-                {allocatedBatches[item.medicine_name]?.length > 0 && (
-                  <div style={{ marginTop: 10 }}>
-                    <strong>Allocated Batches:</strong>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {allocatedBatches[item.medicine_name].map((b) => (
-                        <span key={b.batch_id} style={batchBadge}>
-                          {b.batch_id} - Quantity: {b.used}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+      {allocatedBatches[item.medicine_name]?.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <strong>Allocated Batches:</strong>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {allocatedBatches[item.medicine_name].map((b) => (
+              <span key={b.batch_id} style={batchBadge}>
+                {b.batch_id} - Quantity: {b.used}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  </div>
+))}
+
           
           
 
@@ -473,6 +526,7 @@ const medicineHeaderStyle: React.CSSProperties = {
   gap: 8,
   fontWeight: 700,
   marginBottom: "0.75rem",
+  fontSize: "1.2rem",
   color: "#1e40af",
 };
 

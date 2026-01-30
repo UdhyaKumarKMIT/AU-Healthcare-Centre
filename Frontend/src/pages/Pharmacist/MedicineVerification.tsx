@@ -1,12 +1,24 @@
 import { useState, useEffect } from "react";
-import { ShieldX, Pill } from "lucide-react";
+import { Pill, PillBottleIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
 import CustomModal from "./CustomModal";
 
+interface Batch {
+  batch_no: string;
+  quantity: number;
+  expiry: string;
+}
+
+interface PendingMedicine {
+  medicine_id: string;
+  medicine_name: string;
+  batches: Batch[];
+}
+
 /* ---------- Component ---------- */
-const ExpiredStockPage = () => {
+const MedicineVerification = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
@@ -16,9 +28,10 @@ const ExpiredStockPage = () => {
   
   const pharmacistId = user?.pharmacist_id;
 
-  const [expiredMedicines, setExpiredMedicines] = useState<any[]>([]);
+  const [verifiedMedicines, setverifiedMedicines] = useState<PendingMedicine[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [search, setSearch] = useState("");
+
 
   useEffect(() => {
     if (!pharmacistId) {
@@ -26,61 +39,53 @@ const ExpiredStockPage = () => {
       return;
     }
 
-    const fetchExpiredMedicine = async () => {
+    const fetchverifiedMedicine = async () => {
       try {
-        const response = await api.get("/pharmacy/expiryMedicine", {
-          params: { pharmacist_id: pharmacistId }
-        });
-        setExpiredMedicines(response.data.items || []);
+        const response = await api.get("/pharmacy/getVerificationStock");
+        setverifiedMedicines(response.data.pendingStocks || []);
       } catch (err) {
-        console.error("Failed to fetch expired medicine:", err);
-        setModalMessage("Failed to fetch expired medicine.");
+        console.error("Failed to fetch medicine:", err);
+        setModalMessage("Failed to fetch medicine.");
         setModalOpen(true);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExpiredMedicine();
+    fetchverifiedMedicine();
   }, [pharmacistId, navigate]);
 
-  const handleClear = (batchId: string) => {
-    setModalMessage("Are you sure you want to clear this batch?");
-    setModalConfirmCallback(() => () => {
-      clearBatchConfirmed(batchId);
+  const handleVerify = (batchNo: string) => {
+  setModalMessage("Are you sure you want to verify this batch?");
+  setModalConfirmCallback(() => () => {
+    verifyBatchConfirmed(batchNo);
+  });
+  setModalOpen(true);
+};
+
+const filteredMedicines = verifiedMedicines.filter(med =>
+  med.medicine_name.toLowerCase().includes(search.toLowerCase())
+);
+
+
+const verifyBatchConfirmed = async (batchNo: string) => {
+  try {
+    await api.post("/pharmacy/verifyStock", {
+      batch_no: batchNo
     });
+
+    const res = await api.get("/pharmacy/getVerificationStock");
+    setverifiedMedicines(res.data.pendingStocks || []);
+
+    setModalMessage("Stock verified successfully!");
     setModalOpen(true);
-  };
+  } catch (err) {
+    console.error("Verification failed:", err);
+    setModalMessage("Failed to verify stock.");
+    setModalOpen(true);
+  }
+};
 
-  const filteredMedicines = expiredMedicines.filter((med) =>
-    med.medicine_name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
-
-  const clearBatchConfirmed = async (batchId: string) => {   
-
-    try {
-      const response = await api.delete(
-        `/pharmacy/clearMedicineBatch/${batchId}`,
-        {
-          params: { pharmacist_id: pharmacistId }
-        }
-      );
-      if (response.status === 200) {
-        const response = await api.get("/pharmacy/expiryMedicine", {
-          params: { pharmacist_id: pharmacistId }
-        });
-        setExpiredMedicines(response.data.items || []);
-        setModalMessage("Stock cleared successfully!");
-        setModalOpen(true);
-      }
-    } catch (err) {
-      console.error("Failed to clear stock:", err);
-      setModalMessage("Failed to clear stock.");
-      setModalOpen(true);
-    }
-  };
 
   return (
     <> 
@@ -117,49 +122,52 @@ const ExpiredStockPage = () => {
         <div style={sectionCardStyle}>
           {/* SECTION HEADER */}
           <div style={sectionHeaderStyle}>
-            <ShieldX size={22} />
-            Expired Medicine Stock
+            <PillBottleIcon size={22} />
+            Issued Medicine Stock
           </div>
 
           {/* SEARCH BAR */}
-<div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+<div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
   <input
     type="text"
-    placeholder="Search medicine name..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
+    placeholder="Search by medicine name"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
     style={{
       flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: "6px",
+      padding: "0.6rem 1rem",
+      borderRadius: "8px",
       border: "1px solid #cbd5e1",
-      fontSize: "0.95rem"
+      fontSize: "1rem",
     }}
   />
+
   <button
-    onClick={() => setSearchTerm("")}
+    onClick={() => setSearch("")}
     style={{
+      padding: "0.6rem 1.2rem",
+      borderRadius: "8px",
+      border: "none",
       background: "#1e40af",
       color: "white",
-      border: "none",
-      padding: "0.5rem 1rem",
-      borderRadius: "6px",
-      fontWeight: 600,
-      cursor: "pointer"
+      fontWeight: 700,
+      cursor: "pointer",
     }}
   >
     Clear
   </button>
 </div>
 
+
           {/* CONTENT */}
           {loading ? (
-            <p>Loading expired medicines...</p>
+            <p>Loading medicines for verification...</p>
           ) : filteredMedicines.length === 0 ? (
-            <p>No expired medicines found</p>
+            <p>No medicines found for verification</p>
           ) : (
             filteredMedicines.map((med, idx) => (
-  <article key={idx} style={prescriptionRowStyle}>
+                med.batches.map((batch, bIdx) => (
+  <article key={batch.batch_no} style={prescriptionRowStyle}>
     <div style={{ display: "flex", gap: "1.5rem", fontFamily: "verdana"}}>
       <div style={iconBoxStyle}>
         <Pill size={20} />
@@ -170,34 +178,34 @@ const ExpiredStockPage = () => {
           <strong>Medicine:</strong> {med.medicine_name}
         </p>
         <p style={{paddingBottom: "2px"}}>
-          <strong>Batch ID:</strong> {med.batch_id}
+          <strong>Batch ID:</strong> {batch.batch_no}
         </p>
         <p style={{paddingBottom: "2px"}}>
           <strong>Expiry Date:</strong>{" "}
-          {new Date(med.expiry_date).toLocaleDateString("en-US", {
+          {new Date(batch.expiry).toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
             day: "numeric",
           })}
         </p>
         <p>
-          <strong>In Stock:</strong> {med.in_stock} units
+          <strong>In Stock:</strong> {batch.quantity} units
         </p>
 
         {/* CLEAR BUTTON AT BOTTOM */}
         <div style={{ display: "flex", justifyContent: "flex-start", marginTop: "1rem" }}>
           <button
-            onClick={() => handleClear(med.batch_id)}
+            onClick={() => handleVerify(batch.batch_no)}
             style={clearButtonStyle}
           >
-            Clear
+            Verified
           </button>
         </div>
       </div>
     </div>
   </article>
-))
-
+)))
+            )
           )}
         </div>
       </main>
@@ -258,4 +266,4 @@ const clearButtonStyle: React.CSSProperties = {
   height: "fit-content",
 };
 
-export default ExpiredStockPage;
+export default MedicineVerification;

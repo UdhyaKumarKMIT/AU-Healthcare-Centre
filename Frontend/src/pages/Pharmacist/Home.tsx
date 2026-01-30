@@ -70,6 +70,7 @@ const Home = () => {
     total_prescriptions: 0,
     today_issued_transactions: 0,
     expired_stock_count: 0,
+    medicine_issued_count: 0,
   });
 
 
@@ -165,6 +166,12 @@ const Home = () => {
           <h3>Prescriptions Issued Today</h3>
           <p style={statsValueStyle}>
             {dashboardCounts.today_issued_transactions}
+          </p>
+        </div>
+        <div style={statsCardStyle}>
+          <h3>Medicines Issued</h3>
+          <p style={statsValueStyle}>
+            {dashboardCounts.medicine_issued_count}
           </p>
         </div>
         <div style={statsCardStyle}>

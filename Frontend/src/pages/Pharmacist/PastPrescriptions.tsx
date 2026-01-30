@@ -25,6 +25,8 @@ interface PrescriptionItem {
   total_days: number;  
   issued_days: number;
   dosage_per_day: number;
+  timing_flags: [number, number, number]; // [morning, afternoon, night]
+  food_timing: 'BEFORE' | 'AFTER' | 'WITH' | 'EMPTY_STOMACH' | null;
 }
 
 /* ---------- Helpers ---------- */
@@ -117,9 +119,18 @@ const filteredPrescriptions = prescriptions.filter((p) => {
   let matchesDate = true;
 
   if (filterDate) {
-    const issuedDate = new Date(p.issued_at).toISOString().split("T")[0];
-    matchesDate = issuedDate === filterDate;
-  }
+  const issued = new Date(p.issued_at);
+
+  const localDate =
+    issued.getFullYear() +
+    "-" +
+    String(issued.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(issued.getDate()).padStart(2, "0");
+
+  matchesDate = localDate === filterDate;
+}
+
 
   return matchesText && matchesDate;
 });
@@ -299,17 +310,35 @@ const filteredPrescriptions = prescriptions.filter((p) => {
             <p style={{paddingBottom: "2px"}}><strong>Specialization: </strong>{toTitleCase(specialization)}</p>
             <p style={{paddingBottom: "2px"}}><strong>Pharmacist: </strong>{toTitleCase(pharmacistName)}</p><br />
               {selected.items?.map((item, idx) => (
-                <div key={idx} style={detailCardStyle}>
-                  <p style={{paddingBottom: "2px"}}>
-                    <Pill size={18} /> <strong>Medicine:</strong>{" "}
-                    {toTitleCase(item.medicine_name)} - {toTitleCase(item.medicine_type)}
-                  </p> 
-                  <p style={{paddingBottom: "2px"}}><strong>Prescribed Duration:</strong> {item.total_days} days</p> 
-                  <p style={{paddingBottom: "2px"}}><strong>Dispensed Duration:</strong> {item.issued_days} days</p>
-                  <p style={{paddingBottom: "2px"}}><strong>Dosage per day:</strong> {item.dosage_per_day}</p>
-                  
-                </div>
-              ))}
+  <div key={idx} style={detailCardStyle}>
+    <p style={{paddingBottom: "2px"}}>
+      <Pill size={18} /> <strong>Medicine:</strong>{" "}
+      {toTitleCase(item.medicine_name)} - {toTitleCase(item.medicine_type)}
+    </p> <br />
+    <p style={{paddingBottom: "2px"}}><strong>Prescribed Duration:</strong> {item.total_days} days</p> 
+    <p style={{paddingBottom: "2px"}}><strong>Dispensed Duration:</strong> {item.issued_days} days</p>
+    <p style={{paddingBottom: "2px"}}><strong>Dosage per day:</strong> {item.dosage_per_day}</p>
+
+    {/* --- Food Timing --- */}
+    {item.food_timing && (
+      <p style={{paddingBottom: "2px"}}><strong>Food Instruction:</strong> {toTitleCase(item.food_timing.replace("_", " "))}</p>
+    )}<br />
+
+    {/* --- Timing Checkboxes --- */}
+    <div style={{ display: "flex", gap: "12px", marginTop: 4 }}>
+      <label>
+        <input type="checkbox" checked={item.timing_flags?.[0] === 1} readOnly /> Morning
+      </label>
+      <label>
+        <input type="checkbox" checked={item.timing_flags?.[1] === 1} readOnly /> Afternoon
+      </label>
+      <label>
+        <input type="checkbox" checked={item.timing_flags?.[2] === 1} readOnly /> Night
+      </label>
+    </div>
+  </div>
+))}
+
 
               <button onClick={() => setSelected(null)} style={backButtonStyle}>
                 ← Back to list

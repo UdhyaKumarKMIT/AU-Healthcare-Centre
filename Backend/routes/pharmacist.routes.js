@@ -345,4 +345,58 @@ router.get(
   pharmacistController.getDashboardCounts
 );
 
+/**
+ * @swagger
+ * /api/pharmacy/getPendingStock:
+ *   get:
+ *     summary: Get pending pharmacy stock verifications
+ *     tags: [Pharmacy]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending pharmacy stocks retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/getVerificationStock",
+  authenticate,
+  authorize(ROLES.PHARMACIST),
+  transactionController.getVerificationStock
+);
+
+/**
+ * @swagger
+ * /api/pharmacy/verifyStock:
+ *   post:
+ *     summary: Verify pharmacy stock by batch number
+ *     tags: [Pharmacy]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               batch_no:
+ *                 type: string
+ *                 example: "BATCH12345"
+ *     responses:
+ *       200:
+ *         description: Stock verification updated successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+  "/verifyStock",
+  authenticate,
+  authorize(ROLES.PHARMACIST),
+  transactionController.verifyPharmacyStock
+);
+
 export default router;

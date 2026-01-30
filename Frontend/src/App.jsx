@@ -20,11 +20,11 @@ import MedicinePage from './pages/Pharmacist/MedicinePage.jsx';
 import ExpiredStockPage from './pages/Pharmacist/ExpiredStock.jsx';
 import PendingPrescriptions from './pages/Pharmacist/PendingPrescriptions.jsx';
 import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.jsx';
+import IssuedMedicines from './pages/Pharmacist/MedicineVerification.jsx';
 
 // Clerical Assistant Pages
 import CA_dashboard from './pages/Clerical_Assistant/Dashboard.tsx';
-import CA_home from './pages/Clerical_Assistant/Home.tsx';
-import CA_requests from './pages/Clerical_Assistant/PendingRequests.tsx'; 
+import CA_home from './pages/Clerical_Assistant/Home.tsx'; 
 import CA_expiredStock from './pages/Clerical_Assistant/ExpiredStock.tsx';
 import CA_addStock from './pages/Clerical_Assistant/AddMedicineStockPage.tsx';
 import CA_issueStock from './pages/Clerical_Assistant/RequestDetails.tsx';
@@ -61,6 +61,7 @@ import LabTestReport from './pages/labtech/LabTestReport';
 
 
 import NurseDashboard from './pages/Nurse/NurseDashboard.jsx';
+import MedicineVerification from './pages/Pharmacist/MedicineVerification.jsx';
 function App() {
   return (
     <Provider store={store}>
@@ -76,6 +77,7 @@ function App() {
                <Route path="/pharmacist" element={<Dashboard />}>
                   <Route path="dashboard" element={<Home />} />
                   <Route path="profile" element={<Profile />} />
+                  <Route path="issuedMedicines" element={<MedicineVerification />} />
                   <Route path="prescriptionsDetails" element={<PrescriptionDetailsPage />} />
                   <Route path="medicineStock" element={<MedicinePage />} />
                   <Route path="expiredStock" element={<ExpiredStockPage />} />
@@ -89,7 +91,6 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['CLERICAL_ASSISTANT']} />}>
               <Route path="/clerical_assistant" element={<CA_dashboard />}> 
                 <Route path="dashboard" element={<CA_home />} />
-                <Route path="requests" element={<CA_requests />} /> 
                 <Route path="expiryMedicine" element={<CA_expiredStock />} />
                 <Route path="addMedicineStock/:name" element={<CA_addStock />} />
                 <Route path="issueStock" element={<CA_issueStock />} />

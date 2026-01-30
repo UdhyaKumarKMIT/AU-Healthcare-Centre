@@ -1,4 +1,5 @@
-import pool from "../../config/db.js";
+import sequelize from "../../config/sequelize.js";
+import { QueryTypes } from "sequelize";
 
 const SUBSTOCK_TABLE_MAP = {
   1: "dressing_stock",
@@ -7,41 +8,36 @@ const SUBSTOCK_TABLE_MAP = {
   4: "pharmacy_stock",
 };
 
-const TABLE_ATTRIBUTE = {
-  1: "dressing_substock",
-  2: "labtech_substock",
-  3: "nurse_substock",
-  4: "pharmacy_substock",
-};
-
 export const issueMedicineService = async (medicine_id, batches) => {
   if (!medicine_id || !Array.isArray(batches) || batches.length === 0) {
     throw new Error("Missing required fields");
   }
 
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-
+  return await sequelize.transaction(async (transaction) => {
     for (const batch of batches) {
       const { batch_id, quantity, substockCode } = batch;
 
-      const substockTable = SUBSTOCK_TABLE_MAP[substockCode];
-      const tableAttribute = TABLE_ATTRIBUTE[substockCode];
+      const substockTable = SUBSTOCK_TABLE_MAP[substockCode]; 
 
       if (!substockTable) {
         throw new Error(`Invalid substock code: ${substockCode}`);
       }
 
-      // 1️⃣ Check & lock main stock
-      const [mainRows] = await conn.query(
+      /* ============================
+         1️⃣ Check & lock main stock
+      ============================ */
+      const mainRows = await sequelize.query(
         `
         SELECT quantity, expiry
-        FROM medicine_main_stock 
+        FROM medicine_main_stock
         WHERE medicine_id = ? AND batch_no = ?
         FOR UPDATE
         `,
-        [medicine_id, batch_id]
+        {
+          replacements: [medicine_id, batch_id],
+          type: QueryTypes.SELECT,
+          transaction
+        }
       );
 
       if (!mainRows.length) {
@@ -57,78 +53,83 @@ export const issueMedicineService = async (medicine_id, batches) => {
         );
       }
 
-      // 2️⃣ Upsert into substock
-      const [subRows] = await conn.query(
+      /* ============================
+         2️⃣ Upsert into substock
+      ============================ */
+      const subRows = await sequelize.query(
         `
-        SELECT quantity 
+        SELECT quantity
         FROM ${substockTable}
         WHERE medicine_id = ? AND batch_no = ?
         FOR UPDATE
         `,
-        [medicine_id, batch_id]
+        {
+          replacements: [medicine_id, batch_id],
+          type: QueryTypes.SELECT,
+          transaction
+        }
       );
 
       if (subRows.length === 0) {
         // INSERT
-        await conn.query(
+        await sequelize.query(
           `
           INSERT INTO ${substockTable}
-          (medicine_id, batch_no, quantity, expiry, sub_stock_id)
-          VALUES (?, ?, ?, ?, UUID())
+          (medicine_id, batch_no, quantity, expiry, sub_stock_id, verification)
+          VALUES (?, ?, ?, ?, UUID(), 'waiting')
           `,
-          [medicine_id, batch_id, quantity, stockExpiry]
+          {
+            replacements: [medicine_id, batch_id, quantity, stockExpiry],
+            transaction
+          }
         );
       } else {
         // UPDATE
-        await conn.query(
+        await sequelize.query(
           `
           UPDATE ${substockTable}
-          SET quantity = quantity + ?
+          SET quantity = quantity + ? AND verification = 'waiting'
           WHERE medicine_id = ? AND batch_no = ?
           `,
-          [quantity, medicine_id, batch_id]
+          {
+            replacements: [quantity, medicine_id, batch_id],
+            transaction
+          }
         );
       }
 
-      // 3️⃣ Decrease from main stock
-      await conn.query(
+      /* ============================
+         3️⃣ Decrease main stock
+      ============================ */
+      await sequelize.query(
         `
         UPDATE medicine_main_stock
         SET quantity = quantity - ?
         WHERE medicine_id = ? AND batch_no = ?
         `,
-        [quantity, medicine_id, batch_id]
+        {
+          replacements: [quantity, medicine_id, batch_id],
+          transaction
+        }
       );
 
-      // 4️⃣ Delete main stock row if zero
+      /* ============================
+         4️⃣ Delete if zero
+      ============================ */
       if (mainStockQty === quantity) {
-        await conn.query(
+        await sequelize.query(
           `
           DELETE FROM medicine_main_stock
           WHERE medicine_id = ? AND batch_no = ?
           `,
-          [medicine_id, batch_id]
+          {
+            replacements: [medicine_id, batch_id],
+            transaction
+          }
         );
       }
-
-      // 5️⃣ Update stock_request to mark substock as issued
-      await conn.query(
-        `
-        UPDATE stock_request
-        SET ${tableAttribute} = 0
-        WHERE medicine_id = ?
-        `,
-        [medicine_id]
-      );
     }
 
-    await conn.commit();
     return true; // success
-  } catch (err) {
-    await conn.rollback();
-    console.error("Issue medicine service error:", err.message);
-    throw err;
-  } finally {
-    conn.release();
-  }
+  });
 };
