@@ -35,8 +35,8 @@ const ReceptionistDashboard = () => {
   const visits = useSelector(selectVisits);
   const visitsLoading = useSelector(selectVisitsLoading);
 
-  const [showRegisterPatient, setShowRegisterPatient] = useState(true);
-  const [showDoctorAvailability, setShowDoctorAvailability] = useState(true);
+  const [showRegisterPatient, setShowRegisterPatient] = useState(false);
+  const [showDoctorAvailability, setShowDoctorAvailability] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -62,12 +62,24 @@ const ReceptionistDashboard = () => {
     }
   }).length || 0;
 
+  // console.log('📊 Dashboard State:', {
+  //   patientsCount: patients?.length,
+  //   doctorsCount: doctors?.length,
+  //   visitsCount: visits?.length,
+  //   visits: visits
+  // });
+
   const handleRoleSwap = () => {
     navigate('/nurse');
   };
 
-  const handleRefreshVisits = ({ from, to } = {}) => {
-    dispatch(fetchVisits({ from, to }));
+  const handleRefreshVisits = (params = {}) => {
+    // Only pass non-empty values
+    const cleanParams = {};
+    if (params.from && params.from.trim()) cleanParams.from = params.from;
+    if (params.to && params.to.trim()) cleanParams.to = params.to;
+
+    dispatch(fetchVisits(cleanParams));
   };
 
   if (authLoading) {

@@ -1,15 +1,19 @@
 import {
   getPharmacistDetailsService,
   updatePharmacistDetailsService,
+  getActivePharmacistStaffByCodeService,
   fetchDashboardCountsService
 } from "../../services/pharmacist/pharmacist.service.js";
 
 export const getPharmacistDetails = async (req, res) => {
-  const { pharmacist_id } = req.query;
-  if (!pharmacist_id) return res.status(400).json({ message: "pharmacist_id query parameter is required" });
+  const { secret_code } = req.query;
+  if (!secret_code) return res.status(400).json({ message: "secret_code query parameter is required" });
 
   try {
-    const pharmacist = await getPharmacistDetailsService(pharmacist_id);
+    const staff = await getActivePharmacistStaffByCodeService(secret_code);
+    if (!staff) return res.status(401).json({ message: "Invalid secret code" });
+
+    const pharmacist = await getPharmacistDetailsService(staff.staff_id);
     if (!pharmacist) return res.status(404).json({ message: "Pharmacist not found" });
     res.json(pharmacist);
   } catch (err) {
@@ -19,14 +23,20 @@ export const getPharmacistDetails = async (req, res) => {
 };
 
 export const updatePharmacistDetails = async (req, res) => {
-  const { pharmacist_id, name, email, phone } = req.body;
-  if (!pharmacist_id) return res.status(400).json({ message: "pharmacist_id is required" });
+  const { secret_code, name, email, phone } = req.body;
+  if (!secret_code) return res.status(400).json({ message: "secret_code is required" });
   if (!name && !email && !phone) return res.status(400).json({ message: "At least one field is required" });
 
   try {
-    const affectedRows = await updatePharmacistDetailsService(pharmacist_id, { name, email, phone });
+    const staff = await getActivePharmacistStaffByCodeService(secret_code);
+    if (!staff) return res.status(401).json({ message: "Invalid secret code" });
+
+    const affectedRows = await updatePharmacistDetailsService(staff.staff_id, { name, email, phone });
     if (!affectedRows) return res.status(404).json({ message: "Pharmacist not found" });
-    res.json({ message: "Pharmacist details updated successfully" });
+
+    const pharmacist = await getPharmacistDetailsService(staff.staff_id);
+    if (!pharmacist) return res.status(404).json({ message: "Pharmacist not found" });
+    res.json(pharmacist);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Unable to update pharmacist details" });

@@ -1,16 +1,34 @@
 // src/components/Header/Header.jsx
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Header.module.css';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const token = localStorage.getItem('token');
+  const isAuthenticated = !!user && !!token;
+
+  useEffect(() => {
+    // If token is missing, ensure we don't show auth UI and force login flow.
+    if (!token) {
+      if (user) logout();
+
+      const onLoginFlow = location.pathname === '/' || location.pathname === '/login' || location.pathname.startsWith('/login/');
+      if (!onLoginFlow) {
+        navigate('/login', { replace: true });
+      }
+    }
+    // Intentionally depends on location changes so URL updates re-check auth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const handleNavigation = (path) => {
@@ -78,16 +96,16 @@ const Header = () => {
 
         {/* Right Section - User Info & Logout */}
         <div className={styles.rightSection}>
-          {user ? (
+          {isAuthenticated ? (
             <>
               <div className={styles.userInfo}>
                 <div className={styles.userRole}>
-                  {user.role === 'DOCTOR' || user.role === 'doctor' ? 'Doctor' : 
-                   user.role === 'NURSE_RECEPTIONIST' || user.role === 'receptionist' ? 'Nurse/Receptionist' : 
-                   user.role === 'ADMIN' || user.role === 'administrator' ? 'Administrator' :
-                   user.role === 'PHARMACIST' ? 'Pharmacist' :
-                   user.role === 'LAB_TECHNICIAN' ? 'Lab Technician' :
-                   user.role === 'PATIENT' || user.role === 'patient' ? 'Patient' : 'User'}
+                  {user.role === 'DOCTOR' || user.role === 'doctor' ? 'Doctor' :
+                    user.role === 'NURSE_RECEPTIONIST' || user.role === 'receptionist' ? 'Nurse/Receptionist' :
+                      user.role === 'ADMIN' || user.role === 'administrator' ? 'Administrator' :
+                        user.role === 'PHARMACIST' ? 'Pharmacist' :
+                          user.role === 'LAB_TECHNICIAN' ? 'Lab Technician' :
+                            user.role === 'PATIENT' || user.role === 'patient' ? 'Patient' : 'User'}
                 </div>
                 {user.role === 'DOCTOR' || user.role === 'doctor' || user.role === 'ADMIN' || user.role === 'administrator' || user.role === 'LAB_TECHNICIAN' || user.role === 'lab_technician' || user.role === 'PATIENT' || user.role === 'patient' ? (
                   <div className={styles.userName}>{user.name}</div>

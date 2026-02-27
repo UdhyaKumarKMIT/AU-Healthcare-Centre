@@ -2,6 +2,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import ApiError from '../utils/ApiError.js';
+import { normalizeDateBound } from '../utils/dateRange.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 import {
@@ -27,25 +28,25 @@ import {
 export const getAdminStats = async () => {
   try {
     console.log('📊 Fetching admin stats from database...');
-    
+
     // Get total users count
     const userCount = await User.count();
-    
+
     // Get doctors count
     const doctorCount = await Doctor.count();
-    
+
     // Get staff counts by role (NURSE_RECEPTIONIST, PHARMACIST, etc.)
     const nurseReceptionistCount = await StaffDetails.count({
       where: { role: 'NURSE_RECEPTIONIST' }
     });
-    
+
     const pharmacistCount = await StaffDetails.count({
       where: { role: 'PHARMACIST' }
     });
-    
+
     // Get patient count
     const patientCount = await Patient.count();
-    
+
     // Get role distribution
     const roleCounts = await User.findAll({
       attributes: [
@@ -55,12 +56,12 @@ export const getAdminStats = async () => {
       group: ['role'],
       raw: true
     });
-    
+
     const roleCountsObj = roleCounts.reduce((acc, row) => {
       acc[row.role.toLowerCase()] = parseInt(row.count);
       return acc;
     }, {});
-    
+
     // Get today's visits
     const todayVisits = await Visit.count({
       where: sequelize.where(
@@ -68,7 +69,7 @@ export const getAdminStats = async () => {
         sequelize.fn('CURDATE')
       )
     });
-    
+
     // Get new patients today
     const newPatientsToday = await Patient.count({
       where: sequelize.where(
@@ -76,16 +77,16 @@ export const getAdminStats = async () => {
         sequelize.fn('CURDATE')
       )
     });
-    
+
     // Get active users by status
     const activeUsers = await User.count({
       where: { status: 'ACTIVE' }
     });
-    
+
     const inactiveUsers = await User.count({
       where: { status: 'INACTIVE' }
     });
-    
+
     const stats = {
       totalUsers: userCount,
       totalDoctors: doctorCount,
@@ -100,10 +101,10 @@ export const getAdminStats = async () => {
       inactiveUsers: inactiveUsers,
       roleDistribution: roleCountsObj
     };
-    
+
     console.log('✅ Final Stats Object:', stats);
     return stats;
-    
+
   } catch (error) {
     console.error('❌ Error fetching admin stats:', error);
     throw new ApiError(500, 'Failed to fetch admin statistics: ' + error.message);
@@ -113,7 +114,7 @@ export const getAdminStats = async () => {
 export const getPatientOverview = async () => {
   try {
     console.log('📊 Fetching patient overview...');
-    
+
     // Get patient demographics by gender
     const demographics = await Patient.findAll({
       attributes: [
@@ -126,7 +127,7 @@ export const getPatientOverview = async () => {
       group: ['gender'],
       raw: true
     });
-    
+
     // Get visit trends for last 6 months
     const visitTrends = await Visit.findAll({
       attributes: [
@@ -148,7 +149,7 @@ export const getPatientOverview = async () => {
       order: [[sequelize.literal('year'), 'ASC'], [sequelize.literal('month_num'), 'ASC']],
       raw: true
     });
-    
+
     // Get patient type distribution
     const patientTypes = await Patient.findAll({
       attributes: [
@@ -158,7 +159,7 @@ export const getPatientOverview = async () => {
       group: ['patient_type'],
       raw: true
     });
-    
+
     const result = {
       demographics: demographics.reduce((acc, row) => {
         acc[row.gender.toLowerCase()] = parseInt(row.count);
@@ -173,9 +174,9 @@ export const getPatientOverview = async () => {
         return acc;
       }, {})
     };
-    
+
     return result;
-    
+
   } catch (error) {
     console.error('❌ Error fetching patient overview:', error);
     throw new ApiError(500, 'Failed to fetch patient overview: ' + error.message);
@@ -185,23 +186,23 @@ export const getPatientOverview = async () => {
 export const getAllUsers = async ({ role, status, search }) => {
   try {
     console.log('👥 Fetching users with filters:', { role, status, search });
-    
+
     const whereClause = {};
-    
+
     if (role && role !== 'all') {
       whereClause.role = role.toUpperCase();
     }
-    
+
     if (status && status !== 'all') {
       whereClause.status = status.toUpperCase();
     }
-    
+
     if (search) {
       whereClause[Op.or] = [
         { username: { [Op.like]: `%${search}%` } }
       ];
     }
-    
+
     const users = await User.findAll({
       where: whereClause,
       include: [
@@ -218,12 +219,12 @@ export const getAllUsers = async ({ role, status, search }) => {
       ],
       order: [['created_at', 'DESC']]
     });
-    
+
     const mappedUsers = users.map(user => {
       const userData = user.toJSON();
       const doctor = userData.Doctor;
       const staff = userData.StaffDetails && userData.StaffDetails[0];
-      
+
       return {
         user_id: userData.user_id,
         name: doctor?.name || staff?.name || 'Unknown',
@@ -235,44 +236,44 @@ export const getAllUsers = async ({ role, status, search }) => {
         registeredDate: userData.created_at
       };
     });
-    
+
     return mappedUsers;
-    
+
   } catch (error) {
     console.error('❌ Error fetching users:', error);
     throw new ApiError(500, 'Failed to fetch users: ' + error.message);
   }
 };
 
-export const createUser = async ({ 
-  name, 
-  username, 
-  password, 
-  role, 
-  phone, 
+export const createUser = async ({
+  name,
+  username,
+  password,
+  role,
+  phone,
   email,
-  specialization, 
+  specialization,
   code,
-  is_role_specific = false 
+  is_role_specific = false
 }) => {
   const transaction = await sequelize.transaction();
-  
+
   try {
     console.log('➕ Creating user:', { name, username, role });
-    
+
     // Check if username already exists
     const existing = await User.findOne({
       where: { username }
     });
-    
+
     if (existing) {
       await transaction.rollback();
       throw new ApiError(409, 'User with this username already exists');
     }
-    
+
     const userId = crypto.randomUUID();
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // Insert into users table
     await User.create({
       user_id: userId,
@@ -282,7 +283,7 @@ export const createUser = async ({
       status: 'ACTIVE',
       is_role_specific
     }, { transaction });
-    
+
     // Create role-specific record
     if (role.toUpperCase() === 'DOCTOR') {
       await Doctor.create({
@@ -316,9 +317,9 @@ export const createUser = async ({
         status: 'ACTIVE'
       }, { transaction });
     }
-    
+
     await transaction.commit();
-    
+
     return {
       user_id: userId,
       name,
@@ -332,7 +333,7 @@ export const createUser = async ({
     if (!transaction.finished) {
       await transaction.rollback();
     }
-    
+
     if (error instanceof ApiError) {
       throw error;
     }
@@ -343,13 +344,13 @@ export const createUser = async ({
 export const updateUserStatus = async (userId, status, reason) => {
   try {
     const user = await User.findByPk(userId);
-    
+
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
-    
+
     await user.update({ status: status.toUpperCase() });
-    
+
     // Log the status change in audit log
     await SystemAuditLog.create({
       log_id: crypto.randomUUID(),
@@ -360,7 +361,7 @@ export const updateUserStatus = async (userId, status, reason) => {
       new_value: JSON.stringify({ status: status.toUpperCase() }),
       remarks: reason || 'Status updated by admin'
     });
-    
+
     return { message: 'User status updated successfully' };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -372,18 +373,18 @@ export const updateUserStatus = async (userId, status, reason) => {
 
 export const deleteUser = async (userId) => {
   const transaction = await sequelize.transaction();
-  
+
   try {
     const user = await User.findByPk(userId, { transaction });
-    
+
     if (!user) {
       await transaction.rollback();
       throw new ApiError(404, 'User not found');
     }
-    
+
     // The foreign key constraints with ON DELETE CASCADE will handle related records
     await user.destroy({ transaction });
-    
+
     // Log the deletion
     await SystemAuditLog.create({
       log_id: crypto.randomUUID(),
@@ -392,16 +393,16 @@ export const deleteUser = async (userId) => {
       entity_id: userId,
       remarks: 'User deleted by admin'
     }, { transaction });
-    
+
     await transaction.commit();
-    
+
     return { message: 'User deleted successfully' };
   } catch (error) {
     // Only rollback if transaction hasn't been committed or rolled back
     if (!transaction.finished) {
       await transaction.rollback();
     }
-    
+
     if (error instanceof ApiError) {
       throw error;
     }
@@ -418,12 +419,12 @@ export const getAllDoctors = async () => {
       }],
       order: [['name', 'ASC']]
     });
-    
+
     // Get today's visit count for each doctor
     const doctorsWithStats = await Promise.all(
       doctors.map(async (doctor) => {
         const doctorData = doctor.toJSON();
-        
+
         const visitCount = await Visit.count({
           where: {
             doctor_id: doctorData.doctor_id,
@@ -433,7 +434,7 @@ export const getAllDoctors = async () => {
             )
           }
         });
-        
+
         return {
           id: doctorData.doctor_id,
           doctor_id: doctorData.doctor_id,
@@ -450,9 +451,9 @@ export const getAllDoctors = async () => {
         };
       })
     );
-    
+
     return doctorsWithStats;
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch doctors: ' + error.message);
   }
@@ -468,12 +469,12 @@ export const getAllReceptionists = async () => {
       }],
       order: [['name', 'ASC']]
     });
-    
+
     // Get today's visit registrations for each receptionist
     const receptionistsWithStats = await Promise.all(
       receptionists.map(async (receptionist) => {
         const receptionistData = receptionist.toJSON();
-        
+
         const visitCount = await Visit.count({
           where: {
             created_by_code: receptionistData.code,
@@ -483,7 +484,7 @@ export const getAllReceptionists = async () => {
             )
           }
         });
-        
+
         return {
           id: receptionistData.staff_id,
           staff_id: receptionistData.staff_id,
@@ -500,9 +501,9 @@ export const getAllReceptionists = async () => {
         };
       })
     );
-    
+
     return receptionistsWithStats;
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch receptionists: ' + error.message);
   }
@@ -519,12 +520,12 @@ export const getAllNurses = async () => {
       }],
       order: [['name', 'ASC']]
     });
-    
+
     // Get today's task count for each nurse
     const nursesWithStats = await Promise.all(
       nurses.map(async (nurse) => {
         const nurseData = nurse.toJSON();
-        
+
         const taskCount = await NurseTransaction.count({
           where: {
             performed_by_code: nurseData.code,
@@ -534,7 +535,7 @@ export const getAllNurses = async () => {
             )
           }
         });
-        
+
         return {
           id: nurseData.staff_id,
           nurse_id: nurseData.staff_id,
@@ -552,9 +553,9 @@ export const getAllNurses = async () => {
         };
       })
     );
-    
+
     return nursesWithStats;
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch nurses: ' + error.message);
   }
@@ -570,12 +571,12 @@ export const getAllPharmacists = async () => {
       }],
       order: [['name', 'ASC']]
     });
-    
+
     // Get today's prescription transactions for each pharmacist
     const pharmacistsWithStats = await Promise.all(
       pharmacists.map(async (pharmacist) => {
         const pharmacistData = pharmacist.toJSON();
-        
+
         const transactionCount = await PrescriptionTransaction.count({
           where: {
             issued_by_code: pharmacistData.code,
@@ -585,7 +586,7 @@ export const getAllPharmacists = async () => {
             )
           }
         });
-        
+
         return {
           id: pharmacistData.staff_id,
           pharmacist_id: pharmacistData.staff_id,
@@ -602,9 +603,9 @@ export const getAllPharmacists = async () => {
         };
       })
     );
-    
+
     return pharmacistsWithStats;
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch pharmacists: ' + error.message);
   }
@@ -613,18 +614,18 @@ export const getAllPharmacists = async () => {
 export const getAllVisits = async ({ date, status }) => {
   try {
     const whereClause = {};
-    
+
     if (date) {
       whereClause[Op.and] = sequelize.where(
         sequelize.fn('DATE', sequelize.col('visit_date')),
         date
       );
     }
-    
+
     if (status && status !== 'all') {
       whereClause.status = status.toUpperCase();
     }
-    
+
     const visits = await Visit.findAll({
       where: whereClause,
       include: [
@@ -640,7 +641,7 @@ export const getAllVisits = async ({ date, status }) => {
       order: [['visit_date', 'DESC']],
       limit: 100
     });
-    
+
     return visits.map(visit => {
       const visitData = visit.toJSON();
       return {
@@ -658,7 +659,7 @@ export const getAllVisits = async ({ date, status }) => {
         specialization: visitData.Doctor?.specialization
       };
     });
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch visits: ' + error.message);
   }
@@ -667,11 +668,11 @@ export const getAllVisits = async ({ date, status }) => {
 export const getMedicineInventory = async ({ status, search }) => {
   try {
     const whereClause = {};
-    
+
     if (search) {
       whereClause.name = { [Op.like]: `%${search}%` };
     }
-    
+
     const medicines = await Medicine.findAll({
       where: whereClause,
       attributes: [
@@ -688,10 +689,10 @@ export const getMedicineInventory = async ({ status, search }) => {
       order: [['name', 'ASC']],
       raw: true
     });
-    
+
     return medicines.map(item => {
       const total_stock = parseInt(item.main_stock) + parseInt(item.pharmacy_stock) + parseInt(item.nurse_stock) + parseInt(item.dressing_stock);
-      
+
       return {
         medicine_id: item.medicine_id,
         name: item.name,
@@ -703,11 +704,11 @@ export const getMedicineInventory = async ({ status, search }) => {
         total_stock: total_stock,
         batch_count: parseInt(item.batch_count),
         nearest_expiry: item.nearest_expiry,
-        status: total_stock === 0 ? 'OUT_OF_STOCK' : 
-                total_stock < 20 ? 'LOW_STOCK' : 'IN_STOCK'
+        status: total_stock === 0 ? 'OUT_OF_STOCK' :
+          total_stock < 20 ? 'LOW_STOCK' : 'IN_STOCK'
       };
     });
-    
+
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch medicine inventory: ' + error.message);
   }
@@ -717,7 +718,7 @@ export const getMedicineInventory = async ({ status, search }) => {
 const safeJsonParse = (jsonString) => {
   if (!jsonString) return null;
   if (typeof jsonString === 'object') return jsonString; // Already parsed
-  
+
   try {
     return JSON.parse(jsonString);
   } catch (e) {
@@ -729,18 +730,21 @@ const safeJsonParse = (jsonString) => {
 export const getSystemLogs = async ({ startDate, endDate }) => {
   try {
     console.log('📋 Fetching system logs...');
-    
+
     const whereClause = {};
 
-    if (startDate) {
-      whereClause.created_at = { [Op.gte]: startDate };
+    const normalizedStart = normalizeDateBound(startDate, 'start');
+    const normalizedEnd = normalizeDateBound(endDate, 'end');
+
+    if (normalizedStart) {
+      whereClause.created_at = { [Op.gte]: normalizedStart };
     }
 
-    if (endDate) {
+    if (normalizedEnd) {
       if (whereClause.created_at) {
-        whereClause.created_at = { ...whereClause.created_at, [Op.lte]: endDate };
+        whereClause.created_at = { ...whereClause.created_at, [Op.lte]: normalizedEnd };
       } else {
-        whereClause.created_at = { [Op.lte]: endDate };
+        whereClause.created_at = { [Op.lte]: normalizedEnd };
       }
     }
 
@@ -750,9 +754,9 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
       limit: 200,
       raw: true
     });
-    
+
     console.log(`✅ Found ${logs.length} log entries`);
-    
+
     // Format the logs for better readability with safe JSON parsing
     const formattedLogs = logs.map(log => {
       try {
@@ -789,16 +793,16 @@ export const getSystemLogs = async ({ startDate, endDate }) => {
         };
       }
     });
-    
+
     return formattedLogs;
 
   } catch (error) {
     console.error('❌ Error in getSystemLogs:', error);
     console.error('Error stack:', error.stack);
-    
+
     // Return more specific error information
     throw new ApiError(
-      500, 
+      500,
       `Failed to fetch system logs: ${error.message}. Please check if the system_audit_log table exists.`
     );
   }

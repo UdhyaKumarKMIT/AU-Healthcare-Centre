@@ -19,14 +19,62 @@ export const fetchNurseTasks = createAsyncThunk(
       const response = await fetch(`${API_BASE}/nurse/tasks`, {
         headers: getAuthHeaders(getState)
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         return rejectWithValue(error.message || 'Failed to fetch tasks');
       }
-      
+
       const data = await response.json();
       return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchCompletedNurseTasks = createAsyncThunk(
+  'nurse/fetchCompletedTasks',
+  async ({ from, to } = {}, { getState, rejectWithValue }) => {
+    try {
+      const url = new URL(`${API_BASE}/nurse/tasks`);
+      url.searchParams.set('status', 'COMPLETED');
+      if (from) url.searchParams.set('from', from);
+      if (to) url.searchParams.set('to', to);
+
+      const response = await fetch(url.toString(), {
+        headers: getAuthHeaders(getState)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return rejectWithValue(error.message || 'Failed to fetch completed tasks');
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchCompletedNurseTasksToday = createAsyncThunk(
+  'nurse/fetchCompletedTasksToday',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const url = new URL(`${API_BASE}/nurse/tasks`);
+      url.searchParams.set('status', 'COMPLETED');
+
+      const response = await fetch(url.toString(), {
+        headers: getAuthHeaders(getState)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return rejectWithValue(error.message || 'Failed to fetch completed tasks (today)');
+      }
+
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -40,12 +88,12 @@ export const fetchTaskDetails = createAsyncThunk(
       const response = await fetch(`${API_BASE}/nurse/task/${taskId}/details`, {
         headers: getAuthHeaders(getState)
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         return rejectWithValue(error.message || 'Failed to fetch task details');
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -61,12 +109,12 @@ export const fetchCompletedTaskDetails = createAsyncThunk(
       const response = await fetch(`${API_BASE}/nurse/task/${taskId}/completed-details`, {
         headers: getAuthHeaders(getState)
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         return rejectWithValue(error.message || 'Failed to fetch completed task details');
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -83,27 +131,27 @@ export const completeTask = createAsyncThunk(
       console.log('🔍 [REDUX THUNK] taskId:', taskId);
       console.log('🔍 [REDUX THUNK] payload:', payload);
       console.log('🔍 [REDUX THUNK] payload.secret_code:', payload.secret_code);
-      
+
       const headers = getAuthHeaders(getState);
       console.log('🔍 [REDUX THUNK] headers:', headers);
-      
+
       const bodyString = JSON.stringify(payload);
       console.log('🔍 [REDUX THUNK] body string:', bodyString);
-      
+
       const response = await fetch(`${API_BASE}/nurse/task/${taskId}/complete`, {
         method: 'POST',
         headers: headers,
         body: bodyString
       });
-      
+
       console.log('🔍 [REDUX THUNK] response status:', response.status);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.log('❌ [REDUX THUNK] error response:', error);
         return rejectWithValue(error.message || 'Failed to complete task');
       }
-      
+
       const data = await response.json();
       console.log('✅ [REDUX THUNK] success response:', data);
       return { ...data, taskId };
@@ -121,12 +169,12 @@ export const fetchAvailableStock = createAsyncThunk(
       const response = await fetch(`${API_BASE}/nurse/stock?stock_type=${stockType}`, {
         headers: getAuthHeaders(getState)
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         return rejectWithValue(error.message || 'Failed to fetch stock');
       }
-      
+
       const data = await response.json();
       return { stockType, data };
     } catch (error) {
@@ -144,11 +192,11 @@ export const verifySecretCode = createAsyncThunk(
         headers: getAuthHeaders(getState),
         body: JSON.stringify({ secret_code: secretCode })
       });
-      
+
       if (!response.ok) {
         return rejectWithValue('Invalid code');
       }
-      
+
       const data = await response.json();
       return data.valid;
     } catch (error) {
@@ -160,6 +208,8 @@ export const verifySecretCode = createAsyncThunk(
 // Initial State
 const initialState = {
   tasks: [],
+  completedTasks: [],
+  completedTasksToday: [],
   currentTask: null,
   completedTaskDetails: null,
   stock: {
@@ -168,6 +218,8 @@ const initialState = {
   },
   loading: {
     tasks: false,
+    completedTasks: false,
+    completedTasksToday: false,
     taskDetails: false,
     completedTaskDetails: false,
     completeTask: false,
@@ -176,6 +228,8 @@ const initialState = {
   },
   error: {
     tasks: null,
+    completedTasks: null,
+    completedTasksToday: null,
     taskDetails: null,
     completedTaskDetails: null,
     completeTask: null,
@@ -229,7 +283,35 @@ const nurseSlice = createSlice({
         state.loading.tasks = false;
         state.error.tasks = action.payload;
       })
-      
+
+      // Fetch Completed Tasks (filtered)
+      .addCase(fetchCompletedNurseTasks.pending, (state) => {
+        state.loading.completedTasks = true;
+        state.error.completedTasks = null;
+      })
+      .addCase(fetchCompletedNurseTasks.fulfilled, (state, action) => {
+        state.loading.completedTasks = false;
+        state.completedTasks = action.payload;
+      })
+      .addCase(fetchCompletedNurseTasks.rejected, (state, action) => {
+        state.loading.completedTasks = false;
+        state.error.completedTasks = action.payload;
+      })
+
+      // Fetch Completed Tasks Today (stat)
+      .addCase(fetchCompletedNurseTasksToday.pending, (state) => {
+        state.loading.completedTasksToday = true;
+        state.error.completedTasksToday = null;
+      })
+      .addCase(fetchCompletedNurseTasksToday.fulfilled, (state, action) => {
+        state.loading.completedTasksToday = false;
+        state.completedTasksToday = action.payload;
+      })
+      .addCase(fetchCompletedNurseTasksToday.rejected, (state, action) => {
+        state.loading.completedTasksToday = false;
+        state.error.completedTasksToday = action.payload;
+      })
+
       // Fetch Task Details
       .addCase(fetchTaskDetails.pending, (state) => {
         state.loading.taskDetails = true;
@@ -243,7 +325,7 @@ const nurseSlice = createSlice({
         state.loading.taskDetails = false;
         state.error.taskDetails = action.payload;
       })
-      
+
       // Fetch Completed Task Details
       .addCase(fetchCompletedTaskDetails.pending, (state) => {
         state.loading.completedTaskDetails = true;
@@ -257,7 +339,7 @@ const nurseSlice = createSlice({
         state.loading.completedTaskDetails = false;
         state.error.completedTaskDetails = action.payload;
       })
-      
+
       // Complete Task
       .addCase(completeTask.pending, (state) => {
         state.loading.completeTask = true;
@@ -276,7 +358,7 @@ const nurseSlice = createSlice({
         state.loading.completeTask = false;
         state.error.completeTask = action.payload;
       })
-      
+
       // Fetch Stock
       .addCase(fetchAvailableStock.pending, (state) => {
         state.loading.stock = true;
@@ -290,7 +372,7 @@ const nurseSlice = createSlice({
         state.loading.stock = false;
         state.error.stock = action.payload;
       })
-      
+
       // Verify Secret Code
       .addCase(verifySecretCode.pending, (state) => {
         state.loading.verifyCode = true;
@@ -320,23 +402,26 @@ export const {
 
 // Selectors
 export const selectTasks = (state) => state.nurse.tasks;
-export const selectPendingTasks = (state) => 
+export const selectPendingTasks = (state) =>
   state.nurse.tasks.filter(t => t.status !== 'COMPLETED');
-export const selectCompletedTasks = (state) => 
-  state.nurse.tasks.filter(t => t.status === 'COMPLETED');
+export const selectCompletedTasks = (state) => state.nurse.completedTasks;
+export const selectCompletedTasksToday = (state) => state.nurse.completedTasksToday;
 export const selectCurrentTask = (state) => state.nurse.currentTask;
 export const selectCompletedTaskDetails = (state) => state.nurse.completedTaskDetails;
 export const selectNurseStock = (state) => state.nurse.stock.NURSE;
 export const selectDressingStock = (state) => state.nurse.stock.DRESSING;
-export const selectStock = (stockType) => (state) => 
+export const selectStock = (stockType) => (state) =>
   state.nurse.stock[stockType] || [];
 export const selectLoading = (state) => state.nurse.loading;
 export const selectError = (state) => state.nurse.error;
 export const selectIsTasksLoading = (state) => state.nurse.loading.tasks;
+export const selectIsCompletedTasksLoading = (state) => state.nurse.loading.completedTasks;
+export const selectIsCompletedTasksTodayLoading = (state) => state.nurse.loading.completedTasksToday;
 export const selectIsTaskDetailsLoading = (state) => state.nurse.loading.taskDetails;
 export const selectIsCompletingTask = (state) => state.nurse.loading.completeTask;
 export const selectIsStockLoading = (state) => state.nurse.loading.stock;
 export const selectTasksError = (state) => state.nurse.error.tasks;
+export const selectCompletedTasksError = (state) => state.nurse.error.completedTasks;
 export const selectCompleteTaskError = (state) => state.nurse.error.completeTask;
 export const selectLastRefresh = (state) => state.nurse.lastRefresh;
 export const selectCodeVerified = (state) => state.nurse.codeVerified;

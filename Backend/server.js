@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     await sequelize.authenticate();
-    // Creates tables for all defined models if they do not exist
-    // Note: avoid `alter: true` to prevent unintended schema changes.
-    await sequelize.sync({ alter: false });
+    console.log('✅ Database connection has been established successfully.');
+
+    // await sequelize.sync({ alter: true }); // REMOVED
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

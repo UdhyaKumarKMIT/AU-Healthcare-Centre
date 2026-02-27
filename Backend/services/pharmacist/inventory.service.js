@@ -120,71 +120,76 @@ export const getExpiredMedicineBatchesService = async () => {
 ============================ */
 export const clearMedicineBatchService = async (
   batch_id,
-  pharmacist_id,
-  transaction
-) => { 
+  secret_code
+) => {
+  const transaction = await sequelize.transaction();
 
-  const staffRows = await sequelize.query(
-    `
-    SELECT code
-    FROM staff_details
-    WHERE staff_id = ?
-      AND role = 'PHARMACIST'
-    `,
-    {
-      replacements: [pharmacist_id],
-      type: QueryTypes.SELECT,
-      transaction
+  try {
+    const staffRows = await sequelize.query(
+      `
+      SELECT code
+      FROM staff_details
+      WHERE code = ?
+        AND role = 'PHARMACIST'
+        AND status = 'ACTIVE'
+      `,
+      {
+        replacements: [secret_code],
+        type: QueryTypes.SELECT,
+        transaction
+      }
+    );
+
+    if (staffRows.length === 0) {
+      throw new Error("Invalid secret code");
     }
-  );
 
-  if (staffRows.length === 0) {
-    throw new Error("Invalid pharmacist_id");
+    const pharmacist_code = staffRows[0].code;
+
+    const [insertResult] = await sequelize.query(
+      `
+      INSERT INTO pharmacy_expired_medicine_log (
+        batch_no,
+        medicine_id,
+        sub_stock_id,
+        expiry,
+        quantity,
+        cleared_by_code
+      )
+      SELECT
+        batch_no,
+        medicine_id,
+        sub_stock_id,
+        expiry,
+        quantity,
+        ?
+      FROM pharmacy_stock
+      WHERE batch_no = ?;
+      `,
+      {
+        replacements: [pharmacist_code, batch_id],
+        transaction
+      }
+    );
+
+    if (insertResult.affectedRows === 0) {
+      throw new Error("Batch not found");
+    }
+
+    await sequelize.query(
+      `DELETE FROM pharmacy_stock WHERE batch_no = ?`,
+      {
+        replacements: [batch_id],
+        transaction
+      }
+    );
+
+    await transaction.commit();
+    return { message: "Medicine batch cleared and logged successfully" };
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
   }
-
-  const pharmacist_code = staffRows[0].code;
-
-  const [insertResult] = await sequelize.query(
-    `
-    INSERT INTO pharmacy_expired_medicine_log (
-      batch_no,
-      medicine_id,
-      sub_stock_id,
-      expiry,
-      quantity,
-      cleared_by_code
-    )
-    SELECT
-      batch_no,
-      medicine_id,
-      sub_stock_id,
-      expiry,
-      quantity,
-      ?
-    FROM pharmacy_stock
-    WHERE batch_no = ?;
-    `,
-    {
-      replacements: [pharmacist_code, batch_id],
-      transaction
-    }
-  );
-
-  if (insertResult.affectedRows === 0) {
-    throw new Error("Batch not found");
-  }
-
-  await sequelize.query(
-    `DELETE FROM pharmacy_stock WHERE batch_no = ?`,
-    {
-      replacements: [batch_id],
-      transaction
-    }
-  );
-
-  await transaction.commit();
-
-  return { message: "Medicine batch cleared and logged successfully" };
 };
 
 /* ============================

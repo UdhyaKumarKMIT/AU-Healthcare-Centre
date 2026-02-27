@@ -19,7 +19,7 @@ export const getTransactionDetails = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Unable to fetch prescription details" });
   }
-}; 
+};
 
 export const getVerificationStock = async (req, res) => {
   try {
@@ -33,19 +33,22 @@ export const getVerificationStock = async (req, res) => {
 
 export const verifyPharmacyStock = async (req, res) => {
   try {
-    const { batch_no } = req.body;
+    const { batch_no, secret_code } = req.body;
 
-    if (!batch_no) {
-      return res.status(400).json({ message: "Batch number is required" });
+    if (!batch_no || !secret_code) {
+      return res.status(400).json({ message: "batch_no and secret_code are required" });
     }
 
-    await verifyPharmacyStockService(batch_no);
+    await verifyPharmacyStockService(batch_no, secret_code);
 
     res.status(200).json({
       message: `Pharmacy stock for batch ${batch_no} has been verified.`,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Unable to verify pharmacy stock" });
+    if (String(err.message).toLowerCase().includes("invalid secret code")) {
+      return res.status(401).json({ message: "Invalid secret code" });
+    }
+    res.status(500).json({ message: err.message || "Unable to verify pharmacy stock" });
   }
 };

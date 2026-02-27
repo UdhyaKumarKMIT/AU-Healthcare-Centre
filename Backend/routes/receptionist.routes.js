@@ -9,7 +9,7 @@ const router = express.Router()
 router.post(
   '/register/patient',
   authenticate,
-  authorize(ROLES.NURSE_RECEPTIONIST,ROLES.ADMIN),
+  authorize(ROLES.NURSE_RECEPTIONIST, ROLES.ADMIN),
   receptionistController.registerPatient
 )
 
@@ -39,6 +39,13 @@ router.get(
   authenticate,
   authorize(ROLES.NURSE_RECEPTIONIST),
   receptionistController.getPatients
+)
+
+router.get(
+  '/patients/search',
+  authenticate,
+  authorize(ROLES.NURSE_RECEPTIONIST),
+  receptionistController.searchPatients
 )
 
 router.get(

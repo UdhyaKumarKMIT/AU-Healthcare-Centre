@@ -2,6 +2,34 @@ import sequelize from "../../config/sequelize.js";
 import { QueryTypes } from "sequelize";
 
 /* ============================
+   Resolve active pharmacist by secret code
+============================ */
+export const getActivePharmacistStaffByCodeService = async (secret_code) => {
+  if (!secret_code) return null;
+
+  const rows = await sequelize.query(
+    `
+    SELECT
+      staff_id,
+      name,
+      email,
+      phone,
+      code
+    FROM staff_details
+    WHERE code = ?
+      AND role = 'PHARMACIST'
+      AND status = 'ACTIVE'
+    `,
+    {
+      replacements: [secret_code],
+      type: QueryTypes.SELECT
+    }
+  );
+
+  return rows[0] || null;
+};
+
+/* ============================
    Get pharmacist details
 ============================ */
 export const getPharmacistDetailsService = async (pharmacist_id) => {
@@ -54,9 +82,10 @@ export const updatePharmacistDetailsService = async (
   values.push(pharmacist_id);
 
   const query = `
-    UPDATE pharmacist
+    UPDATE staff_details
     SET ${setFields.join(", ")}
-    WHERE pharmacist_id = ?
+    WHERE staff_id = ?
+      AND role = 'PHARMACIST'
   `;
 
   const [result] = await sequelize.query(query, {

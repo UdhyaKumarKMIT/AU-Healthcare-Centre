@@ -12,7 +12,7 @@ User.init(
         },
         username: {
             type: DataTypes.STRING(100),
-            unique: true,
+            // unique: true,  // Don't use inline unique - causes duplicate index creation
             allowNull: false,
         },
         password_hash: {
@@ -44,6 +44,13 @@ User.init(
         modelName: 'User',
         tableName: 'users',
         timestamps: false,
+        indexes: [
+            {
+                unique: true,
+                fields: ['username'],
+                name: 'username'  // Explicitly name the index to match existing DB
+            }
+        ]
     }
 );
 

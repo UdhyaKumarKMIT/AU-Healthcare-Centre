@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
+import {
   updateDoctorAvailability,
   selectDoctorsLoading
 } from '../../store/slices/receptionistSlice';
@@ -9,7 +9,7 @@ import styles from './DoctorAvailabilityTable.module.css';
 const DoctorAvailabilityTable = ({ doctors = [] }) => {
   const dispatch = useDispatch();
   const loading = useSelector(selectDoctorsLoading);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -20,7 +20,10 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
 
   const handleStatusChange = async (doctorId, newStatus) => {
     setUpdatingId(doctorId);
-    await dispatch(updateDoctorAvailability({ doctorId, status: newStatus }));
+    const staffCode = window.prompt('Enter your secret code to update doctor availability:');
+    if (staffCode && staffCode.trim()) {
+      await dispatch(updateDoctorAvailability({ doctorId, status: newStatus, staffCode: staffCode.trim() }));
+    }
     setUpdatingId(null);
   };
 
@@ -38,7 +41,7 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
           <h2 className={styles.sectionTitle}>Doctor Availability</h2>
           <p className={styles.sectionSubtitle}>Update doctor availability status</p>
         </div>
-        
+
         <div className={styles.searchContainer}>
           <input
             type="text"
@@ -48,7 +51,7 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
             placeholder="Search by doctor name or specialization..."
           />
           {searchQuery && (
-            <button 
+            <button
               className={styles.clearSearch}
               onClick={() => setSearchQuery('')}
             >
@@ -57,11 +60,11 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
           )}
         </div>
       </div>
-      
+
       {filteredDoctors.length === 0 ? (
         <div className={styles.emptyState}>
           <p>No doctors found matching "{searchQuery}"</p>
-          <button 
+          <button
             className={styles.clearButton}
             onClick={() => setSearchQuery('')}
           >
@@ -104,7 +107,7 @@ const DoctorAvailabilityTable = ({ doctors = [] }) => {
           </tbody>
         </table>
       )}
-      
+
       {searchQuery && filteredDoctors.length > 0 && (
         <div className={styles.searchInfo}>
           Found {filteredDoctors.length} doctor(s) matching "{searchQuery}"

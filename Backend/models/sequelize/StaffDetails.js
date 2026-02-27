@@ -39,7 +39,7 @@ StaffDetails.init(
         code: {
             type: DataTypes.STRING(50),
             allowNull: false,
-            unique: true,
+            // unique: true,  // Moved to indexes config
         },
         phone: {
             type: DataTypes.STRING(20),
@@ -59,6 +59,13 @@ StaffDetails.init(
         modelName: 'StaffDetails',
         tableName: 'staff_details',
         timestamps: false,
+        indexes: [
+            {
+                unique: true,
+                fields: ['code'],
+                name: 'code'
+            }
+        ]
     }
 );
 

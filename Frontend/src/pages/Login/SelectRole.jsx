@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
 import styles from './SelectRole.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileLines } from '@fortawesome/free-solid-svg-icons';
 
-import { 
-  faUserMd, 
-  faPills, 
-  faUserNurse, 
-  faClipboard, 
+import {
+  faUserMd,
+  faPills,
+  faUserNurse,
+  faClipboard,
   faUser,
   faUserTie,
   faVial
@@ -26,11 +27,29 @@ const roles = [
 
 const SelectRole = () => {
   const navigate = useNavigate();
+  const { user, loading, initialRoute } = useAuth();
+
+  useEffect(() => {
+    // If user is already authenticated with valid token, redirect to their dashboard
+    if (!loading && user && initialRoute) {
+      console.log('✅ Valid token found, redirecting to:', initialRoute);
+      navigate(initialRoute, { replace: true });
+    }
+  }, [user, loading, initialRoute, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // If user is authenticated, don't show role selection
+  if (user && initialRoute) {
+    return null;
+  }
 
   return (
     <div className={styles.dashboard}>
       <Header />
-      
+
       <main className={styles.mainContent}>
         <div className={styles.loginCard}>
           <header className={styles.loginHeader}>

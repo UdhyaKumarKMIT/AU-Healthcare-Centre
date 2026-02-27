@@ -13,7 +13,7 @@ NurseTaskMaster.init(
         task_name: {
             type: DataTypes.STRING(100),
             allowNull: false,
-            unique: true,
+            // unique: true,  // Moved to indexes config
         },
     },
     {
@@ -21,6 +21,13 @@ NurseTaskMaster.init(
         modelName: 'NurseTaskMaster',
         tableName: 'nurse_task_master',
         timestamps: false,
+        indexes: [
+            {
+                unique: true,
+                fields: ['task_name'],
+                name: 'task_name'
+            }
+        ]
     }
 );
 

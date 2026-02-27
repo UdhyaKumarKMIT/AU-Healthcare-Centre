@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import styles from './RecentVisitsList.module.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
+import {
   faSync,
   faChevronDown,
   faChevronUp,
@@ -14,6 +14,22 @@ const RecentVisitsList = ({ visits = [], onRefresh, isLoading }) => {
   const [to, setTo] = useState('')
   const [showOngoing, setShowOngoing] = useState(true)
   const [showCompleted, setShowCompleted] = useState(false)
+
+  const normalizeDateTimeLocal = (value, bound) => {
+    if (!value) return value
+
+    // If a user typed/pasted date-only, convert to datetime-local range.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return bound === 'end' ? `${value}T23:59` : `${value}T00:00`
+    }
+
+    // If the user picked a date but left time at midnight, treat end as end-of-day.
+    if (bound === 'end' && /^\d{4}-\d{2}-\d{2}T00:00$/.test(value)) {
+      return value.replace('T00:00', 'T23:59')
+    }
+
+    return value
+  }
 
   const { ongoingVisits, completedVisits } = useMemo(() => {
     const ongoing = []
@@ -105,26 +121,39 @@ const RecentVisitsList = ({ visits = [], onRefresh, isLoading }) => {
 
         <div className={styles.filterControls}>
           <input
-            type="datetime-local"
+            type="date"
             value={from}
             onChange={e => setFrom(e.target.value)}
             className={styles.filterInput}
+            placeholder="From Date"
           />
 
           <input
-            type="datetime-local"
+            type="date"
             value={to}
             onChange={e => setTo(e.target.value)}
             className={styles.filterInput}
+            placeholder="To Date"
           />
 
           <button
-            onClick={() => onRefresh({ from, to })}
+            onClick={() => {
+              const params = {};
+              const normalizedFrom = normalizeDateTimeLocal(from, 'start');
+              const normalizedTo = normalizeDateTimeLocal(to, 'end');
+
+              // Only add params if they have actual values
+              if (normalizedFrom) params.from = normalizedFrom;
+              if (normalizedTo) params.to = normalizedTo;
+
+              console.log('📅 Filter params:', params);
+              onRefresh(params);
+            }}
             disabled={isLoading}
             className={styles.refreshButton}
           >
             <FontAwesomeIcon icon={faSync} spin={isLoading} />
-            Filter
+
           </button>
         </div>
       </div>
