@@ -45,7 +45,7 @@ if (swaggerDocument) {
 // Global Middlewares
 // -------------------
 app.use(cors({
-  origin: 'http://localhost:5173', // adjust frontend URL
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
 }));
 

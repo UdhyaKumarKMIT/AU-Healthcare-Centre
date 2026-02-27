@@ -1169,7 +1169,7 @@ const DoctorDashboard = () => {
                       try {
                         // Complete visit with referral note
                         const response = await fetch(
-                          `${API_BASE}/api/doctor/visit/${selectedPatient.visitId}/complete`,
+                          `${API_URL}/api/doctor/visit/${selectedPatient.visitId}/complete`,
                           {
                             method: "PATCH",
                             headers: {
