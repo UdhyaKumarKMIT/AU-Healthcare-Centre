@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
+import {
   PillBottle,
   PersonStanding,
   CalendarDays,
   Stethoscope,
   CheckLine,
-  Layers, 
+  Layers,
   DotIcon,
 } from "lucide-react";
 import api from "../../api/axios";
@@ -42,8 +42,6 @@ const PrescriptionDetailsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const pharmacistId = user?.pharmacist_id;
-
   const [patientName, setPatientName] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [items, setItems] = useState<PrescriptionItem[]>([]);
@@ -61,7 +59,7 @@ const PrescriptionDetailsPage = () => {
   /* ---------- FETCH DETAILS ---------- */
 
   useEffect(() => {
-    if (!pharmacistId) {
+    if (!user) {
       navigate("/login/pharmacist");
       return;
     }
@@ -86,9 +84,9 @@ const PrescriptionDetailsPage = () => {
     };
 
     fetchDetails();
-  }, [id, pharmacistId, navigate]);
+  }, [id, navigate, user]);
 
-  useEffect (() => {
+  useEffect(() => {
     setAllocatedBatches({});
   }, [issuedDays])
 
@@ -111,7 +109,7 @@ const PrescriptionDetailsPage = () => {
 
     try {
       const res = await api.get("/pharmacy/getBatches", {
-        params: { 
+        params: {
           medicine_name: item.medicine_name,
           total_days: issuedDays,
           quantity: qty,
@@ -131,7 +129,7 @@ const PrescriptionDetailsPage = () => {
   /* ---------- COMPLETE ISSUE ---------- */
 
   const handleComplete = () => {
-    if (!id || !issuedDays || !pharmacistId) {
+    if (!id || !issuedDays) {
       setModalMessage("Please fill all required fields.");
       setModalOpen(true);
       return;
@@ -150,33 +148,40 @@ const PrescriptionDetailsPage = () => {
   };
 
   const handleFinalSubmit = async () => {
-  try {
-    setIsSubmitting(true);
+    try {
+      setIsSubmitting(true);
 
-    await api.post("/pharmacy/issue", {
-      pharmacist_id: pharmacistId,
-      prescription_id: id,
-      issued_days: Number(issuedDays),
-      batches: items.flatMap((med) =>
-        allocatedBatches[med.medicine_name].map((b) => ({
-          batch_id: b.batch_id,
-          quantity: b.used,
-        }))
-      ),
-    });
+      const secretCode = window.prompt("Enter pharmacist secret code to issue medicine:");
+      if (!secretCode) {
+        setModalMessage("Secret code is required to issue medicine.");
+        setModalOpen(true);
+        return;
+      }
 
-    setModalMessage("Prescription sent successfully to patient");
-    setModalOpen(true);
-    setNavigateOnClose(true);
-    
-  } catch (err) {
-    console.error(err);
-    setModalMessage("Could not complete prescription issue.");
-    setModalOpen(true);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      await api.post("/pharmacy/issue", {
+        secret_code: secretCode,
+        prescription_id: id,
+        issued_days: Number(issuedDays),
+        batches: items.flatMap((med) =>
+          allocatedBatches[med.medicine_name].map((b) => ({
+            batch_id: b.batch_id,
+            quantity: b.used,
+          }))
+        ),
+      });
+
+      setModalMessage("Prescription sent successfully to patient");
+      setModalOpen(true);
+      setNavigateOnClose(true);
+
+    } catch (err) {
+      console.error(err);
+      setModalMessage("Could not complete prescription issue.");
+      setModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
 
   /* ---------- HELPERS ---------- */
@@ -188,307 +193,307 @@ const PrescriptionDetailsPage = () => {
   }
 
   return (
-    <> 
-  <CustomModal
-  isOpen={modalOpen}
-  title="Alert"
-  message={modalMessage}
-  confirmText="OK"
-  onConfirm={modalConfirmCallback ?? undefined}
-  onClose={() => { 
-    setModalOpen(false);
-    if (navigateOnClose) {
-      navigate("/pharmacist/pendingPrescription", { replace: true });
-      setNavigateOnClose(false);
-    }
-  }}
-/>
-
-
-    {showPreview ? (
-      /* ================= PREVIEW ================= */
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2rem",
+    <>
+      <CustomModal
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalOpen(false);
+          if (navigateOnClose) {
+            navigate("/pharmacist/pendingPrescription", { replace: true });
+            setNavigateOnClose(false);
+          }
         }}
-      >
-        <div style={enhancedPrescriptionCard}>
-          {/* HEADER */}
-          <div style={prescriptionHeader}>
-            <h1 style={{ margin: 0 }}>Anna University Health Center</h1>
-          </div>
-
-          {/* META */}
-          <div style={prescriptionMeta}>
-            <div><strong>Patient:</strong> {toTitleCase(patientName)}</div>
-            <div><strong>Date:</strong> {new Date().toLocaleDateString()}</div>
-            <div><strong>Doctor:</strong> Dr. {toTitleCase(doctorName)}</div>
-            <div><strong>Issued Days:</strong> {issuedDays}</div>
-          </div>
-
-          <hr />
-
-          {/* MEDICINES */}
-          {items.map((item) => (
-            <div key={item.medicine_name} style={medicineCardStyle}>
-  <div style={{...medicineHeaderStyle, fontFamily: "verdana"}}>
-    <PillBottle />
-    <strong>{toTitleCase(item.medicine_name)}</strong>
-    <span>({toTitleCase(item.medicine_type)})</span>
-  </div>
-
-  <div style={medicineGridStyle}> 
-    {/* --- Dosage & Quantity --- */}
-    <div style={{...rowStyle, fontFamily: "verdana"}}>
-      <span style={labelStyle}>Dosage/day:</span>
-      <span>{item.dosage_per_day}</span>
-      <span style={labelStyle}>Quantity:</span>
-      <span>{item.dosage_per_day * issuedDays}</span>
-    </div>
-
-    {/* --- Food Timing --- */}
-    {item.food_timing && (
-      <div style={{ marginTop: 6 , fontFamily: "verdana"}}>
-        <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
-      </div>
-    )}
-
-    {/* --- Timing Checkboxes --- */}
-    <div style={{ marginTop: 6, display: "flex", gap: 12 , fontFamily: "verdana"}}>
-      <label>
-        <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
-        Morning
-      </label>
-      <label>
-        <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
-        Afternoon
-      </label>
-      <label>
-        <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
-        Night
-      </label>
-    </div> 
-  </div>
-</div>
-
-))}
+      />
 
 
-
-          <hr />
-
-          {/* BATCHES */}
-          <h4 style={{...sectionTitle, fontFamily: "verdana", fontSize: "0.95rem"}}>Dispensed Batches</h4>
-          {items.map((item) => (
-            <p key={item.medicine_name}>
-              <strong><span style={{fontFamily: "verdana", fontSize: "0.86rem"}}>{toTitleCase(item.medicine_name)}:</span></strong>{" "}
-              {allocatedBatches[item.medicine_name].map((b) => (
-                <span key={b.batch_id} style={{fontFamily: "verdana", fontSize: "0.9rem"}}>
-                  {b.batch_id} ({b.used} units){" "}
-                </span>
-              ))}
-            </p>
-          ))}
-
-          {/* ACTIONS */}
-          <div style={previewActions}>
-            <button
-              style={{...secondaryButtonStyle, fontFamily: "verdana", fontSize: "0.95rem"}}
-              onClick={() => setShowPreview(false)}
-            >
-              Back to Edit
-            </button>
-
-            <button
-              style={{...successButtonStyle, fontFamily: "verdana", fontSize: "0.95rem"}}
-              onClick={handleFinalSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Completing..." : "Confirm & Issue"}
-            </button>
-          </div>
-        </div>
-      </div>
-    ) : (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>    
-      {/* HEADER */}
-      <header
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
-        }}
-      > 
-      </header>
-
-      {/* MAIN */}
-      <main
-        style={{ maxWidth: 1200, margin: "auto", padding: "1rem", color: "black" }}
-      >
-        <div style={sectionCardStyle}>
-          <h2 style={{ color: "#0039caff"}}>Medicine Issue</h2><br />
-          <div style={patientBarStyle}>
-            <PersonStanding size={20} color="#0039caff" />
-            <span style={{ color: "#0039caff", fontWeight: 700 }}>
-              Patient:
-            </span>
-            <span style={{ fontWeight: 700 }}>
-              {toTitleCase(patientName)}
-            </span>
-          </div>
-
-          <div style={patientBarStyle}>
-            <Stethoscope size={20} color="#0039caff" />
-            <span style={{ color: "#0039caff", fontWeight: 700 }}>
-              Doctor:
-            </span>
-            <span style={{ fontWeight: 700 }}>
-              {toTitleCase(doctorName)}
-            </span>
-          </div>
-
-          <div style={{ marginTop: 16 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <CalendarDays size={18} color="#0039caff" />{" "}
-              <strong style={{ color: "#0039caff" }}>
-                Prescribed Duration Days: <span style={{color: "black"}}> {durationDays}</span>
-              </strong>
-            </label>
-          </div>
-
-          <div style={{ marginTop: 16 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <CalendarDays size={18} color="#0039caff" />
-              <strong style={{ color: "#0039caff" }}>Issued Days</strong>
-              <input
-                type="number"
-                min={1}
-                max={durationDays}
-                value={issuedDays}
-                onChange={(e) => {
-                  const value = e.target.valueAsNumber;
-
-                  setIssuedDays(Number.isNaN(value) ? 0 : value);
-                }}
-
-                onBlur={() => {
-                  setIssuedDays((prev) =>
-                    Math.min(Math.max(prev, 1), durationDays)
-                  );
-                }}
-
-                style={inputStyle}
-              />
-            </label>
-          </div>
-
-          <br />
-
-          {items.map((item) => (
-  <div key={item.medicine_name} style={medicineCardStyle}>
-    <div style={medicineHeaderStyle}>
-      <PillBottle />
-      <strong>{toTitleCase(item.medicine_name)}</strong>
-      <span>({toTitleCase(item.medicine_type)})</span>
-    </div>
-
-    <div style={medicineGridStyle}> 
-
-      <div style={rowStyle}>
-        <span style={labelStyle}>Dosage per day:</span>
-        <span>{item.dosage_per_day} days</span>
-      </div>
-
-      {/* --- Food Timing --- */}
-      {item.food_timing && (
-        <div style={{ marginTop: 6 }}>
-          <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
-        </div>
-      )}
-      
-      {/* --- Timing Checkboxes --- */}
-      <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-        <label>
-          <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
-           Morning
-        </label>
-        <label>
-          <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
-           Afternoon
-        </label>
-        <label>
-          <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
-           Night
-        </label>
-      </div>
-      
-
-      <div style={{ marginTop: 6 }}>
-        <Layers size={18} color="#0039caff" />{" "}
-        <strong style={{ color: "#0039caff" }}>Quantity</strong>
-
-        <input
-          type="number"
-          value={(item.dosage_per_day || 0) * (issuedDays || 0)}
-          readOnly
+      {showPreview ? (
+        /* ================= PREVIEW ================= */
+        <div
           style={{
-            ...inputStyle,
-            backgroundColor: "#f3f3f3",
-            cursor: "not-allowed",
-          }}
-        />
-
-        <br />
-
-        <button
-          onClick={() => handleGetBatches(item)}
-          style={{
-            ...secondaryButtonStyle,
-            padding: "4px 10px",
-            fontSize: 12,
-            height: 28,
-            marginTop: 6,
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
           }}
         >
-          Get Batches
-        </button>
-      </div>
+          <div style={enhancedPrescriptionCard}>
+            {/* HEADER */}
+            <div style={prescriptionHeader}>
+              <h1 style={{ margin: 0 }}>Anna University Health Center</h1>
+            </div>
 
-      {allocatedBatches[item.medicine_name]?.length > 0 && (
-        <div style={{ marginTop: 10 }}>
-          <strong>Allocated Batches:</strong>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {allocatedBatches[item.medicine_name].map((b) => (
-              <span key={b.batch_id} style={batchBadge}>
-                {b.batch_id} - Quantity: {b.used}
-              </span>
+            {/* META */}
+            <div style={prescriptionMeta}>
+              <div><strong>Patient:</strong> {toTitleCase(patientName)}</div>
+              <div><strong>Date:</strong> {new Date().toLocaleDateString()}</div>
+              <div><strong>Doctor:</strong>   {toTitleCase(doctorName)}</div>
+              <div><strong>Issued Days:</strong> {issuedDays}</div>
+            </div>
+
+            <hr />
+
+            {/* MEDICINES */}
+            {items.map((item) => (
+              <div key={item.medicine_name} style={medicineCardStyle}>
+                <div style={{ ...medicineHeaderStyle, fontFamily: "verdana" }}>
+                  <PillBottle />
+                  <strong>{toTitleCase(item.medicine_name)}</strong>
+                  <span>({toTitleCase(item.medicine_type)})</span>
+                </div>
+
+                <div style={medicineGridStyle}>
+                  {/* --- Dosage & Quantity --- */}
+                  <div style={{ ...rowStyle, fontFamily: "verdana" }}>
+                    <span style={labelStyle}>Dosage/day:</span>
+                    <span>{item.dosage_per_day}</span>
+                    <span style={labelStyle}>Quantity:</span>
+                    <span>{item.dosage_per_day * issuedDays}</span>
+                  </div>
+
+                  {/* --- Food Timing --- */}
+                  {item.food_timing && (
+                    <div style={{ marginTop: 6, fontFamily: "verdana" }}>
+                      <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
+                    </div>
+                  )}
+
+                  {/* --- Timing Checkboxes --- */}
+                  <div style={{ marginTop: 6, display: "flex", gap: 12, fontFamily: "verdana" }}>
+                    <label>
+                      <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
+                      Morning
+                    </label>
+                    <label>
+                      <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
+                      Afternoon
+                    </label>
+                    <label>
+                      <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
+                      Night
+                    </label>
+                  </div>
+                </div>
+              </div>
+
             ))}
+
+
+
+            <hr />
+
+            {/* BATCHES */}
+            <h4 style={{ ...sectionTitle, fontFamily: "verdana", fontSize: "0.95rem" }}>Dispensed Batches</h4>
+            {items.map((item) => (
+              <p key={item.medicine_name}>
+                <strong><span style={{ fontFamily: "verdana", fontSize: "0.86rem" }}>{toTitleCase(item.medicine_name)}:</span></strong>{" "}
+                {allocatedBatches[item.medicine_name].map((b) => (
+                  <span key={b.batch_id} style={{ fontFamily: "verdana", fontSize: "0.9rem" }}>
+                    {b.batch_id} ({b.used} units){" "}
+                  </span>
+                ))}
+              </p>
+            ))}
+
+            {/* ACTIONS */}
+            <div style={previewActions}>
+              <button
+                style={{ ...secondaryButtonStyle, fontFamily: "verdana", fontSize: "0.95rem" }}
+                onClick={() => setShowPreview(false)}
+              >
+                Back to Edit
+              </button>
+
+              <button
+                style={{ ...successButtonStyle, fontFamily: "verdana", fontSize: "0.95rem" }}
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Completing..." : "Confirm & Issue"}
+              </button>
+            </div>
           </div>
+        </div>
+      ) : (
+        <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+          {/* HEADER */}
+          <header
+            style={{
+              background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
+              color: "white",
+            }}
+          >
+          </header>
+
+          {/* MAIN */}
+          <main
+            style={{ maxWidth: 1200, margin: "auto", padding: "1rem", color: "black" }}
+          >
+            <div style={sectionCardStyle}>
+              <h2 style={{ color: "#0039caff" }}>Medicine Issue</h2><br />
+              <div style={patientBarStyle}>
+                <PersonStanding size={20} color="#0039caff" />
+                <span style={{ color: "#0039caff", fontWeight: 700 }}>
+                  Patient:
+                </span>
+                <span style={{ fontWeight: 700 }}>
+                  {toTitleCase(patientName)}
+                </span>
+              </div>
+
+              <div style={patientBarStyle}>
+                <Stethoscope size={20} color="#0039caff" />
+                <span style={{ color: "#0039caff", fontWeight: 700 }}>
+                  Doctor:
+                </span>
+                <span style={{ fontWeight: 700 }}>
+                  {toTitleCase(doctorName)}
+                </span>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <CalendarDays size={18} color="#0039caff" />{" "}
+                  <strong style={{ color: "#0039caff" }}>
+                    Prescribed Duration Days: <span style={{ color: "black" }}> {durationDays}</span>
+                  </strong>
+                </label>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <CalendarDays size={18} color="#0039caff" />
+                  <strong style={{ color: "#0039caff" }}>Issued Days</strong>
+                  <input
+                    type="number"
+                    min={1}
+                    max={durationDays}
+                    value={issuedDays}
+                    onChange={(e) => {
+                      const value = e.target.valueAsNumber;
+
+                      setIssuedDays(Number.isNaN(value) ? 0 : value);
+                    }}
+
+                    onBlur={() => {
+                      setIssuedDays((prev) =>
+                        Math.min(Math.max(prev, 1), durationDays)
+                      );
+                    }}
+
+                    style={inputStyle}
+                  />
+                </label>
+              </div>
+
+              <br />
+
+              {items.map((item) => (
+                <div key={item.medicine_name} style={medicineCardStyle}>
+                  <div style={medicineHeaderStyle}>
+                    <PillBottle />
+                    <strong>{toTitleCase(item.medicine_name)}</strong>
+                    <span>({toTitleCase(item.medicine_type)})</span>
+                  </div>
+
+                  <div style={medicineGridStyle}>
+
+                    <div style={rowStyle}>
+                      <span style={labelStyle}>Dosage per day:</span>
+                      <span>{item.dosage_per_day} days</span>
+                    </div>
+
+                    {/* --- Food Timing --- */}
+                    {item.food_timing && (
+                      <div style={{ marginTop: 6 }}>
+                        <strong>Food Instruction:</strong> {toTitleCase(item.food_timing)}
+                      </div>
+                    )}
+
+                    {/* --- Timing Checkboxes --- */}
+                    <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                      <label>
+                        <input type="checkbox" checked={item.timing_flags[0] === 1} readOnly />&ensp;
+                        Morning
+                      </label>
+                      <label>
+                        <input type="checkbox" checked={item.timing_flags[1] === 1} readOnly />&ensp;
+                        Afternoon
+                      </label>
+                      <label>
+                        <input type="checkbox" checked={item.timing_flags[2] === 1} readOnly />&ensp;
+                        Night
+                      </label>
+                    </div>
+
+
+                    <div style={{ marginTop: 6 }}>
+                      <Layers size={18} color="#0039caff" />{" "}
+                      <strong style={{ color: "#0039caff" }}>Quantity</strong>
+
+                      <input
+                        type="number"
+                        value={(item.dosage_per_day || 0) * (issuedDays || 0)}
+                        readOnly
+                        style={{
+                          ...inputStyle,
+                          backgroundColor: "#f3f3f3",
+                          cursor: "not-allowed",
+                        }}
+                      />
+
+                      <br />
+
+                      <button
+                        onClick={() => handleGetBatches(item)}
+                        style={{
+                          ...secondaryButtonStyle,
+                          padding: "4px 10px",
+                          fontSize: 12,
+                          height: 28,
+                          marginTop: 6,
+                        }}
+                      >
+                        Get Batches
+                      </button>
+                    </div>
+
+                    {allocatedBatches[item.medicine_name]?.length > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <strong>Allocated Batches:</strong>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {allocatedBatches[item.medicine_name].map((b) => (
+                            <span key={b.batch_id} style={batchBadge}>
+                              {b.batch_id} - Quantity: {b.used}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              ))}
+
+
+
+
+              <div style={buttonRowStyle}>
+                <button onClick={() => navigate(-1)} style={secondaryButtonStyle}>
+                  Back
+                </button>
+                <button onClick={handleComplete} style={successButtonStyle}>
+                  <CheckLine size={16} /> Complete
+                </button>
+              </div>
+            </div>
+          </main>
         </div>
       )}
-
-    </div>
-  </div>
-))}
-
-          
-          
-
-          <div style={buttonRowStyle}>
-            <button onClick={() => navigate(-1)} style={secondaryButtonStyle}>
-              Back
-            </button>
-            <button onClick={handleComplete} style={successButtonStyle}>
-              <CheckLine size={16} /> Complete
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
-    )}
     </>
   );
 };
@@ -547,7 +552,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: "bold",
   minWidth: "80px",
   fontSize: "1rem"
-}; 
+};
 
 const inputStyle: React.CSSProperties = {
   marginLeft: 8,
@@ -614,7 +619,7 @@ const previewActions: React.CSSProperties = {
   justifyContent: "space-between",
   marginTop: 20,
 };
-  
+
 const enhancedPrescriptionCard: React.CSSProperties = {
   background: "#ffffff",
   width: "100%",
@@ -632,7 +637,7 @@ const prescriptionHeader: React.CSSProperties = {
   borderBottom: "2px solid #1e3a8a",
   paddingBottom: "0.75rem",
   marginBottom: "1rem",
-  
+
   color: "#1e3a8a",
 };
 
@@ -667,10 +672,10 @@ const medicineNameRow: React.CSSProperties = {
   paddingBottom: "2px"
 };
 
-const medicineDetails: React.CSSProperties = { 
+const medicineDetails: React.CSSProperties = {
   paddingLeft: 22,
   fontSize: 15,
-  display: "flex", 
+  display: "flex",
   fontFamily: "sans-serif",
   gap: 20,
   marginTop: 2,

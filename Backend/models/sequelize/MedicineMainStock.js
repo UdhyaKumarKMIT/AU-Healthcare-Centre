@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import sequelize from "../../config/sequelize.js";
 import Medicine from "./Medicine.js";
 
-class MedicineMainStock extends Model {}
+class MedicineMainStock extends Model { }
 
 MedicineMainStock.init(
   {
@@ -20,7 +20,7 @@ MedicineMainStock.init(
     batch_no: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: true, // matches UNIQUE KEY in MySQL
+      // unique: true,  // Moved to indexes config
     },
     mfd: {
       type: DataTypes.DATE,
@@ -45,6 +45,13 @@ MedicineMainStock.init(
     modelName: "MedicineMainStock",
     tableName: "medicine_main_stock",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["batch_no"],
+        name: "batch_no"
+      }
+    ]
   }
 );
 

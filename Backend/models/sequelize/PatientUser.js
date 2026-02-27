@@ -21,7 +21,7 @@ PatientUser.init(
         username: {
             type: DataTypes.STRING(100),
             allowNull: false,
-            unique: true,
+            // unique: true,  // Moved to indexes config
         },
         password_hash: {
             type: DataTypes.STRING(255),
@@ -42,6 +42,13 @@ PatientUser.init(
         modelName: 'PatientUser',
         tableName: 'patient_users',
         timestamps: false,
+        indexes: [
+            {
+                unique: true,
+                fields: ['username'],
+                name: 'username'
+            }
+        ]
     }
 );
 

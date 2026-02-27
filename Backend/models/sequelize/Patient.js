@@ -14,14 +14,14 @@ Patient.init(
             type: DataTypes.STRING(100),
             allowNull: false,
         },
-        email: {
-        type: DataTypes.STRING(255),
-        allowNull: true,        // set false if email is mandatory
-        unique: true,          // optional but recommended
-        validate: {
-            isEmail: true,       // built-in email validation
+        blood_group: {
+            type: DataTypes.STRING(10),
+            allowNull: true,
         },
-        },  
+        reg_number: {
+            type: DataTypes.STRING(15),
+            allowNull: false,
+        },
         dob: {
             type: DataTypes.DATEONLY,
             allowNull: true,
@@ -40,6 +40,26 @@ Patient.init(
         },
         allergic_to: {
             type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        email: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        department: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        year: {
+            type: DataTypes.STRING(20),
+            allowNull: true,
+        },
+        employee_id: {
+            type: DataTypes.STRING(50),
+            allowNull: true,
+        },
+        designation: {
+            type: DataTypes.STRING(100),
             allowNull: true,
         },
         created_at: {

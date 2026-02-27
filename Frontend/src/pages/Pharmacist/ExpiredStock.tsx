@@ -13,24 +13,20 @@ const ExpiredStockPage = () => {
 
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const pharmacistId = user?.pharmacist_id;
 
   const [expiredMedicines, setExpiredMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!pharmacistId) {
+    if (!user) {
       navigate("/login/pharmacist");
       return;
     }
 
     const fetchExpiredMedicine = async () => {
       try {
-        const response = await api.get("/pharmacy/expiryMedicine", {
-          params: { pharmacist_id: pharmacistId }
-        });
+        const response = await api.get("/pharmacy/expiryMedicine");
         setExpiredMedicines(response.data.items || []);
       } catch (err) {
         console.error("Failed to fetch expired medicine:", err);
@@ -42,7 +38,7 @@ const ExpiredStockPage = () => {
     };
 
     fetchExpiredMedicine();
-  }, [pharmacistId, navigate]);
+  }, [navigate, user]);
 
   const handleClear = (batchId: string) => {
     setModalMessage("Are you sure you want to clear this batch?");
@@ -58,19 +54,23 @@ const ExpiredStockPage = () => {
       .includes(searchTerm.toLowerCase())
   );
 
-  const clearBatchConfirmed = async (batchId: string) => {   
-
+  const clearBatchConfirmed = async (batchId: string) => {
     try {
+      const secretCode = window.prompt("Enter pharmacist secret code to clear this batch:");
+      if (!secretCode) {
+        setModalMessage("Secret code is required to clear stock.");
+        setModalOpen(true);
+        return;
+      }
+
       const response = await api.delete(
         `/pharmacy/clearMedicineBatch/${batchId}`,
         {
-          params: { pharmacist_id: pharmacistId }
+          params: { secret_code: secretCode }
         }
       );
       if (response.status === 200) {
-        const response = await api.get("/pharmacy/expiryMedicine", {
-          params: { pharmacist_id: pharmacistId }
-        });
+        const response = await api.get("/pharmacy/expiryMedicine");
         setExpiredMedicines(response.data.items || []);
         setModalMessage("Stock cleared successfully!");
         setModalOpen(true);
@@ -83,125 +83,125 @@ const ExpiredStockPage = () => {
   };
 
   return (
-    <> 
+    <>
       <CustomModal
-      isOpen={modalOpen}
-      title="Alert"
-      message={modalMessage}
-      confirmText="OK"
-      onConfirm={modalConfirmCallback ?? undefined}
-      onClose={() => {
-        setModalConfirmCallback(null);
-        setModalOpen(false);
-      }}
-    />
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* HEADER */}
-      <div
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalConfirmCallback(null);
+          setModalOpen(false);
         }}
-      > 
-      </div> 
+      />
+      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+        {/* HEADER */}
+        <div
+          style={{
+            background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
+            color: "white",
+          }}
+        >
+        </div>
 
-      {/* MAIN */}
-      <main
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: "1rem",
-          color: "black",
-        }}
-      >
-        <div style={sectionCardStyle}>
-          {/* SECTION HEADER */}
-          <div style={sectionHeaderStyle}>
-            <ShieldX size={22} />
-            Expired Medicine Stock
+        {/* MAIN */}
+        <main
+          style={{
+            maxWidth: 1200,
+            margin: "auto",
+            padding: "1rem",
+            color: "black",
+          }}
+        >
+          <div style={sectionCardStyle}>
+            {/* SECTION HEADER */}
+            <div style={sectionHeaderStyle}>
+              <ShieldX size={22} />
+              Expired Medicine Stock
+            </div>
+
+            {/* SEARCH BAR */}
+            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+              <input
+                type="text"
+                placeholder="Search medicine name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "6px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.95rem"
+                }}
+              />
+              <button
+                onClick={() => setSearchTerm("")}
+                style={{
+                  background: "#1e40af",
+                  color: "white",
+                  border: "none",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "6px",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Clear
+              </button>
+            </div>
+
+            {/* CONTENT */}
+            {loading ? (
+              <p>Loading expired medicines...</p>
+            ) : filteredMedicines.length === 0 ? (
+              <p>No expired medicines found</p>
+            ) : (
+              filteredMedicines.map((med, idx) => (
+                <article key={idx} style={prescriptionRowStyle}>
+                  <div style={{ display: "flex", gap: "1.5rem", fontFamily: "verdana" }}>
+                    <div style={iconBoxStyle}>
+                      <Pill size={20} />
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <p style={{ paddingBottom: "2px" }}>
+                        <strong>Medicine:</strong> {med.medicine_name}
+                      </p>
+                      <p style={{ paddingBottom: "2px" }}>
+                        <strong>Batch ID:</strong> {med.batch_id}
+                      </p>
+                      <p style={{ paddingBottom: "2px" }}>
+                        <strong>Expiry Date:</strong>{" "}
+                        {new Date(med.expiry_date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                      <p>
+                        <strong>In Stock:</strong> {med.in_stock} units
+                      </p>
+
+                      {/* CLEAR BUTTON AT BOTTOM */}
+                      <div style={{ display: "flex", justifyContent: "flex-start", marginTop: "1rem" }}>
+                        <button
+                          onClick={() => handleClear(med.batch_id)}
+                          style={clearButtonStyle}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))
+
+            )}
           </div>
-
-          {/* SEARCH BAR */}
-<div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-  <input
-    type="text"
-    placeholder="Search medicine name..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    style={{
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: "6px",
-      border: "1px solid #cbd5e1",
-      fontSize: "0.95rem"
-    }}
-  />
-  <button
-    onClick={() => setSearchTerm("")}
-    style={{
-      background: "#1e40af",
-      color: "white",
-      border: "none",
-      padding: "0.5rem 1rem",
-      borderRadius: "6px",
-      fontWeight: 600,
-      cursor: "pointer"
-    }}
-  >
-    Clear
-  </button>
-</div>
-
-          {/* CONTENT */}
-          {loading ? (
-            <p>Loading expired medicines...</p>
-          ) : filteredMedicines.length === 0 ? (
-            <p>No expired medicines found</p>
-          ) : (
-            filteredMedicines.map((med, idx) => (
-  <article key={idx} style={prescriptionRowStyle}>
-    <div style={{ display: "flex", gap: "1.5rem", fontFamily: "verdana"}}>
-      <div style={iconBoxStyle}>
-        <Pill size={20} />
+        </main>
       </div>
-
-      <div style={{ flex: 1 }}>
-        <p style={{paddingBottom: "2px"}}>
-          <strong>Medicine:</strong> {med.medicine_name}
-        </p>
-        <p style={{paddingBottom: "2px"}}>
-          <strong>Batch ID:</strong> {med.batch_id}
-        </p>
-        <p style={{paddingBottom: "2px"}}>
-          <strong>Expiry Date:</strong>{" "}
-          {new Date(med.expiry_date).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
-        <p>
-          <strong>In Stock:</strong> {med.in_stock} units
-        </p>
-
-        {/* CLEAR BUTTON AT BOTTOM */}
-        <div style={{ display: "flex", justifyContent: "flex-start", marginTop: "1rem" }}>
-          <button
-            onClick={() => handleClear(med.batch_id)}
-            style={clearButtonStyle}
-          >
-            Clear
-          </button>
-        </div>
-      </div>
-    </div>
-  </article>
-))
-
-          )}
-        </div>
-      </main>
-    </div>
     </>
   );
 };

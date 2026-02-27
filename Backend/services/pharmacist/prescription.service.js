@@ -3,7 +3,7 @@ import { QueryTypes } from "sequelize";
 import {
   prescriptionPDF,
   generatePrescriptionPDFStream,
-  sendPrescriptionEmail 
+  sendPrescriptionEmail
 } from "../../utils/pdf.js";
 
 /* ============================
@@ -127,7 +127,7 @@ export const getPrescriptionDetailsService = async (id) => {
    Issue medicine
 ============================ */
 export const issueMedicineService = async ({
-  pharmacist_id,
+  secret_code,
   prescription_id,
   issued_days,
   batches
@@ -195,23 +195,24 @@ export const issueMedicineService = async ({
       }
     );
 
-    // --- Step 3: Validate pharmacist ---
+    // --- Step 3: Validate pharmacist secret code ---
     const staffRows = await sequelize.query(
       `
       SELECT code
       FROM staff_details
-      WHERE staff_id = ?
+      WHERE code = ?
         AND role = 'PHARMACIST'
+        AND status = 'ACTIVE'
       `,
       {
-        replacements: [pharmacist_id],
+        replacements: [secret_code],
         type: QueryTypes.SELECT,
         transaction
       }
     );
 
     if (!staffRows.length) {
-      throw new Error("Invalid pharmacist_id");
+      throw new Error("Invalid secret code");
     }
 
     const pharmacist_code = staffRows[0].code;
@@ -230,7 +231,7 @@ export const issueMedicineService = async ({
           pharmacist_code,
           issued_days
         ],
-        transaction 
+        transaction
       }
     );
 
@@ -238,17 +239,34 @@ export const issueMedicineService = async ({
       throw new Error("Unable to insert transaction record!");
     }
 
-    // --- Step 5: Generate PDF & email ---
+    // --- Step 5: Generate PDF (inside txn for consistent reads) ---
     const details = await prescriptionPDF(transaction, prescription_id);
-    const pdfBuffer = await generatePrescriptionPDFStream(details);
+    const pdfStream = await generatePrescriptionPDFStream(details);
 
-    if (details.email) {
-      await sendPrescriptionEmail(details.email, pdfBuffer);
-    }
-
+    // Commit first so email connectivity doesn't block issuing.
     await transaction.commit();
 
-    return { message: "Medicine issued successfully" };
+    // --- Step 6: Email (best-effort) ---
+    let emailResult = null;
+    let emailError = null;
+    if (details.email) {
+      try {
+        emailResult = await sendPrescriptionEmail(details.email, pdfStream);
+      } catch (e) {
+        emailError = e?.message ? String(e.message) : String(e);
+        console.warn("Issue medicine: email send failed (continuing):", emailError);
+      }
+    }
+
+    return {
+      message: "Medicine issued successfully",
+      email: {
+        attempted: !!details.email,
+        sent: !!emailResult,
+        messageId: emailResult,
+        error: emailError,
+      },
+    };
   } catch (err) {
     console.log(err)
     await transaction.rollback();

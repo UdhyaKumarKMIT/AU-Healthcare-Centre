@@ -116,9 +116,32 @@ export const getPendingPharmacyStockService = async () => {
 };
 
 
-export const verifyPharmacyStockService = async (batch_no) => {
+export const verifyPharmacyStockService = async (batch_no, secret_code) => {
   if (!batch_no) {
     throw new Error("Batch number is required");
+  }
+
+  if (!secret_code) {
+    throw new Error("Secret code is required");
+  }
+
+  // Validate secret code exists as an active PHARMACIST staff
+  const staffRows = await sequelize.query(
+    `
+    SELECT staff_id
+    FROM staff_details
+    WHERE code = ?
+      AND role = 'PHARMACIST'
+      AND status = 'ACTIVE'
+    `,
+    {
+      replacements: [secret_code],
+      type: QueryTypes.SELECT
+    }
+  );
+
+  if (!staffRows.length) {
+    throw new Error("Invalid secret code");
   }
 
   const [affectedRows] = await sequelize.query(

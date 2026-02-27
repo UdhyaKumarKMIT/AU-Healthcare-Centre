@@ -14,7 +14,7 @@ export const prescriptionPDF = async (transaction, prescriptionId) => {
     SELECT
       p.name AS patient_name,
       p.patient_id AS pid,
-      p.email AS email,
+      pu.username AS email,
       d.name AS doctor_name,
       pt.issued_days,
       MAX(pi.duration_days) AS duration_days
@@ -22,12 +22,13 @@ export const prescriptionPDF = async (transaction, prescriptionId) => {
     JOIN prescription pr ON pt.prescription_id = pr.prescription_id
     JOIN visit v ON pr.visit_id = v.visit_id
     JOIN patient p ON v.patient_id = p.patient_id
+    JOIN patient_users pu ON pu.patient_id = p.patient_id
     JOIN doctor d ON pr.doctor_id = d.doctor_id
     JOIN prescription_items pi ON pi.prescription_id = pr.prescription_id
     JOIN medicine m ON m.medicine_id = pi.medicine_id
     WHERE pt.prescription_id = ?
     GROUP BY
-      p.name, p.patient_id, p.email, d.name, pt.issued_days;
+      p.name, p.patient_id, pu.username, d.name, pt.issued_days;
     `,
     { replacements: [prescriptionId], type: QueryTypes.SELECT, transaction }
   );

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSync } from '@fortawesome/free-solid-svg-icons';
 import styles from './NurseDashboard.module.css';
@@ -6,18 +7,39 @@ const TasksView = ({
   pendingTasks,
   completedTasks,
   isTasksLoading,
+  isCompletedLoading,
   onRefresh,
+  onRefreshCompleted,
   onViewTaskDetails,
   onViewCompletedDetails
 }) => {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
+  const normalizeDateTimeLocal = (value, bound) => {
+    if (!value) return value;
+
+    // If a user typed/pasted date-only, convert to datetime-local range.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return bound === 'end' ? `${value}T23:59` : `${value}T00:00`;
+    }
+
+    // If the user picked a date but left time at midnight, treat end as end-of-day.
+    if (bound === 'end' && /^\d{4}-\d{2}-\d{2}T00:00$/.test(value)) {
+      return value.replace('T00:00', 'T23:59');
+    }
+
+    return value;
+  };
+
   return (
     <div className={styles.tasksGrid}>
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3>Pending Tasks ({pendingTasks.length})</h3>
-          <button 
-            onClick={onRefresh} 
-            disabled={isTasksLoading} 
+          <button
+            onClick={onRefresh}
+            disabled={isTasksLoading}
             className={styles.refreshButton}
           >
             <FontAwesomeIcon icon={faSync} spin={isTasksLoading} />
@@ -54,8 +76,8 @@ const TasksView = ({
                     </div>
                   )}
                 </div>
-                <button 
-                  className={styles.viewButton} 
+                <button
+                  className={styles.viewButton}
                   onClick={() => onViewTaskDetails(task)}
                 >
                   View Details & Complete
@@ -69,6 +91,36 @@ const TasksView = ({
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3>Completed Tasks ({completedTasks.length})</h3>
+
+          <div className={styles.filterControls}>
+            <input
+              type="date"
+              value={from}
+              onChange={e => setFrom(e.target.value)}
+              className={styles.filterInput}
+              placeholder="From Date"
+            />
+
+            <input
+              type="date"
+              value={to}
+              onChange={e => setTo(e.target.value)}
+              className={styles.filterInput}
+              placeholder="To Date"
+            />
+
+            <button
+              onClick={() => onRefreshCompleted?.({
+                from: normalizeDateTimeLocal(from, 'start'),
+                to: normalizeDateTimeLocal(to, 'end')
+              })}
+              disabled={isCompletedLoading}
+              className={styles.refreshButton}
+              title="Refresh completed tasks"
+            >
+              <FontAwesomeIcon icon={faSync} spin={isCompletedLoading} />
+            </button>
+          </div>
         </div>
         {completedTasks.length === 0 ? (
           <div className={styles.emptyState}>
@@ -94,8 +146,8 @@ const TasksView = ({
                     </div>
                   )}
                 </div>
-                <button 
-                  className={styles.viewDetailsButton} 
+                <button
+                  className={styles.viewDetailsButton}
                   onClick={() => onViewCompletedDetails(task)}
                 >
                   View Details

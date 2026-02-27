@@ -7,16 +7,16 @@ import * as doctorService from '../services/doctor.service.js';
 export const getDoctorQueue = async (req, res, next) => {
   try {
     const { doctorId } = req.params;
-    
+
     if (!doctorId) {
       return res.status(400).json({
         success: false,
         message: 'doctorId parameter is required'
       });
     }
-    
+
     const visits = await doctorService.getActiveDoctorVisits(doctorId);
-    
+
     res.json({
       success: true,
       count: visits.length,
@@ -31,16 +31,16 @@ export const getDoctorQueue = async (req, res, next) => {
 export const getDoctorVisits = async (req, res, next) => {
   try {
     const doctor_id = req.query.doctor_id;
-    
+
     if (!doctor_id) {
       return res.status(400).json({
         success: false,
         message: 'doctor_id query parameter is required'
       });
     }
-    
+
     const visits = await doctorService.getActiveDoctorVisits(doctor_id);
-    
+
     res.json({
       success: true,
       data: visits
@@ -58,16 +58,16 @@ export const getDoctorVisits = async (req, res, next) => {
 export const getPatientHistory = async (req, res, next) => {
   try {
     const { patient_id } = req.params;
-    
+
     if (!patient_id) {
       return res.status(400).json({
         success: false,
         message: 'patient_id parameter is required'
       });
     }
-    
+
     const history = await doctorService.getPatientHistory(patient_id);
-    
+
     res.json({
       success: true,
       data: history
@@ -81,9 +81,9 @@ export const getPatientHistory = async (req, res, next) => {
 export const searchMedicines = async (req, res, next) => {
   try {
     const { search } = req.query;
-    
+
     const medicines = await doctorService.searchMedicines(search);
-    
+
     res.json({
       success: true,
       data: medicines
@@ -97,7 +97,7 @@ export const searchMedicines = async (req, res, next) => {
 export const getAvailableNurses = async (req, res, next) => {
   try {
     const nurses = await doctorService.getAvailableNurses();
-    
+
     res.json({
       success: true,
       nurses: nurses,
@@ -128,9 +128,9 @@ export const createPrescriptionWithTasks = async (req, res, next) => {
     }
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'No medicines provided' 
+        message: 'No medicines provided'
       });
     }
 
@@ -168,9 +168,9 @@ export const addDiagnosis = async (req, res, next) => {
     }
 
     await doctorService.addDiagnosis(req.body);
-    res.status(201).json({ 
-      success: true, 
-      message: 'Diagnosis added successfully' 
+    res.status(201).json({
+      success: true,
+      message: 'Diagnosis added successfully'
     });
   } catch (e) {
     console.error('❌ Error adding diagnosis:', e);
@@ -305,21 +305,21 @@ export const updateVisitStatus = async (req, res, next) => {
     });
   } catch (e) {
     console.error('❌ Error updating visit status:', e);
-    
+
     if (e.message.includes('Invalid status')) {
       return res.status(400).json({
         success: false,
         message: e.message
       });
     }
-    
+
     if (e.message === 'Visit not found') {
       return res.status(404).json({
         success: false,
         message: 'Visit not found'
       });
     }
-    
+
     next(e);
   }
 };
@@ -339,7 +339,7 @@ export const markVisitAsCompleted = async (req, res, next) => {
         message: 'visit_id parameter is required'
       });
     }
-    
+
     await doctorService.updateVisitStatus({
       visit_id,
       newStatus: 'COMPLETED'
@@ -349,7 +349,7 @@ export const markVisitAsCompleted = async (req, res, next) => {
     if (remarks) {
       const { SystemAuditLog } = await import('../models/sequelize/index.js');
       const { randomUUID } = await import('crypto');
-      
+
       await SystemAuditLog.create({
         log_id: randomUUID(),
         actor_user_id: req.user?.user_id || null,
@@ -364,9 +364,9 @@ export const markVisitAsCompleted = async (req, res, next) => {
       });
     }
 
-    res.json({ 
-      success: true, 
-      message: remarks ? 'Visit completed with referral remarks' : 'Visit marked as completed' 
+    res.json({
+      success: true,
+      message: remarks ? 'Visit completed with referral remarks' : 'Visit marked as completed'
     });
   } catch (e) {
     console.error('❌ Error marking visit as completed:', e);
@@ -377,7 +377,7 @@ export const markVisitAsCompleted = async (req, res, next) => {
 export const getTodayVisitsCount = async (req, res, next) => {
   try {
     const { doctor_id, date } = req.query;
-    
+
     if (!doctor_id || !date) {
       return res.status(400).json({
         success: false,
@@ -387,10 +387,12 @@ export const getTodayVisitsCount = async (req, res, next) => {
 
     const Visit = (await import('../models/sequelize/index.js')).Visit;
     const { Op } = await import('sequelize');
+    const { isDateOnlyLikeString, parseLocalDateOnly } = await import('../utils/dateRange.js');
 
-    const startOfDay = new Date(date);
+    const base = isDateOnlyLikeString(date) ? parseLocalDateOnly(date) : new Date(date);
+    const startOfDay = new Date(base);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(base);
     endOfDay.setHours(23, 59, 59, 999);
 
     const count = await Visit.count({
@@ -418,7 +420,7 @@ export const getTodayVisitsCount = async (req, res, next) => {
 export const getNurseTaskTypes = async (req, res, next) => {
   try {
     const taskTypes = await doctorService.getNurseTaskTypes();
-    
+
     res.json({
       success: true,
       data: taskTypes
@@ -432,16 +434,16 @@ export const getNurseTaskTypes = async (req, res, next) => {
 export const createNurseTask = async (req, res, next) => {
   try {
     const { visit_id, doctor_id, task_type_id, instructions } = req.body;
-    
+
     if (!visit_id || !doctor_id || !task_type_id) {
       return res.status(400).json({
         success: false,
         message: 'visit_id, doctor_id, and task_type_id are required'
       });
     }
-    
+
     const task = await doctorService.createNurseTask(visit_id, doctor_id, task_type_id, instructions);
-    
+
     res.json({
       success: true,
       data: task,

@@ -4,15 +4,15 @@ import ApiError from '../utils/ApiError.js';
 export const registerPatient = async (req, res, next) => {
   try {
     const { code } = req.user; // Get receptionist code from auth middleware
-    
+
     const result = await receptionistService.registerPatient({
       ...req.body,
       created_by_code: req.body.created_by_code || code
     });
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: 'Patient registered successfully',
-      patient_id: result.patient_id 
+      patient_id: result.patient_id
     });
   } catch (error) {
     next(error);
@@ -22,12 +22,12 @@ export const registerPatient = async (req, res, next) => {
 export const createVisit = async (req, res, next) => {
   try {
     const { code } = req.user; // Get receptionist code from auth middleware
-    
+
     const result = await receptionistService.createVisit({
       ...req.body,
       created_by_code: req.body.created_by_code || code
     });
-    
+
     res.status(201).json({
       message: 'Visit created',
       visit_id: result.visit_id
@@ -40,12 +40,12 @@ export const createVisit = async (req, res, next) => {
 export const addVitals = async (req, res, next) => {
   try {
     const { code } = req.user; // Get receptionist code from auth middleware
-    
+
     await receptionistService.addVitals({
       ...req.body,
       recorded_by_code: code
     });
-    
+
     res.status(201).json({ message: 'Vitals recorded successfully' });
   } catch (error) {
     next(error);
@@ -110,14 +110,30 @@ export const getPatients = async (req, res, next) => {
   try {
     console.log('🔧 DEBUG: getPatients called');
     console.log('🔧 DEBUG: User:', req.user);
-    
+
     const data = await receptionistService.getAllPatients();
-    
+
     console.log('✅ DEBUG: Patients fetched:', data.length);
     res.json({ success: true, data });
   } catch (err) {
     console.error('❌ DEBUG: getPatients error:', err);
     console.error('❌ DEBUG: Error stack:', err.stack);
+    next(err);
+  }
+};
+
+export const searchPatients = async (req, res, next) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim().length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const data = await receptionistService.searchPatients(query.trim());
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('❌ searchPatients error:', err);
     next(err);
   }
 };
@@ -135,10 +151,13 @@ export const getVisits = async (req, res, next) => {
   try {
     console.log('🔧 DEBUG: getVisits called');
     console.log('🔧 DEBUG: User:', req.user);
-    
+    console.log('🔧 DEBUG: Query params:', req.query);
+
     const { from, to } = req.query
-const data = await receptionistService.getAllVisits({ from, to })
-    
+    console.log('🔧 DEBUG: Date filters - from:', from, 'to:', to);
+
+    const data = await receptionistService.getAllVisits({ from, to })
+
     console.log('✅ DEBUG: Visits fetched:', data.length);
     res.json({ success: true, data });
   } catch (err) {

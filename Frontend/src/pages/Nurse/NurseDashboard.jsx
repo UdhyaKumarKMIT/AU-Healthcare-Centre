@@ -3,18 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faSync, faTasks, faBoxes, 
+import {
+  faSync, faTasks, faBoxes,
   faExchangeAlt, faCheckCircle, faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
-import TasksView from '../../components/nurse/TasksView';
-import StockView from '../../components/nurse/StockView';
-import TaskDetailsModal from '../../components/nurse/TaskDetailsModal';
-import CompletedTaskDetailsModal from '../../components/nurse/CompletedTaskDetailsModal';
+import TasksView from '../../components/Nurse/TasksView';
+import StockView from '../../components/Nurse/StockView';
+import TaskDetailsModal from '../../components/Nurse/TaskDetailsModal';
+import CompletedTaskDetailsModal from '../../components/Nurse/CompletedTaskDetailsModal';
 import {
   fetchNurseTasks,
+  fetchCompletedNurseTasks,
+  fetchCompletedNurseTasksToday,
   fetchTaskDetails,
   fetchCompletedTaskDetails,
   fetchAvailableStock,
@@ -22,30 +24,34 @@ import {
   clearCompletedTaskDetails,
   selectPendingTasks,
   selectCompletedTasks,
+  selectCompletedTasksToday,
   selectCurrentTask,
   selectCompletedTaskDetails,
   selectStock,
-  selectIsTasksLoading
+  selectIsTasksLoading,
+  selectIsCompletedTasksLoading
 } from '../../store/slices/nurseSlice';
-import styles from '../../components/nurse/NurseDashboard.module.css';
+import styles from '../../components/Nurse/NurseDashboard.module.css';
 
 function NurseDashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
-  
+
   const pendingTasks = useSelector(selectPendingTasks);
   const completedTasks = useSelector(selectCompletedTasks);
+  const completedTasksToday = useSelector(selectCompletedTasksToday);
   const taskDetails = useSelector(selectCurrentTask);
   const completedTaskDetails = useSelector(selectCompletedTaskDetails);
   const isTasksLoading = useSelector(selectIsTasksLoading);
-  
+  const isCompletedLoading = useSelector(selectIsCompletedTasksLoading);
+
   const [showModal, setShowModal] = useState(false);
   const [showCompletedDetailsModal, setShowCompletedDetailsModal] = useState(false);
   const [activeTask, setActiveTask] = useState(null);
   const [activeView, setActiveView] = useState("tasks");
   const [stockType, setStockType] = useState('NURSE');
-  
+
   const availableStock = useSelector(selectStock(stockType));
 
   useEffect(() => {
@@ -57,8 +63,13 @@ function NurseDashboard() {
   useEffect(() => {
     if (user && isAuthenticated) {
       dispatch(fetchNurseTasks());
+      // Default completed list = today
+      dispatch(fetchCompletedNurseTasks());
+      // Keep 'Completed Today' stat accurate
+      dispatch(fetchCompletedNurseTasksToday());
       const interval = setInterval(() => {
         dispatch(fetchNurseTasks());
+        dispatch(fetchCompletedNurseTasksToday());
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -66,15 +77,20 @@ function NurseDashboard() {
 
   const handleRefreshTasks = () => {
     dispatch(fetchNurseTasks());
+    dispatch(fetchCompletedNurseTasksToday());
     toast.info('Refreshing tasks...');
+  };
+
+  const handleRefreshCompletedTasks = ({ from, to } = {}) => {
+    dispatch(fetchCompletedNurseTasks({ from, to }));
   };
 
   const loadTaskDetails = async (task) => {
     setActiveTask(task);
     setShowModal(true);
-    
+
     const result = await dispatch(fetchTaskDetails(task.task_id));
-    
+
     if (result.payload) {
       const isDressing = result.payload.task_type?.toLowerCase().includes('dressing');
       const stockTypeToLoad = isDressing ? 'DRESSING' : 'NURSE';
@@ -119,6 +135,9 @@ function NurseDashboard() {
     setActiveTask(null);
     dispatch(clearCurrentTask());
     dispatch(fetchNurseTasks());
+    // Keep completed list + stat cards in sync immediately
+    dispatch(fetchCompletedNurseTasks());
+    dispatch(fetchCompletedNurseTasksToday());
   };
 
   if (authLoading) {
@@ -135,7 +154,7 @@ function NurseDashboard() {
   return (
     <div className={styles.dashboard}>
       <Header />
-      
+
       <div className={styles.roleSwapBar}>
         <div className={styles.roleSwapContainer}>
           <span className={styles.roleSwapText}>Switch Role:</span>
@@ -152,7 +171,7 @@ function NurseDashboard() {
             <h1 className={styles.pageTitle}>Nurse Dashboard</h1>
             <p className={styles.pageSubtitle}>Welcome back, {user.name}</p>
           </div>
-          
+
           <div className={styles.statsCards}>
             <div className={styles.statCard}>
               <div className={styles.statIcon} style={{ background: '#fee2e2', color: '#dc2626' }}>
@@ -168,7 +187,7 @@ function NurseDashboard() {
                 <FontAwesomeIcon icon={faCheckCircle} />
               </div>
               <div>
-                <div className={styles.statValue}>{completedTasks.length}</div>
+                <div className={styles.statValue}>{completedTasksToday.length}</div>
                 <div className={styles.statLabel}>Completed Today</div>
               </div>
             </div>
@@ -176,15 +195,15 @@ function NurseDashboard() {
         </div>
 
         <div className={styles.viewToggle}>
-          <button 
-            className={`${styles.actionCard} ${activeView === 'tasks' ? styles.active : ''}`} 
+          <button
+            className={`${styles.actionCard} ${activeView === 'tasks' ? styles.active : ''}`}
             onClick={() => setActiveView('tasks')}
           >
             <FontAwesomeIcon icon={faTasks} className={styles.toggleIcon} />
             <span> My Tasks</span>
           </button>
-          <button 
-            className={`${styles.actionCard} ${activeView === 'stock' ? styles.active : ''}`} 
+          <button
+            className={`${styles.actionCard} ${activeView === 'stock' ? styles.active : ''}`}
             onClick={() => {
               setActiveView('stock');
               setStockType('NURSE');
@@ -201,7 +220,9 @@ function NurseDashboard() {
             pendingTasks={pendingTasks}
             completedTasks={completedTasks}
             isTasksLoading={isTasksLoading}
+            isCompletedLoading={isCompletedLoading}
             onRefresh={handleRefreshTasks}
+            onRefreshCompleted={handleRefreshCompletedTasks}
             onViewTaskDetails={loadTaskDetails}
             onViewCompletedDetails={loadCompletedTaskDetails}
           />

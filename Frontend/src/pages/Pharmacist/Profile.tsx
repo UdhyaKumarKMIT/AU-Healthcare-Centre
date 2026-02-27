@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Pencil, X, Phone, Mail} from "lucide-react";
+import { Pencil, X, Phone, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
 import CustomModal from "./CustomModal";
 
-/* ---------- Helpers ---------- */ 
+/* ---------- Helpers ---------- */
 const Profile = () => {
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
@@ -15,7 +15,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [profile, setProfile] = useState({ 
+  const [profile, setProfile] = useState({
     name: "",
     email: "",
     phone: "",
@@ -25,19 +25,30 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const pharmacistId = user?.pharmacist_id;
+  const askSecretCode = () => {
+    const code = window.prompt("Enter Pharmacist Secret Code");
+    return code ? code.trim() : "";
+  };
 
   // Fetch pharmacist details
-  useEffect(() => { 
-    if (!pharmacistId) {
+  useEffect(() => {
+    if (!user) {
       navigate("/login/pharmacist");
+      return;
+    }
+
+    const secretCode = askSecretCode();
+    if (!secretCode) {
+      setModalMessage("Secret code is required to view profile.");
+      setModalOpen(true);
+      navigate("/pharmacist/dashboard");
       return;
     }
 
     const fetchProfile = async () => {
       try {
         const res = await api.get("/pharmacy/pharmacistDetails", {
-          params: { pharmacist_id: pharmacistId }
+          params: { secret_code: secretCode }
         });
         setProfile(res.data);
         setFormData(res.data);
@@ -52,7 +63,7 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, [navigate, pharmacistId]);
+  }, [navigate, user]);
 
   // Handlers
   const handleEdit = () => setIsEditing(true);
@@ -62,27 +73,35 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
-  setSaving(true);
-  try {
-    // Instead of updating DB directly, send a request for change
-    /*await api.post("/pharmacy/requestProfileChange", {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-    });*/
+    setSaving(true);
+    try {
+      const secretCode = askSecretCode();
+      if (!secretCode) {
+        setModalMessage("Secret code is required to update profile.");
+        setModalOpen(true);
+        return;
+      }
 
-    // Do NOT update local profile immediately
-    setIsEditing(false);
-    setModalMessage("Request for changes sent to Admin");
-    setModalOpen(true);
-  } catch (err) {
-    console.error(err);
-    setModalMessage("Failed to send request for changes.");
-    setModalOpen(true);
-  } finally {
-    setSaving(false);
-  }
-};
+      const res = await api.patch("/pharmacy/updatePharmacistDetails", {
+        secret_code: secretCode,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+      });
+
+      setProfile(res.data);
+      setFormData(res.data);
+      setIsEditing(false);
+      setModalMessage("Profile updated successfully.");
+      setModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      setModalMessage("Failed to update profile.");
+      setModalOpen(true);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   function toTitleCase(str: string) {
     return str.replace(/\w\S*/g, (txt) =>
@@ -93,192 +112,192 @@ const Profile = () => {
   if (loading) return <p style={{ textAlign: "center" }}>Loading...</p>;
 
   return (
-     <> 
+    <>
       <CustomModal
-      isOpen={modalOpen}
-      title="Alert"
-      message={modalMessage}
-      confirmText="OK"
-      onConfirm={modalConfirmCallback ?? undefined}
-      onClose={() => {
-        setModalConfirmCallback(null);
-        setModalOpen(false);
-      }}
-    />
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalConfirmCallback(null);
+          setModalOpen(false);
+        }}
+      />
 
-    <div style={{ minHeight: "100vh", background: "#f9fafb", padding: "2rem" }}>
-      <div  style={{
+      <div style={{ minHeight: "100vh", background: "#f9fafb", padding: "2rem" }}>
+        <div style={{
           maxWidth: 1200,
           margin: "auto",
           padding: "1rem",
           color: "black",
-        }}> 
+        }}>
 
-        {/* Profile Card */}
-        <div
-          style={{
-            background: "white",
-            borderRadius: "16px",
-            padding: "2rem",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-            transition: "box-shadow 0.3s ease",
-          }}
-        >
-          {/* Avatar + Edit Button */}
+          {/* Profile Card */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "2rem",
-              flexWrap: "wrap",
-              gap: "1rem",
+              background: "white",
+              borderRadius: "16px",
+              padding: "2rem",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+              transition: "box-shadow 0.3s ease",
             }}
           >
-            <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-              <div
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-                  color: "white",
-                  fontSize: "2rem",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 6px 16px rgba(37,99,235,0.4)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              >
-                {profile.name.charAt(0).toUpperCase() }
-              </div>
-              <div>
-                <h2 style={{ margin: 0, color: "#111827", fontWeight: "bolder" }}>
-                  {toTitleCase(profile.name)} 
-                </h2> 
-              </div>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-                <span style={roleBadgeStyle}>Pharmacist</span>
-                <span style={statusBadgeStyle}>Active</span>
-              </div>
-            </div>
-
-            {!isEditing && (
-              <button onClick={handleEdit} style={secondaryButtonStyle}>
-                <Pencil size={18} /> Edit Profile
-              </button>
-            )}
-          </div>
-          <hr style={{
-            border: "none",
-            borderTop: "1px solid #e5e7eb",
-            margin: "1.5rem 0"
-          }} />
-
-          {/* Profile Details / Form */}
-          <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "1.5rem",
-            fontFamily: "verdana",
-            paddingBottom: "2px"
-          }}
-          onFocus={(e) => (e.target.style.border = "1px solid #2563eb")}
-          onBlur={(e) => (e.target.style.border = "1px solid #e2e8f0")}
-          >
-            {isEditing ? (
-              <>
-                <Input
-                  label="Full Name"
-                  value={formData.name.charAt(0).toUpperCase() + formData.name.slice(1)}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, name: v }))
-                  }
-                />
-                <Input
-                  label="Email"
-                  value={formData.email}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, email: v }))
-                  }
-                />
-                <Input
-                  label="Phone"
-                  value={formData.phone}
-                  onChange={(v) =>
-                    setFormData((f) => ({ ...f, phone: v }))
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: "1.25rem",
-    fontFamily: "verdana"
-  }}
->
-  <InfoCard
-    icon={<Pencil size={20} />}
-    label="Full Name"
-    value={toTitleCase(profile.name)}
-  />
-
-  <InfoCard
-    icon={<Mail size={20} />}
-    label="Email Address"
-    value={profile.email}
-  />
-
-  <InfoCard
-    icon={<Phone size={20} />}
-    label="Contact Number"
-    value={profile.phone}
-  />
-</div>
-
-              </>
-            )}
-          </div>
-
-          {/* Actions */}
-          {isEditing && (
+            {/* Avatar + Edit Button */}
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "2rem",
-                gap: "0.75rem",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "2rem",
                 flexWrap: "wrap",
+                gap: "1rem",
               }}
             >
-              <button onClick={handleCancel} style={cancelButtonStyle}>
-                <X size={18} /> Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                style={{
-                  ...primaryButtonStyle,
-                  opacity: saving ? 0.7 : 1,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              >
-                {saving ? "Saving..." : "Submit Update Request"}
-              </button>
+              <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                    color: "white",
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 6px 16px rgba(37,99,235,0.4)",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  {profile.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, color: "#111827", fontWeight: "bolder" }}>
+                    {toTitleCase(profile.name)}
+                  </h2>
+                </div>
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                  <span style={roleBadgeStyle}>Pharmacist</span>
+                  <span style={statusBadgeStyle}>Active</span>
+                </div>
+              </div>
+
+              {!isEditing && (
+                <button onClick={handleEdit} style={secondaryButtonStyle}>
+                  <Pencil size={18} /> Edit Profile
+                </button>
+              )}
             </div>
-          )}
+            <hr style={{
+              border: "none",
+              borderTop: "1px solid #e5e7eb",
+              margin: "1.5rem 0"
+            }} />
+
+            {/* Profile Details / Form */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: "1.5rem",
+                fontFamily: "verdana",
+                paddingBottom: "2px"
+              }}
+              onFocus={(e) => (e.target.style.border = "1px solid #2563eb")}
+              onBlur={(e) => (e.target.style.border = "1px solid #e2e8f0")}
+            >
+              {isEditing ? (
+                <>
+                  <Input
+                    label="Full Name"
+                    value={formData.name.charAt(0).toUpperCase() + formData.name.slice(1)}
+                    onChange={(v) =>
+                      setFormData((f) => ({ ...f, name: v }))
+                    }
+                  />
+                  <Input
+                    label="Email"
+                    value={formData.email}
+                    onChange={(v) =>
+                      setFormData((f) => ({ ...f, email: v }))
+                    }
+                  />
+                  <Input
+                    label="Phone"
+                    value={formData.phone}
+                    onChange={(v) =>
+                      setFormData((f) => ({ ...f, phone: v }))
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                      gap: "1.25rem",
+                      fontFamily: "verdana"
+                    }}
+                  >
+                    <InfoCard
+                      icon={<Pencil size={20} />}
+                      label="Full Name"
+                      value={toTitleCase(profile.name)}
+                    />
+
+                    <InfoCard
+                      icon={<Mail size={20} />}
+                      label="Email Address"
+                      value={profile.email}
+                    />
+
+                    <InfoCard
+                      icon={<Phone size={20} />}
+                      label="Contact Number"
+                      value={profile.phone}
+                    />
+                  </div>
+
+                </>
+              )}
+            </div>
+
+            {/* Actions */}
+            {isEditing && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginTop: "2rem",
+                  gap: "0.75rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button onClick={handleCancel} style={cancelButtonStyle}>
+                  <X size={18} /> Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    ...primaryButtonStyle,
+                    opacity: saving ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  {saving ? "Saving..." : "Submit Update Request"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  </>
+    </>
   );
 };
 
@@ -456,7 +475,7 @@ const InfoCard = ({
     </div>
 
     <div>
-      <p style={{ margin: 0, fontSize: "1rem", color: "#000000", paddingBottom: "3px", fontWeight: "700"}}>
+      <p style={{ margin: 0, fontSize: "1rem", color: "#000000", paddingBottom: "3px", fontWeight: "700" }}>
         {label}
       </p>
       <p

@@ -26,17 +26,20 @@ export const getPrescriptionDetails = async (req, res) => {
 };
 
 export const issueMedicine = async (req, res) => {
-  const { pharmacist_id, prescription_id, issued_days, batches } = req.body;
+  const { secret_code, prescription_id, issued_days, batches } = req.body;
 
-  if (!pharmacist_id || !prescription_id || !issued_days || !batches || !batches.length) {
+  if (!secret_code || !prescription_id || !issued_days || !batches || !batches.length) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   try {
-    const result = await issueMedicineService({ pharmacist_id, prescription_id, issued_days, batches });
+    const result = await issueMedicineService({ secret_code, prescription_id, issued_days, batches });
     res.status(200).json(result);
   } catch (err) {
     console.error("Issue medicine error:", err.message);
+    if (String(err.message).toLowerCase().includes("invalid secret code")) {
+      return res.status(401).json({ message: "Invalid secret code" });
+    }
     res.status(400).json({ message: err.message });
   }
 };

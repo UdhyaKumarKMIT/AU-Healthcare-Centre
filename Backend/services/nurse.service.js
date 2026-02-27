@@ -1,61 +1,135 @@
-import { 
-  NurseTask, 
-  NurseTransaction, 
+import {
+  NurseTask,
+  NurseTransaction,
   NurseStock,
   DressingStock,
-  Visit, 
-  Patient, 
+  Visit,
+  Patient,
   Doctor,
   NurseTaskMaster,
   StaffDetails,
   SystemAuditLog,
-  sequelize 
+  sequelize
 } from '../models/sequelize/index.js';
 import { Op } from 'sequelize';
 import ApiError from '../utils/ApiError.js';
+import { isDateOnlyLikeString, normalizeDateBound } from '../utils/dateRange.js';
 
-// Get all tasks for a nurse (by staff code or staff_id)
-export const getNurseTasks = async (staff_code) => {
-  const tasks = await NurseTask.findAll({
-    include: [
-      {
-        model: Visit,
-        include: [
-          {
-            model: Patient,
-            attributes: ['patient_id', 'name', 'phone', 'patient_type', 'allergic_to']
-          },
-          {
-            model: Doctor,
-            attributes: ['doctor_id', 'name', 'specialization']
-          }
-        ]
-      },
-      {
-        model: NurseTaskMaster,
-        attributes: ['task_name']
+const parseRange = ({ from, to } = {}) => {
+  const normalizedFrom = normalizeDateBound(from, 'start');
+  const normalizedTo = normalizeDateBound(to, 'end');
+
+  // Default: today (server local time)
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  let start = normalizedFrom ?? startOfToday;
+  let end = normalizedTo ?? endOfToday;
+
+  // If user provided only a from date (date-only), treat it as that full day.
+  if (normalizedFrom && !normalizedTo && isDateOnlyLikeString(from)) {
+    end = normalizeDateBound(from, 'end');
+  }
+
+  // If user provided only a to date (date-only), treat it as that full day.
+  if (!normalizedFrom && normalizedTo && isDateOnlyLikeString(to)) {
+    start = normalizeDateBound(to, 'start');
+  }
+
+  // Be tolerant if bounds are reversed.
+  if (start > end) {
+    const tmp = start;
+    start = end;
+    end = tmp;
+  }
+
+  return { start, end };
+};
+
+// Get nurse tasks. Supports filtering completed tasks by performed_at range via query params.
+// NOTE: completed_at is derived from nurse_transaction.performed_at to be resilient to schema drift.
+export const getNurseTasks = async (staff_code, { status, from, to } = {}) => {
+  const include = [
+    {
+      model: Visit,
+      include: [
+        {
+          model: Patient,
+          attributes: ['patient_id', 'name', 'phone', 'patient_type', 'allergic_to']
+        },
+        {
+          model: Doctor,
+          attributes: ['doctor_id', 'name', 'specialization']
+        }
+      ]
+    },
+    {
+      model: NurseTaskMaster,
+      attributes: ['task_name']
+    }
+  ];
+
+  const where = {};
+  if (status === 'COMPLETED') {
+    where.status = 'COMPLETED';
+
+    const { start, end } = parseRange({ from, to });
+    include.push({
+      model: NurseTransaction,
+      attributes: ['performed_at', 'status'],
+      required: true,
+      where: {
+        status: 'COMPLETED',
+        performed_at: { [Op.between]: [start, end] }
       }
-    ],
-    order: [['assigned_at', 'DESC']]
+    });
+  } else {
+    include.push({
+      model: NurseTransaction,
+      attributes: ['performed_at', 'status'],
+      required: false
+    });
+  }
+
+  const tasks = await NurseTask.findAll({
+    where,
+    include,
+    order: [['assigned_at', 'DESC']],
+    distinct: true
   });
 
-  return tasks.map(task => ({
-    task_id: task.task_id,
-    task_type: task.NurseTaskMaster?.task_name || 'General Task',
-    task_type_id: task.task_type_id,
-    status: task.status,
-    instructions: task.instructions,
-    assigned_at: task.assigned_at,
-    completed_at: task.completed_at,
-    visit_id: task.visit_id,
-    visit_date: task.Visit?.visit_date,
-    reason: task.Visit?.reason,
-    patient_id: task.Visit?.Patient?.patient_id,
-    patient_name: task.Visit?.Patient?.name,
-    patient_allergies: task.Visit?.Patient?.allergic_to,
-    doctor_id: task.Visit?.Doctor?.doctor_id,
-    doctor_name: task.Visit?.Doctor?.name
-  }));
+  return tasks.map(task => {
+    const txns = task.NurseTransactions || [];
+    const completedTimes = txns
+      .filter(t => t?.status === 'COMPLETED' && t?.performed_at)
+      .map(t => new Date(t.performed_at))
+      .filter(d => !Number.isNaN(d.getTime()));
+
+    const completed_at = completedTimes.length
+      ? new Date(Math.max(...completedTimes.map(d => d.getTime())))
+      : null;
+
+    return {
+      task_id: task.task_id,
+      task_type: task.NurseTaskMaster?.task_name || 'General Task',
+      task_type_id: task.task_type_id,
+      status: task.status,
+      instructions: task.instructions,
+      assigned_at: task.assigned_at,
+      completed_at,
+      visit_id: task.visit_id,
+      visit_date: task.Visit?.visit_date,
+      reason: task.Visit?.reason,
+      patient_id: task.Visit?.Patient?.patient_id,
+      patient_name: task.Visit?.Patient?.name,
+      patient_allergies: task.Visit?.Patient?.allergic_to,
+      doctor_id: task.Visit?.Doctor?.doctor_id,
+      doctor_name: task.Visit?.Doctor?.name
+    };
+  });
 };
 
 // Get task details with medication info
@@ -131,7 +205,7 @@ export const getTaskDetails = async (task_id) => {
 // Get completed task details
 export const getCompletedTaskDetails = async (task_id) => {
   console.log('🔍 [GET COMPLETED DETAILS] Fetching for task_id:', task_id);
-  
+
   try {
     const task = await NurseTask.findByPk(task_id, {
       include: [
@@ -169,7 +243,7 @@ export const getCompletedTaskDetails = async (task_id) => {
 
     // Get the most recent transaction
     const transaction = task.NurseTransactions?.[0] || null;
-    
+
     console.log('🔍 [GET COMPLETED DETAILS] Transaction:', transaction ? 'FOUND' : 'NOT FOUND');
 
     // Get staff details separately if we have a performed_by_code
@@ -196,21 +270,21 @@ export const getCompletedTaskDetails = async (task_id) => {
       let resultObservation = null
       try {
         if (transaction.medications_used) {
-          medicationsUsed = typeof transaction.medications_used === 'string' 
-            ? JSON.parse(transaction.medications_used) 
+          medicationsUsed = typeof transaction.medications_used === 'string'
+            ? JSON.parse(transaction.medications_used)
             : transaction.medications_used;
         }
       } catch (e) {
         console.error('❌ [GET COMPLETED DETAILS] Error parsing medications_used:', e);
       }
-      
+
       try {
         if (task.NurseTaskMaster?.task_name?.toUpperCase().includes('ECG')) {
           try {
             const parsed = JSON.parse(transaction.remarks || '{}')
             ecgReportData = parsed.ecg_report || null
             resultObservation = null
-          } catch {}
+          } catch { }
         }
       } catch (e) {
         console.error('❌ [GET COMPLETED DETAILS] Error parsing ecg_report:', e);
@@ -276,8 +350,8 @@ export const completeTask = async ({
 
     // Get task
     const task = await NurseTask.findByPk(task_id, {
-    include: [{ model: NurseTaskMaster }, { model: Visit }],
-    transaction: t
+      include: [{ model: NurseTaskMaster }, { model: Visit }],
+      transaction: t
     });
 
 
@@ -295,10 +369,10 @@ export const completeTask = async ({
     const isDressing = taskName.includes('DRESSING') || taskName.includes('WOUND')
 
     if (isECG && medications_used?.length)
-      throw new ApiError(400,'ECG task cannot use medicines')
+      throw new ApiError(400, 'ECG task cannot use medicines')
 
     if (!isECG && ecg_report)
-      throw new ApiError(400,'ECG report allowed only for ECG task')
+      throw new ApiError(400, 'ECG report allowed only for ECG task')
 
     if (isECG) StockModel = null
     else StockModel = isDressing ? DressingStock : NurseStock
@@ -314,16 +388,16 @@ export const completeTask = async ({
         }
 
         // Find stock entry
-      const stock = await StockModel.findOne({
-        where: { medicine_id, batch_no },
-        transaction: t,
-        lock: t.LOCK.UPDATE
-      })
+        const stock = await StockModel.findOne({
+          where: { medicine_id, batch_no },
+          transaction: t,
+          lock: t.LOCK.UPDATE
+        })
 
-      if (!stock) throw new ApiError(404,'Stock not found for selected item')
-      if (stock.quantity < quantity) throw new ApiError(400,'Insufficient stock for selected item')
+        if (!stock) throw new ApiError(404, 'Stock not found for selected item')
+        if (stock.quantity < quantity) throw new ApiError(400, 'Insufficient stock for selected item')
 
-      await stock.update({ quantity: stock.quantity - quantity }, { transaction: t })
+        await stock.update({ quantity: stock.quantity - quantity }, { transaction: t })
 
 
 
@@ -350,9 +424,9 @@ export const completeTask = async ({
     }, { transaction: t });
 
     // Update task status
-    await task.update({ 
-        status: 'COMPLETED',
-        completed_at: new Date()
+    await task.update({
+      status: 'COMPLETED',
+      completed_at: new Date()
     }, { transaction: t });
 
 
@@ -379,7 +453,7 @@ export const completeTask = async ({
 export const getAvailableStock = async (stock_type = 'NURSE') => {
   const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
 
-  const stock = await StockModel.findAll({ where:{ quantity:{[Op.gt]:0}}, order:[['expiry','ASC']] })
+  const stock = await StockModel.findAll({ where: { quantity: { [Op.gt]: 0 } }, order: [['expiry', 'ASC']] })
 
 
   return stock.map(s => ({
@@ -400,7 +474,7 @@ export const verifyStaffCode = async (secret_code) => {
   console.log('🔍 [VERIFY CODE] Is undefined?', secret_code === undefined);
   console.log('🔍 [VERIFY CODE] Is null?', secret_code === null);
   console.log('🔍 [VERIFY CODE] Is empty string?', secret_code === '');
-  
+
   if (!secret_code) {
     console.log('❌ [VERIFY CODE] Secret code is falsy, returning false');
     return false;
@@ -408,19 +482,19 @@ export const verifyStaffCode = async (secret_code) => {
 
   try {
     const staff = await StaffDetails.findOne({
-  attributes: [
-    'staff_id',
-  ],
-  where: { 
-    code: secret_code,
-    role: 'NURSE_RECEPTIONIST',
-    status: 'ACTIVE'
-  }
-});
+      attributes: [
+        'staff_id',
+      ],
+      where: {
+        code: secret_code,
+        role: 'NURSE_RECEPTIONIST',
+        status: 'ACTIVE'
+      }
+    });
 
 
     console.log('🔍 [VERIFY CODE] Database query result:', staff ? 'FOUND' : 'NOT FOUND');
-    
+
 
     return !!staff;
   } catch (error) {

@@ -14,17 +14,15 @@ const MedicinePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const pharmacistId = user?.pharmacist_id;
-
   const [medicine, setMedicine] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<"all" | "name">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [quickFilter, setQuickFilter] = useState<
     "none" | "out" | "exp3" | "exp1" | "withStock"
   >("none");
-  
+
   useEffect(() => {
-    if (!pharmacistId) {
+    if (!user) {
       navigate("/login/pharmacist");
       return;
     }
@@ -33,7 +31,7 @@ const MedicinePage = () => {
       try {
         const res = await api.get("/pharmacy/medicine");
         console.log(res.data.medicines)
-        setMedicine(res.data.medicines);  
+        setMedicine(res.data.medicines);
       } catch (err) {
         setModalMessage("Failed to load medicine details");
         setModalOpen(true);
@@ -41,7 +39,7 @@ const MedicinePage = () => {
       }
     };
     loadMedicineDetails();
-  }, [pharmacistId, navigate]);
+  }, [navigate, user]);
 
   const getRemainingTime = (expiryDate: string) => {
     const now = new Date();
@@ -70,12 +68,12 @@ const MedicinePage = () => {
     }
 
     return { expired: false, years, months, days };
-  }; 
- 
-const toTitleCase = (str: string) =>
-  str.replace(/\w\S*/g, (txt) =>
-    txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
-  );
+  };
+
+  const toTitleCase = (str: string) =>
+    str.replace(/\w\S*/g, (txt) =>
+      txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
+    );
 
 
   const isExpiringWithin = (date: string, months: number) => {
@@ -87,151 +85,151 @@ const toTitleCase = (str: string) =>
   };
 
   const filteredMedicine = medicine.filter((med: any) => {
-  let passesQuickFilter = true;
-  let passesSearchFilter = true;
-  
-  if (quickFilter === "withStock") {
-    passesQuickFilter = med.batches.some((b: any) => b.in_stock > 0);
-  }
-  
-  if (quickFilter === "out") {
-    passesQuickFilter =
-      med.batches.length === 0 ||
-      med.batches.every((b: any) => b.in_stock === 0);
-  }
+    let passesQuickFilter = true;
+    let passesSearchFilter = true;
 
-  if (quickFilter === "exp3") {
-    passesQuickFilter = med.batches.some((b: any) =>
-      isExpiringWithin(b.expiry_date, 3)
-    );
-  }
+    if (quickFilter === "withStock") {
+      passesQuickFilter = med.batches.some((b: any) => b.in_stock > 0);
+    }
 
-  if (quickFilter === "exp1") {
-    passesQuickFilter = med.batches.some((b: any) =>
-      isExpiringWithin(b.expiry_date, 1)
-    );
-  }
+    if (quickFilter === "out") {
+      passesQuickFilter =
+        med.batches.length === 0 ||
+        med.batches.every((b: any) => b.in_stock === 0);
+    }
 
-  if (filterType === "name" && searchTerm.trim() !== "") {
-    passesSearchFilter = med.medicine_name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-  }
+    if (quickFilter === "exp3") {
+      passesQuickFilter = med.batches.some((b: any) =>
+        isExpiringWithin(b.expiry_date, 3)
+      );
+    }
 
-  return passesQuickFilter && passesSearchFilter;
-});
+    if (quickFilter === "exp1") {
+      passesQuickFilter = med.batches.some((b: any) =>
+        isExpiringWithin(b.expiry_date, 1)
+      );
+    }
+
+    if (filterType === "name" && searchTerm.trim() !== "") {
+      passesSearchFilter = med.medicine_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+    }
+
+    return passesQuickFilter && passesSearchFilter;
+  });
 
 
   return (
-    <> 
+    <>
       <CustomModal
-      isOpen={modalOpen}
-      title="Alert"
-      message={modalMessage}
-      confirmText="OK"
-      onConfirm={modalConfirmCallback ?? undefined}
-      onClose={() => {
-        setModalConfirmCallback(null);
-        setModalOpen(false);
-      }}
-    />
-
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* HEADER */}
-      <header
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalConfirmCallback(null);
+          setModalOpen(false);
         }}
-      >
-      </header> 
-      {/* MAIN */}
-      <main
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: "1rem",
-          color: "black",
-        }}
-      >
-        <div style={pageCardStyle}>
-          {/* TITLE */}
-          <h2 style={{ color: "#1e40af", margin: 0 }}>
-            <ChartColumnIncreasing /> Stock Analytics
-          </h2><br />
+      />
 
-          {/* FILTER BAR */}
-<div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.6rem",
-    flexWrap: "wrap",
-    marginBottom: "1.5rem",
-    padding: "0.75rem",
-    borderRadius: "8px"
-  }}
->
-  {/* SEARCH BAR */}
-  <input
-    type="text"
-    placeholder="Search medicine name"
-    value={searchTerm}
-    onChange={(e) => {
-      setFilterType("name");
-      setSearchTerm(e.target.value);
-    }}
-    style={searchBarStyle}
-  />
+      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+        {/* HEADER */}
+        <header
+          style={{
+            background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
+            color: "white",
+          }}
+        >
+        </header>
+        {/* MAIN */}
+        <main
+          style={{
+            maxWidth: 1200,
+            margin: "auto",
+            padding: "1rem",
+            color: "black",
+          }}
+        >
+          <div style={pageCardStyle}>
+            {/* TITLE */}
+            <h2 style={{ color: "#1e40af", margin: 0 }}>
+              <ChartColumnIncreasing /> Stock Analytics
+            </h2><br />
 
-  {/* QUICK FILTERS */}
-  <button
-    onClick={() => setQuickFilter("withStock")}
-    style={quickFilterButton(quickFilter === "withStock")}
-  >
-    With Stock
-  </button>
+            {/* FILTER BAR */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.6rem",
+                flexWrap: "wrap",
+                marginBottom: "1.5rem",
+                padding: "0.75rem",
+                borderRadius: "8px"
+              }}
+            >
+              {/* SEARCH BAR */}
+              <input
+                type="text"
+                placeholder="Search medicine name"
+                value={searchTerm}
+                onChange={(e) => {
+                  setFilterType("name");
+                  setSearchTerm(e.target.value);
+                }}
+                style={searchBarStyle}
+              />
 
-  <button
-    onClick={() => setQuickFilter("out")}
-    style={quickFilterButton(quickFilter === "out")}
-  >
-    Out of Stock
-  </button>
+              {/* QUICK FILTERS */}
+              <button
+                onClick={() => setQuickFilter("withStock")}
+                style={quickFilterButton(quickFilter === "withStock")}
+              >
+                With Stock
+              </button>
 
-  <button
-    onClick={() => setQuickFilter("exp3")}
-    style={quickFilterButton(quickFilter === "exp3")}
-  >
-    Expiring in 3 months
-  </button>
+              <button
+                onClick={() => setQuickFilter("out")}
+                style={quickFilterButton(quickFilter === "out")}
+              >
+                Out of Stock
+              </button>
 
-  <button
-    onClick={() => setQuickFilter("exp1")}
-    style={quickFilterButton(quickFilter === "exp1")}
-  >
-    Expiring in 1 month
-  </button> 
-  
-  <button
-    onClick={() => {
-      setQuickFilter("none");
-      setSearchTerm("");
-      setFilterType("all");
-    }}
-    style={clearFilterButtonStyle}
-  >
-    Clear
-  </button>
+              <button
+                onClick={() => setQuickFilter("exp3")}
+                style={quickFilterButton(quickFilter === "exp3")}
+              >
+                Expiring in 3 months
+              </button>
 
-</div>
+              <button
+                onClick={() => setQuickFilter("exp1")}
+                style={quickFilterButton(quickFilter === "exp1")}
+              >
+                Expiring in 1 month
+              </button>
+
+              <button
+                onClick={() => {
+                  setQuickFilter("none");
+                  setSearchTerm("");
+                  setFilterType("all");
+                }}
+                style={clearFilterButtonStyle}
+              >
+                Clear
+              </button>
+
+            </div>
 
 
-          {/* LIST */}
-          {Object.keys(filteredMedicine).length === 0 ? (
-            <p>No medicines found.</p>
-          ) : (
-            filteredMedicine.map((med: any) => (
+            {/* LIST */}
+            {Object.keys(filteredMedicine).length === 0 ? (
+              <p>No medicines found.</p>
+            ) : (
+              filteredMedicine.map((med: any) => (
                 <div key={med.medicine_id} style={medicineCardStyle}>
                   <div style={medicineHeaderStyle}>
                     <h3 style={{ margin: 0 }}>
@@ -244,16 +242,16 @@ const toTitleCase = (str: string) =>
                   </div>
 
                   {med.batches.length === 0 ? (
-                    <p style={{fontFamily: "verdana"}}>Out of stock</p>
+                    <p style={{ fontFamily: "verdana" }}>Out of stock</p>
                   ) : (
                     med.batches.map((batch: any) => {
                       const remaining = getRemainingTime(batch.expiry_date);
 
                       return (
-                        <div key={batch.batch_id} style={{...batchCardStyle, fontFamily: "verdana"}}>
-                          <div style={{paddingBottom: "2px"}}><strong>Batch ID:</strong> {batch.batch_id}</div>
-                          <div style={{paddingBottom: "2px"}}><strong>In Stock:</strong> {batch.in_stock} units</div>
-                          <div style={{paddingBottom: "2px"}}>
+                        <div key={batch.batch_id} style={{ ...batchCardStyle, fontFamily: "verdana" }}>
+                          <div style={{ paddingBottom: "2px" }}><strong>Batch ID:</strong> {batch.batch_id}</div>
+                          <div style={{ paddingBottom: "2px" }}><strong>In Stock:</strong> {batch.in_stock} units</div>
+                          <div style={{ paddingBottom: "2px" }}>
                             <strong>Expiry:</strong>{" "}
                             {new Date(batch.expiry_date).toLocaleDateString()}
                           </div>
@@ -272,24 +270,24 @@ const toTitleCase = (str: string) =>
                             )}
                           </div>
                           <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-start",
-                    marginTop: "0.6rem",
-                  }}
-                > 
-                </div>
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-start",
+                              marginTop: "0.6rem",
+                            }}
+                          >
+                          </div>
                         </div>
                       );
                     })
                   )}
                 </div>
               )
-            )
-          )}
-        </div>
-      </main>
-    </div>
+              )
+            )}
+          </div>
+        </main>
+      </div>
     </>
   );
 };
@@ -303,7 +301,7 @@ const pageCardStyle: React.CSSProperties = {
   border: "1px solid #cbd5e1",
   boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
 };
- 
+
 const medicineCardStyle: React.CSSProperties = {
   background: "#f3f8ff",
   borderRadius: "10px",
@@ -325,8 +323,8 @@ const batchCardStyle: React.CSSProperties = {
   padding: "0.75rem",
   border: "1px solid #2563eb",
   marginBottom: "0.5rem",
-}; 
- 
+};
+
 const quickFilterButton = (active: boolean): React.CSSProperties => ({
   padding: "0.4rem",
   background: active ? "#2563eb" : "white",
@@ -337,13 +335,13 @@ const quickFilterButton = (active: boolean): React.CSSProperties => ({
 });
 
 const clearFilterButtonStyle: React.CSSProperties = {
-  padding: "0.4rem", 
+  padding: "0.4rem",
   background: "white",
   color: "#b80a0a",
   borderRadius: "5px",
   fontWeight: "500",
   border: "1px solid #dc2626",
-}; 
+};
 
 const searchBarStyle: React.CSSProperties = {
   padding: "0.45rem 0.6rem",

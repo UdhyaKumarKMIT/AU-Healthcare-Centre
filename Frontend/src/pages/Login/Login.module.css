@@ -75,6 +75,19 @@
   font-size: 14px;
 }
 
+.formGroup select {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.formGroup select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
 .formGroup input:focus {
   outline: none;
   border-color: #2563eb;
@@ -122,5 +135,28 @@
 
 .footerNote {
   margin-top: 4px;
+  color: #64748b;
+}
+
+.staffSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.staffSelectHeader {
+  text-align: center;
+}
+
+.staffSelectTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.staffSelectSubtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
   color: #64748b;
 }

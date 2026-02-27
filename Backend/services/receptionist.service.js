@@ -1,9 +1,9 @@
-import { 
-  Patient, 
-  PatientUser, 
+import {
+  Patient,
+  PatientUser,
   FamilyDetails,
-  Visit, 
-  Vitals, 
+  Visit,
+  Vitals,
   Doctor,
   User,
   SystemAuditLog,
@@ -12,6 +12,7 @@ import {
 import { Op } from 'sequelize';
 import bcrypt from 'bcrypt';
 import ApiError from '../utils/ApiError.js';
+import { isDateOnlyLikeString, normalizeDateBound } from '../utils/dateRange.js';
 
 // ============================================================================
 // PATIENT REGISTRATION WITH COMPLETE DETAILS
@@ -25,6 +26,8 @@ export const registerPatient = async ({
   phone,
   patient_type,
   allergic_to,
+  email,
+  rollNo,
   // Additional fields
   department,
   year,
@@ -53,7 +56,13 @@ export const registerPatient = async ({
       gender,
       phone,
       patient_type,
-      allergic_to: allergic_to || null
+      allergic_to: allergic_to || null,
+      email: email || null,
+      reg_number: rollNo || null,
+      department: patient_type === 'STUDENT' ? department : null,
+      year: patient_type === 'STUDENT' ? year : null,
+      employee_id: patient_type !== 'STUDENT' ? employeeId : null,
+      designation: patient_type !== 'STUDENT' ? designation : null
     }, { transaction: t });
 
     // Create patient user account
@@ -87,9 +96,9 @@ export const registerPatient = async ({
         action: 'REGISTER_PATIENT',
         entity_type: 'PATIENT',
         entity_id: patient.patient_id,
-        new_value: { 
-          name, 
-          patient_type, 
+        new_value: {
+          name,
+          patient_type,
           department: patient_type === 'STUDENT' ? department : null,
           year: patient_type === 'STUDENT' ? year : null,
           employeeId: patient_type !== 'STUDENT' ? employeeId : null,
@@ -103,13 +112,13 @@ export const registerPatient = async ({
     return { patient_id: patient.patient_id };
   });
 
-  console.log('✅ Patient registered:', { 
-    patient_id: result.patient_id, 
-    username, 
+  console.log('✅ Patient registered:', {
+    patient_id: result.patient_id,
+    username,
     type: patient_type,
     family_members: familyMembers?.length || 0
   });
-  
+
   return result;
 };
 
@@ -248,13 +257,13 @@ export const addVitals = async ({
 export const getAllPatients = async () => {
   const patients = await Patient.findAll({
     attributes: [
-      'patient_id', 
-      'name', 
-      'dob', 
-      'gender', 
-      'phone', 
-      'patient_type', 
-      'allergic_to', 
+      'patient_id',
+      'name',
+      'dob',
+      'gender',
+      'phone',
+      'patient_type',
+      'allergic_to',
       'created_at'
     ],
     include: [
@@ -347,14 +356,40 @@ export const getAllAvailableDoctors = async () => {
 };
 
 export const getAllVisits = async ({ from, to } = {}) => {
+  console.log('🔍 getAllVisits called with:', { from, to });
+
+  // Treat empty strings as no filter
+  const hasFrom = from && from.trim() !== '';
+  const hasTo = to && to.trim() !== '';
+
   const where = {}
 
-  if (from && to) {
-    where.visit_date = { [Op.between]: [new Date(from), new Date(to)] }
-  } else {
-    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000)
-    where.visit_date = { [Op.gte]: fourHoursAgo }
+  // Default: fetch TODAY's visits only (not last 30 days)
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const normalizedFrom = hasFrom ? normalizeDateBound(from, 'start') : null;
+  const normalizedTo = hasTo ? normalizeDateBound(to, 'end') : null;
+
+  console.log('🔍 Normalized dates:', { normalizedFrom, normalizedTo });
+
+  let start = normalizedFrom ?? startOfToday;
+  let end = normalizedTo ?? endOfToday;
+
+
+  // Be tolerant if bounds are reversed.
+  if (start > end) {
+    const tmp = start;
+    start = end;
+    end = tmp;
   }
+
+  console.log('🔍 Final date range:', { start, end });
+
+  where.visit_date = { [Op.between]: [start, end] }
 
   const visits = await Visit.findAll({
     where,
@@ -370,6 +405,11 @@ export const getAllVisits = async ({ from, to } = {}) => {
     ],
     order: [['visit_date', 'DESC']]
   });
+
+  console.log('🔍 Raw visits from DB:', visits.length);
+  if (visits.length > 0) {
+    console.log('🔍 Sample visit dates:', visits.slice(0, 3).map(v => v.visit_date));
+  }
 
   // Add sequential token numbers
   return visits.map((visit, index) => ({
@@ -430,4 +470,53 @@ export const updateDoctorAvailability = async (doctor_id, availability_status) =
   await doctor.update({ availability_status });
 
   return { doctor_id, availability_status };
+};
+
+// ============================================================================
+// SEARCH PATIENTS (Server-side search)
+// ============================================================================
+
+export const searchPatients = async (query) => {
+  const patients = await Patient.findAll({
+    where: {
+      [Op.or]: [
+        { name: { [Op.like]: `%${query}%` } },
+        { phone: { [Op.like]: `%${query}%` } },
+        { reg_number: { [Op.like]: `%${query}%` } }
+      ]
+    },
+    attributes: [
+      'patient_id',
+      'name',
+      'phone',
+      'reg_number',
+      'patient_type',
+      'dob',
+      'gender',
+      'blood_group',
+      'email',
+      'department',
+      'year',
+      'employee_id',
+      'designation'
+    ],
+    limit: 10
+  });
+
+  return patients.map(p => ({
+    patient_id: p.patient_id,
+    id: p.patient_id,
+    name: p.name,
+    phone: p.phone,
+    reg_number: p.reg_number,
+    patient_type: p.patient_type,
+    dob: p.dob,
+    gender: p.gender,
+    blood_group: p.blood_group,
+    email: p.email,
+    department: p.department,
+    year: p.year,
+    employee_id: p.employee_id,
+    designation: p.designation
+  }));
 };

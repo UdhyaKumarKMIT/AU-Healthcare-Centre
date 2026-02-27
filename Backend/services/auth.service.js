@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 import User from '../models/sequelize/User.js';
-import Doctor from '../models/sequelize/Doctor.js'; 
+import Doctor from '../models/sequelize/Doctor.js';
 import StaffDetails from '../models/sequelize/StaffDetails.js';
 import ApiError from '../utils/ApiError.js';
 import dotenv from 'dotenv';
@@ -22,20 +22,20 @@ export const login = async (username, password, role) => {
   }
 
   // Determine login type based on role
-const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(role)
-const isUserSpecific = USER_SPECIFIC_ROLES.includes(role) || role === ROLES.PATIENT
+  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(role)
+  const isUserSpecific = USER_SPECIFIC_ROLES.includes(role) || role === ROLES.PATIENT
 
-if (!isRoleSpecific && !isUserSpecific)
-  throw new ApiError(400,'Invalid role')
+  if (!isRoleSpecific && !isUserSpecific)
+    throw new ApiError(400, 'Invalid role')
 
-const user = await User.findOne({
-  where: isRoleSpecific
-    ? { role, is_role_specific:true, status:'ACTIVE' }
-    : { username, role, status:'ACTIVE', is_role_specific:false }
-})
+  const user = await User.findOne({
+    where: isRoleSpecific
+      ? { role, is_role_specific: true, status: 'ACTIVE' }
+      : { username, role, status: 'ACTIVE', is_role_specific: false }
+  })
 
-if (!user || (isRoleSpecific && user.username !== username))
-  throw new ApiError(401,'Invalid credentials')
+  if (!user || (isRoleSpecific && user.username !== username))
+    throw new ApiError(401, 'Invalid credentials')
 
 
   // Verify password using bcrypt
@@ -44,7 +44,7 @@ if (!user || (isRoleSpecific && user.username !== username))
   console.log('Password provided:', password);
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);
   console.log('Password valid:', isPasswordValid);
-  
+
   if (!isPasswordValid) {
     throw new ApiError(401, 'Invalid credentials');
   }
@@ -69,22 +69,28 @@ if (!user || (isRoleSpecific && user.username !== username))
 
   // If role-specific, fetch staff details from staff_details table
   if (isRoleSpecific) {
+    // Role-specific accounts should not require staff selection at login.
+    // Accountability is enforced per action via secret_code validation.
+    if (role === ROLES.PHARMACIST || role === 'PHARMACIST' || role === ROLES.NURSE_RECEPTIONIST || role === 'NURSE_RECEPTIONIST') {
+      return response;
+    }
 
-  const staffList = await StaffDetails.findAll({
-    where: { role, status: 'ACTIVE' },
-    attributes: ['staff_id', 'name', 'code', 'phone', 'email']
-  });
+    // Keep existing NURSE_RECEPTIONIST shared-credential behavior.
+    const staffList = await StaffDetails.findAll({
+      where: { role, status: 'ACTIVE' },
+      attributes: ['staff_id', 'name', 'code', 'phone', 'email']
+    });
 
-  return {
-    token: jwt.sign(
-      { userId: user.user_id, role: user.role, isRoleSpecific: true },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    ),
-    user: { id: user.user_id, username: user.username, role, isRoleSpecific: true },
-    staffList
-  };
-}
+    return {
+      token: jwt.sign(
+        { userId: user.user_id, role: user.role, isRoleSpecific: true },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      ),
+      user: { id: user.user_id, username: user.username, role, isRoleSpecific: true },
+      staffList
+    };
+  }
 
   // If doctor, fetch doctor_id and profile using Sequelize
   if (user.role === ROLES.DOCTOR) {
@@ -92,7 +98,7 @@ if (!user || (isRoleSpecific && user.username !== username))
       where: { user_id: user.user_id },
       attributes: ['doctor_id', 'name', 'specialization', 'phone']
     });
-    
+
     if (doctor) {
       response.user.doctor_id = doctor.doctor_id;
       response.user.name = doctor.name;

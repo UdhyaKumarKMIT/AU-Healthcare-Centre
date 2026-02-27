@@ -75,6 +75,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<SelectRole />} />
+            <Route path="/login" element={<SelectRole />} />
             <Route path="/login/:role" element={<Login />} />
 
             {/* Pharmacist Routes */}

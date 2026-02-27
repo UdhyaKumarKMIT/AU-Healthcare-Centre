@@ -224,14 +224,20 @@ router.get(
 
       const params = [patientId];
 
-      // Add date filters
+      // Add date filters with normalization
       if (startDate) {
-        query += " AND DATE(v.visit_date) >= ?";
-        params.push(startDate);
+        const normalized = normalizeDateBound(startDate, 'start');
+        if (normalized) {
+          query += " AND v.visit_date >= ?";
+          params.push(normalized);
+        }
       }
       if (endDate) {
-        query += " AND DATE(v.visit_date) <= ?";
-        params.push(endDate);
+        const normalized = normalizeDateBound(endDate, 'end');
+        if (normalized) {
+          query += " AND v.visit_date <= ?";
+          params.push(normalized);
+        }
       }
 
       // Add status filter
@@ -325,14 +331,20 @@ router.get(
 
       const params = [patientId];
 
-      // Add date filters
+      // Add date filters with normalization
       if (startDate) {
-        query += " AND DATE(p.created_at) >= ?";
-        params.push(startDate);
+        const normalized = normalizeDateBound(startDate, 'start');
+        if (normalized) {
+          query += " AND p.created_at >= ?";
+          params.push(normalized);
+        }
       }
       if (endDate) {
-        query += " AND DATE(p.created_at) <= ?";
-        params.push(endDate);
+        const normalized = normalizeDateBound(endDate, 'end');
+        if (normalized) {
+          query += " AND p.created_at <= ?";
+          params.push(normalized);
+        }
       }
 
       // Add status filter
@@ -408,14 +420,20 @@ router.get(
 
       const params = [patientId];
 
-      // Add date filters
+      // Add date filters with normalization
       if (startDate) {
-        query += " AND DATE(lt.ordered_date) >= ?";
-        params.push(startDate);
+        const normalized = normalizeDateBound(startDate, 'start');
+        if (normalized) {
+          query += " AND lt.ordered_date >= ?";
+          params.push(normalized);
+        }
       }
       if (endDate) {
-        query += " AND DATE(lt.ordered_date) <= ?";
-        params.push(endDate);
+        const normalized = normalizeDateBound(endDate, 'end');
+        if (normalized) {
+          query += " AND lt.ordered_date <= ?";
+          params.push(normalized);
+        }
       }
 
       // Add test name filter
@@ -539,14 +557,20 @@ router.get(
 
       const params = [patientId];
 
-      // Add date filters
+      // Add date filters with normalization
       if (startDate) {
-        query += " AND DATE(v.visit_date) >= ?";
-        params.push(startDate);
+        const normalized = normalizeDateBound(startDate, 'start');
+        if (normalized) {
+          query += " AND v.visit_date >= ?";
+          params.push(normalized);
+        }
       }
       if (endDate) {
-        query += " AND DATE(v.visit_date) <= ?";
-        params.push(endDate);
+        const normalized = normalizeDateBound(endDate, 'end');
+        if (normalized) {
+          query += " AND v.visit_date <= ?";
+          params.push(normalized);
+        }
       }
 
       query += " ORDER BY v.visit_date DESC";

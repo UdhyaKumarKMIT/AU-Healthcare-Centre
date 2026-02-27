@@ -4,53 +4,48 @@ import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../contexts/AuthContext";
 
 const ProtectedRoute = ({ allowedRoles }) => {
+  const { user, loading, getRoleBasedRoute } = useAuth();
   const token = localStorage.getItem("token");
-
-  // // Check token for PHARMACIST role only
-  // if (allowedRoles.includes("PHARMACIST")) {
-  //   if (!token) {
-  //     return <Navigate to="/login" replace />;
-  //   }
-
-  //   try {
-  //     const decoded = jwtDecode(token);
-  //     if (!decoded.role || decoded.role !== "PHARMACIST") {
-  //       return <Navigate to="/" replace />;
-  //     }
-  //   } catch (err) {
-  //     localStorage.removeItem("token");
-  //     return <Navigate to="/login" replace />;
-  //   }
-
-  //   return <Outlet />;
-  // }
-
-  // For other roles, use AuthContext
-  const { user, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  // If token is missing, force login flow
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Validate token expiration
+  try {
+    const decoded = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
+
+    if (decoded.exp && decoded.exp < currentTime) {
+      // Token expired - clear storage and redirect to login
+      console.log('🔒 Token expired in ProtectedRoute');
+      localStorage.removeItem('token');
+      localStorage.removeItem('mitHealthUser');
+      localStorage.removeItem('user');
+      return <Navigate to="/login" replace />;
+    }
+  } catch (err) {
+    console.error('❌ Invalid token:', err);
+    localStorage.removeItem('token');
+    localStorage.removeItem('mitHealthUser');
+    localStorage.removeItem('user');
+    return <Navigate to="/login" replace />;
   }
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    switch (user.role) {
-      case "DOCTOR":
-        return <Navigate to="/doctor/dashboard" replace />;
-      case "NURSE_RECEPTIONIST":
-        return <Navigate to="/reception/dashboard" replace />;
-      case "ADMIN":
-        return <Navigate to="/admin/dashboard" replace />;
-      case "PATIENT":
-        return <Navigate to="/" replace />;
-      case "PHARMACIST":
-        return <Navigate to="/pharmacist/dashboard" replace />;
-      default:
-        return <Navigate to="/login" replace />;
-    }
+  const normalizedRole = String(user.role || '').trim().toUpperCase();
+
+  if (allowedRoles && !allowedRoles.includes(normalizedRole)) {
+    const roleRoute = getRoleBasedRoute(user.role);
+    return <Navigate to={roleRoute} replace />;
   }
 
   return <Outlet />;

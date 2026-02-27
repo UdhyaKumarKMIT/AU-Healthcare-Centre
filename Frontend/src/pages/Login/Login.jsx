@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
 import styles from './Login.module.css';
-import { loginUserApi } from '../../services/auth.service'; 
+import { loginUserApi } from '../../services/auth.service';
 
 const ROLE_MAP = {
   admin: 'ADMIN',
@@ -17,13 +17,14 @@ const ROLE_MAP = {
 };
 
 // Role-specific roles that use shared credentials
-const ROLE_SPECIFIC_ROLES = ['NURSE_RECEPTIONIST', 'PHARMACIST'];
- 
+// Pharmacist should behave like other roles (no staff selection).
+const ROLE_SPECIFIC_ROLES = ['NURSE_RECEPTIONIST'];
+
 const Login = () => {
   const { role } = useParams();
   const userRole = ROLE_MAP[role];
   const navigate = useNavigate();
-  const { login } = useAuth(); 
+  const { login, user, loading: authLoading, initialRoute } = useAuth();
 
   // State for other roles
   const [username, setUsername] = useState('');
@@ -31,7 +32,25 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(userRole); 
+  // Role-specific staff selection
+  const isRoleSpecific = ROLE_SPECIFIC_ROLES.includes(userRole);
+
+  useEffect(() => {
+    // If user is already authenticated with valid token, redirect to their dashboard
+    if (!authLoading && user && initialRoute) {
+      console.log('✅ Valid token found in Login, redirecting to:', initialRoute);
+      navigate(initialRoute, { replace: true });
+    }
+  }, [user, authLoading, initialRoute, navigate]);
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // If user is authenticated, don't show login form
+  if (user && initialRoute) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,45 +59,32 @@ const Login = () => {
 
     try {
       const result = await loginUserApi(username, password, userRole);
-      console.log('Login API result:', result);
+
       login(result.user, result.token);
-      console.log('Logged in user:', result.user);
-      console.log('User role:', result.user.role);
-      console.log('Role type:', typeof result.user.role);
-      
+
       switch (result.user.role) {
         case 'ADMIN':
-          console.log('Navigating to admin dashboard');
           navigate('/admin/dashboard');
           break;
         case 'DOCTOR':
-          console.log('Navigating to doctor dashboard');
           navigate('/doctor/dashboard');
           break;
         case 'NURSE_RECEPTIONIST':
-          console.log('Navigating to reception dashboard');
           navigate('/reception/dashboard');
           break;
         case 'PATIENT':
-          console.log('Navigating to patient dashboard');
           navigate('/patient/dashboard');
           break;
         case 'PHARMACIST':
-          console.log('Navigating to pharmacist dashboard');
           navigate('/pharmacist/dashboard');
           break;
         case 'LAB_TECHNICIAN':
-          console.log('Navigating to labtech dashboard');
           navigate('/labtech/dashboard');
           break;
         case 'CLERICAL_ASSISTANT':
-          console.log('User role:', result.user.role);
-          console.log('Token exists:', !!result.token);
-          console.log('Navigating to clerical assistant dashboard');
           navigate('/clerical_assistant/dashboard');
-          break;  
+          break;
         default:
-          console.log('Unknown role, redirecting to home');
           navigate('/');
       }
     } catch (err) {
@@ -132,8 +138,8 @@ const Login = () => {
                     {role === 'nurse'
                       ? 'Nurse/Receptionist'
                       : role === 'clerical'
-                      ? 'Clerical Assistant'
-                      : 'Pharmacist'} account credentials
+                        ? 'Clerical Assistant'
+                        : 'Pharmacist'} account credentials
                   </small>
                 )}
               </div>

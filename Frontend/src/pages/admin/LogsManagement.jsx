@@ -10,20 +10,26 @@ import tableStyles from '../../components/Admin/ReceptionistTable.module.css';
 const LogsManagement = () => {
   const dispatch = useDispatch();
   const { systemLogs, logsLoading, error } = useSelector((state) => state.admin);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [retryCount, setRetryCount] = useState(0);
 
+  const normalizeDateForQuery = (date) => {
+    if (!date) return date;
+    // Date-only format will be expanded by backend to full day
+    return date;
+  };
+
   useEffect(() => {
     // Only fetch on mount, not on filter changes
     const params = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    if (startDate) params.startDate = normalizeDateForQuery(startDate);
+    if (endDate) params.endDate = normalizeDateForQuery(endDate);
     if (actionFilter !== 'all') params.action = actionFilter;
-    
+
     dispatch(fetchSystemLogs(params));
   }, []); // Empty dependency array - only runs once on mount
 
@@ -31,10 +37,10 @@ const LogsManagement = () => {
   const handleRefresh = () => {
     dispatch(clearError());
     const params = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    if (startDate) params.startDate = normalizeDateForQuery(startDate);
+    if (endDate) params.endDate = normalizeDateForQuery(endDate);
     if (actionFilter !== 'all') params.action = actionFilter;
-    
+
     setRetryCount(prev => prev + 1);
     dispatch(fetchSystemLogs(params));
   };
@@ -43,10 +49,10 @@ const LogsManagement = () => {
   const handleApplyFilters = () => {
     dispatch(clearError());
     const params = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    if (startDate) params.startDate = normalizeDateForQuery(startDate);
+    if (endDate) params.endDate = normalizeDateForQuery(endDate);
     if (actionFilter !== 'all') params.action = actionFilter;
-    
+
     dispatch(fetchSystemLogs(params));
   };
 
@@ -99,9 +105,9 @@ const LogsManagement = () => {
           marginTop: '24px',
           textAlign: 'center'
         }}>
-          <FontAwesomeIcon 
-            icon={faExclamationTriangle} 
-            style={{ fontSize: '48px', color: '#ff9800', marginBottom: '16px' }} 
+          <FontAwesomeIcon
+            icon={faExclamationTriangle}
+            style={{ fontSize: '48px', color: '#ff9800', marginBottom: '16px' }}
           />
           <h2 style={{ color: '#856404', marginBottom: '12px' }}>
             Unable to Load System Logs
@@ -112,9 +118,9 @@ const LogsManagement = () => {
           <p style={{ color: '#856404', marginBottom: '24px', fontSize: '14px' }}>
             The server is experiencing issues (HTTP 500 error). This typically means:
           </p>
-          <ul style={{ 
-            textAlign: 'left', 
-            maxWidth: '600px', 
+          <ul style={{
+            textAlign: 'left',
+            maxWidth: '600px',
             margin: '0 auto 24px',
             color: '#856404',
             fontSize: '14px'
@@ -124,9 +130,9 @@ const LogsManagement = () => {
             <li>The backend service might be down or restarting</li>
             <li>Required database tables might not exist</li>
           </ul>
-          
+
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-            <button 
+            <button
               className={styles.addButton}
               onClick={handleRefresh}
               style={{ minWidth: '140px' }}
@@ -148,12 +154,12 @@ const LogsManagement = () => {
               Dismiss
             </button>
           </div>
-          
+
           {retryCount > 0 && (
-            <p style={{ 
-              marginTop: '16px', 
-              fontSize: '12px', 
-              color: '#6c757d' 
+            <p style={{
+              marginTop: '16px',
+              fontSize: '12px',
+              color: '#6c757d'
             }}>
               Retry attempts: {retryCount}
             </p>
@@ -169,15 +175,15 @@ const LogsManagement = () => {
           borderLeft: '4px solid #2196f3'
         }}>
           <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
-            <strong><FontAwesomeIcon icon={faLightbulb} /> Note:</strong> If you're a developer, check the backend logs for the 
-            <code style={{ 
-              background: '#fff', 
-              padding: '2px 6px', 
+            <strong><FontAwesomeIcon icon={faLightbulb} /> Note:</strong> If you're a developer, check the backend logs for the
+            <code style={{
+              background: '#fff',
+              padding: '2px 6px',
               borderRadius: '4px',
               margin: '0 4px'
             }}>
               /api/admin/logs
-            </code> 
+            </code>
             endpoint. You may need to implement or fix this route.
           </p>
         </div>
@@ -206,9 +212,9 @@ const LogsManagement = () => {
 
       {/* Log Stats */}
       <section className={styles.statsSection}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '20px',
           marginBottom: '24px'
         }}>
@@ -366,8 +372,8 @@ const LogsManagement = () => {
                     </div>
                   </td>
                   <td>
-                    <div style={{ 
-                      fontSize: '14px', 
+                    <div style={{
+                      fontSize: '14px',
                       color: '#4a5568',
                       maxWidth: '400px',
                       overflow: 'hidden',
@@ -412,7 +418,7 @@ const LogsManagement = () => {
         borderLeft: '4px solid #2196f3'
       }}>
         <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
-          <strong>ℹ️ Info:</strong> System logs track all major activities including user logins, 
+          <strong>ℹ️ Info:</strong> System logs track all major activities including user logins,
           visit creation, prescription issuance, and administrative actions for audit purposes.
         </p>
       </div>

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUser, faUserMd, faCalendarPlus, faThermometerHalf, 
+import {
+  faUser, faUserMd, faCalendarPlus, faThermometerHalf,
   faHeartbeat, faTint, faLungs, faTint as faGlucose, faSearch,
   faCheck, faExclamationCircle, faLock
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { verifySecretCode } from '../../store/slices/nurseSlice';
-import { createVisit } from '../../store/slices/receptionistSlice';
-const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
+import { createVisit, searchPatients, selectSearchResults, selectSearchLoading } from '../../store/slices/receptionistSlice';
+const CreateVisitForm = ({ availableDoctors = [] }) => {
   const dispatch = useDispatch();
-  
+  const searchResults = useSelector(selectSearchResults);
+  const searchLoading = useSelector(selectSearchLoading);
+
   const [formData, setFormData] = useState({
     patientId: '',
     doctorId: '',
@@ -25,33 +27,34 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     spo2: '',
     secretCode: ''
   });
-  
+
   const [errors, setErrors] = useState({});
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
-  const [filteredPatients, setFilteredPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  
+  const [searchTimeout, setSearchTimeout] = useState(null);
+
   // Secret code verification states
   const [isCodeValid, setIsCodeValid] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Filter patients based on search query
-  useEffect(() => {
-    if (patientSearchQuery.trim()) {
-      const filtered = patients.filter(patient => {
-        const name = patient.name?.toLowerCase() || '';
-        const phone = patient.phone || '';
-        const studentId = patient.student_id?.toLowerCase() || patient.rollNo?.toLowerCase() || '';
-        const query = patientSearchQuery.toLowerCase();
-        
-        return name.includes(query) || phone.includes(query) || studentId.includes(query);
-      });
-      setFilteredPatients(filtered);
-    } else {
-      setFilteredPatients(patients);
+  // Handle patient search with debouncing
+  const handlePatientSearch = (e) => {
+    const query = e.target.value;
+    setPatientSearchQuery(query);
+    setShowPatientDropdown(true);
+
+    // Clear previous timeout
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    // Debounce API call - only search if query has at least 2 characters
+    if (query.trim().length >= 2) {
+      const timeout = setTimeout(() => {
+        dispatch(searchPatients(query));
+      }, 300);
+      setSearchTimeout(timeout);
     }
-  }, [patientSearchQuery, patients]);
+  };
 
   // Secret code verification effect - SAME AS NURSE DASHBOARD
   useEffect(() => {
@@ -80,18 +83,13 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
-  };
-
-  const handlePatientSearch = (e) => {
-    setPatientSearchQuery(e.target.value);
-    setShowPatientDropdown(true);
   };
 
   const handlePatientSelect = (patient) => {
@@ -102,7 +100,7 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     }));
     setPatientSearchQuery(patient.name);
     setShowPatientDropdown(false);
-    
+
     if (errors.patientId) {
       setErrors(prev => ({
         ...prev,
@@ -113,18 +111,18 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.patientId) newErrors.patientId = 'Select a patient';
     if (!formData.doctorId) newErrors.doctorId = 'Select a doctor';
     if (!formData.reason.trim()) newErrors.reason = 'Reason is required';
-    
+
     // Secret code validation
     if (!formData.secretCode.trim()) {
       newErrors.secretCode = 'Staff code is required';
     } else if (isCodeValid !== true) {
       newErrors.secretCode = 'Please enter a valid staff code';
     }
-    
+
     // Temperature validation
     if (!formData.temperature) {
       newErrors.temperature = 'Temperature is required';
@@ -135,22 +133,22 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     // Blood Pressure validation
     if (!formData.bpSystolic) newErrors.bpSystolic = 'Systolic BP is required';
     if (!formData.bpDiastolic) newErrors.bpDiastolic = 'Diastolic BP is required';
-    
+
     if (formData.bpSystolic && (formData.bpSystolic < 70 || formData.bpSystolic > 200)) {
       newErrors.bpSystolic = 'Systolic BP must be between 70-200 mmHg';
     }
-    
+
     if (formData.bpDiastolic && (formData.bpDiastolic < 40 || formData.bpDiastolic > 130)) {
       newErrors.bpDiastolic = 'Diastolic BP must be between 40-130 mmHg';
     }
-    
+
     // Heart Rate validation
     if (!formData.heartRate) {
       newErrors.heartRate = 'Heart rate is required';
     } else if (formData.heartRate < 40 || formData.heartRate > 200) {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
-    
+
     if (!formData.cbg) {
       newErrors.cbg = 'CBG is required';
     } else if (formData.cbg < 40 || formData.cbg > 600) {
@@ -167,70 +165,70 @@ const CreateVisitForm = ({ patients = [], availableDoctors = [] }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault()
 
-  if (!validateForm()) {
-    toast.error('Please fix all validation errors')
-    return
-  }
+    if (!validateForm()) {
+      toast.error('Please fix all validation errors')
+      return
+    }
 
-  const visitData = {
-    patientId: formData.patientId,
-    doctorId: formData.doctorId,
-    visitType: formData.visitType,
-    reason: formData.reason,
-    staffCode: formData.secretCode, 
-    vitals: {
-      temperature: parseFloat(formData.temperature),
-      bpSystolic: parseInt(formData.bpSystolic),
-      bpDiastolic: parseInt(formData.bpDiastolic),
-      heartRate: parseInt(formData.heartRate),
-      cbg: formData.cbg ? parseFloat(formData.cbg) : null,
-      spo2: formData.spo2 ? parseFloat(formData.spo2) : null
+    const visitData = {
+      patientId: formData.patientId,
+      doctorId: formData.doctorId,
+      visitType: formData.visitType,
+      reason: formData.reason,
+      staffCode: formData.secretCode,
+      vitals: {
+        temperature: parseFloat(formData.temperature),
+        bpSystolic: parseInt(formData.bpSystolic),
+        bpDiastolic: parseInt(formData.bpDiastolic),
+        heartRate: parseInt(formData.heartRate),
+        cbg: formData.cbg ? parseFloat(formData.cbg) : null,
+        spo2: formData.spo2 ? parseFloat(formData.spo2) : null
+      }
+    }
+
+
+    const result = await dispatch(createVisit(visitData))
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      toast.success('Visit created successfully')
+
+      setFormData({
+        patientId: '',
+        doctorId: '',
+        visitType: 'OPD',
+        reason: '',
+        temperature: '',
+        bpSystolic: '',
+        bpDiastolic: '',
+        heartRate: '',
+        cbg: '',
+        spo2: '',
+        secretCode: ''
+      })
+
+      setSelectedPatient(null)
+      setPatientSearchQuery('')
+      setErrors({})
+      setIsCodeValid(null)
+    } else {
+
+      toast.error(result.payload || 'Failed to create visit')
     }
   }
-
-
-  const result = await dispatch(createVisit(visitData))
-
-  if (result.meta.requestStatus === 'fulfilled') {
-    toast.success('Visit created successfully')
-
-    setFormData({
-      patientId: '',
-      doctorId: '',
-      visitType: 'OPD',
-      reason: '',
-      temperature: '',
-      bpSystolic: '',
-      bpDiastolic: '',
-      heartRate: '',
-      cbg: '',
-      spo2: '',
-      secretCode: ''
-    })
-
-    setSelectedPatient(null)
-    setPatientSearchQuery('')
-    setErrors({})
-    setIsCodeValid(null)
-  } else {
-
-    toast.error(result.payload || 'Failed to create visit')
-  }
-}
 
 
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Create New Visit</h2>
-      
+
       <div style={styles.form}>
         {/* Visit Details Section */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Visit Details</h3>
-          
+
           <div style={styles.formGrid}>
             {/* Patient Search */}
             <div style={styles.formGroup}>
@@ -245,37 +243,107 @@ const handleSubmit = async (e) => {
                     value={patientSearchQuery}
                     onChange={handlePatientSearch}
                     onFocus={() => setShowPatientDropdown(true)}
-                    style={{...styles.input, paddingLeft: '40px', ...(errors.patientId && styles.errorInput)}}
+                    style={{ ...styles.input, paddingLeft: '40px', ...(errors.patientId && styles.errorInput) }}
                     placeholder="Search by name, phone, or student ID..."
                   />
                 </div>
-                
-                {showPatientDropdown && filteredPatients.length > 0 && (
+
+                {showPatientDropdown && (searchResults.length > 0 || searchLoading) && (
                   <div style={styles.patientDropdown}>
-                    {filteredPatients.slice(0, 10).map(patient => (
-                      <div
-                        key={patient.patient_id || patient.id}
-                        style={styles.patientOption}
-                        onClick={() => handlePatientSelect(patient)}
-                      >
-                        <div style={styles.patientName}>{patient.name}</div>
-                        <div style={styles.patientMeta}>
-                          {patient.phone} • {patient.student_id || patient.rollNo || 'N/A'}
-                        </div>
+                    {searchLoading ? (
+                      <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
+                        Searching patients...
                       </div>
-                    ))}
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map(patient => (
+                        <div
+                          key={patient.patient_id || patient.id}
+                          style={styles.patientOption}
+                          onClick={() => handlePatientSelect(patient)}
+                        >
+                          <div style={styles.patientName}>{patient.name}</div>
+                          <div style={styles.patientMeta}>
+                            {patient.phone} • {patient.reg_number || 'N/A'}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
+                        No patients found. Try searching by name or phone.
+                      </div>
+                    )}
                   </div>
                 )}
-                
+
                 {selectedPatient && (
-                  <div style={styles.selectedPatient}>
-                    <strong>Selected:</strong> {selectedPatient.name} ({selectedPatient.phone})
+                  <div style={styles.selectedPatientDetails}>
+                    <div style={styles.selectedPatientHeader}>
+                      <strong>✓ Selected Patient</strong>
+                    </div>
+                    <div style={styles.patientDetailsGrid}>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Name:</span>
+                        <span style={styles.detailValue}>{selectedPatient.name}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Phone:</span>
+                        <span style={styles.detailValue}>{selectedPatient.phone || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Reg. Number:</span>
+                        <span style={styles.detailValue}>{selectedPatient.reg_number || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Gender:</span>
+                        <span style={styles.detailValue}>{selectedPatient.gender || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>DOB:</span>
+                        <span style={styles.detailValue}>{selectedPatient.dob || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Email:</span>
+                        <span style={styles.detailValue}>{selectedPatient.email || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Blood Group:</span>
+                        <span style={styles.detailValue}>{selectedPatient.bloodGroup || 'N/A'}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Type:</span>
+                        <span style={styles.detailValue}>{selectedPatient.patientType || 'N/A'}</span>
+                      </div>
+                      {selectedPatient.patientType === 'STUDENT' && (
+                        <>
+                          <div style={styles.detailRow}>
+                            <span style={styles.detailLabel}>Department:</span>
+                            <span style={styles.detailValue}>{selectedPatient.department || 'N/A'}</span>
+                          </div>
+                          <div style={styles.detailRow}>
+                            <span style={styles.detailLabel}>Year:</span>
+                            <span style={styles.detailValue}>{selectedPatient.year || 'N/A'}</span>
+                          </div>
+                        </>
+                      )}
+                      {selectedPatient.patientType !== 'STUDENT' && (
+                        <>
+                          <div style={styles.detailRow}>
+                            <span style={styles.detailLabel}>Employee ID:</span>
+                            <span style={styles.detailValue}>{selectedPatient.employeeId || 'N/A'}</span>
+                          </div>
+                          <div style={styles.detailRow}>
+                            <span style={styles.detailLabel}>Designation:</span>
+                            <span style={styles.detailValue}>{selectedPatient.designation || 'N/A'}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
               {errors.patientId && <span style={styles.errorText}>{errors.patientId}</span>}
             </div>
-            
+
             <div style={styles.formGroup}>
               <label style={styles.label}>
                 <FontAwesomeIcon icon={faUserMd} /> Select Doctor
@@ -284,7 +352,7 @@ const handleSubmit = async (e) => {
                 name="doctorId"
                 value={formData.doctorId}
                 onChange={handleChange}
-                style={{...styles.select, ...(errors.doctorId && styles.errorInput)}}
+                style={{ ...styles.select, ...(errors.doctorId && styles.errorInput) }}
               >
                 <option value="">Select a doctor</option>
                 {availableDoctors.map(doctor => (
@@ -312,13 +380,13 @@ const handleSubmit = async (e) => {
               </select>
             </div>
 
-            <div style={{...styles.formGroup, gridColumn: 'span 2'}}>
+            <div style={{ ...styles.formGroup, gridColumn: 'span 2' }}>
               <label style={styles.label}>Reason for Visit</label>
               <textarea
                 name="reason"
                 value={formData.reason}
                 onChange={handleChange}
-                style={{...styles.textarea, ...(errors.reason && styles.errorInput)}}
+                style={{ ...styles.textarea, ...(errors.reason && styles.errorInput) }}
                 placeholder="Describe the reason for visit..."
                 rows={3}
               />
@@ -330,7 +398,7 @@ const handleSubmit = async (e) => {
         {/* Vitals Section */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Vital Signs</h3>
-          
+
           <div style={styles.vitalsGrid}>
             <div style={styles.formGroup}>
               <label style={styles.label}>
@@ -342,7 +410,7 @@ const handleSubmit = async (e) => {
                   name="temperature"
                   value={formData.temperature}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.temperature && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.temperature && styles.errorInput) }}
                   placeholder="98.6"
                   min="90"
                   max="110"
@@ -363,7 +431,7 @@ const handleSubmit = async (e) => {
                   name="bpSystolic"
                   value={formData.bpSystolic}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.bpSystolic && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.bpSystolic && styles.errorInput) }}
                   placeholder="120"
                   min="70"
                   max="200"
@@ -383,7 +451,7 @@ const handleSubmit = async (e) => {
                   name="bpDiastolic"
                   value={formData.bpDiastolic}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.bpDiastolic && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.bpDiastolic && styles.errorInput) }}
                   placeholder="80"
                   min="40"
                   max="130"
@@ -403,7 +471,7 @@ const handleSubmit = async (e) => {
                   name="heartRate"
                   value={formData.heartRate}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.heartRate && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.heartRate && styles.errorInput) }}
                   placeholder="72"
                   min="40"
                   max="200"
@@ -415,7 +483,7 @@ const handleSubmit = async (e) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL) <span style={{fontSize: '12px', color: '#64748b'}}>Optional</span>
+                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
               </label>
               <div style={styles.inputWithUnit}>
                 <input
@@ -423,7 +491,7 @@ const handleSubmit = async (e) => {
                   name="cbg"
                   value={formData.cbg}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.cbg && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.cbg && styles.errorInput) }}
                   placeholder="100"
                   min="40"
                   max="600"
@@ -436,7 +504,7 @@ const handleSubmit = async (e) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faLungs} /> SpO2 (%) <span style={{fontSize: '12px', color: '#64748b'}}>Optional</span>
+                <FontAwesomeIcon icon={faLungs} /> SpO2 (%) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
               </label>
               <div style={styles.inputWithUnit}>
                 <input
@@ -444,7 +512,7 @@ const handleSubmit = async (e) => {
                   name="spo2"
                   value={formData.spo2}
                   onChange={handleChange}
-                  style={{...styles.input, ...(errors.spo2 && styles.errorInput)}}
+                  style={{ ...styles.input, ...(errors.spo2 && styles.errorInput) }}
                   placeholder="98"
                   min="70"
                   max="100"
@@ -462,7 +530,7 @@ const handleSubmit = async (e) => {
           <h3 style={styles.sectionTitle}>
             <FontAwesomeIcon icon={faLock} /> Authentication
           </h3>
-          
+
           <div style={styles.formGroup}>
             <label style={styles.label}>Your Secret Code</label>
             <div style={styles.codeInputWrapper}>
@@ -501,7 +569,7 @@ const handleSubmit = async (e) => {
 
         {/* Submit Button */}
         <div style={styles.submitSection}>
-          <button 
+          <button
             type="button"
             onClick={handleSubmit}
             style={{
@@ -683,6 +751,44 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px'
+  },
+  selectedPatientDetails: {
+    marginTop: '12px',
+    padding: '12px',
+    background: '#f0f4f8',
+    border: '2px solid #22c55e',
+    borderRadius: '8px',
+    maxHeight: '400px',
+    overflowY: 'auto'
+  },
+  selectedPatientHeader: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#15803d',
+    marginBottom: '10px',
+    paddingBottom: '8px',
+    borderBottom: '2px solid #22c55e'
+  },
+  patientDetailsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '10px'
+  },
+  detailRow: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+  detailLabel: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#0f766e',
+    textTransform: 'uppercase'
+  },
+  detailValue: {
+    fontSize: '14px',
+    color: '#1e293b',
+    fontWeight: '500'
   },
   codeInputWrapper: {
     position: 'relative',

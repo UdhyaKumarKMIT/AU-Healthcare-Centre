@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  FileScan, 
+  FileScan,
   Stethoscope,
   CircleUser,
   PersonStanding,
@@ -16,7 +16,7 @@ interface Prescription {
   prescription_id: string;
   patient_name: string;
   doctor_name: string;
-  doctor_specialization: string; 
+  doctor_specialization: string;
   created_at: Date;
 }
 
@@ -35,8 +35,6 @@ const PendingPrescriptions = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const pharmacistId = user?.pharmacist_id;
-
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +45,7 @@ const PendingPrescriptions = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!pharmacistId) {
+    if (!user) {
       navigate("/login/pharmacist");
       return;
     }
@@ -67,7 +65,7 @@ const PendingPrescriptions = () => {
     };
 
     fetchPrescriptions();
-  }, [pharmacistId, navigate]);
+  }, [navigate, user]);
 
   /* FILTER LOGIC (NEW) */
   const filteredPrescriptions = prescriptions.filter((p) => {
@@ -89,161 +87,161 @@ const PendingPrescriptions = () => {
   });
 
   return (
-    <> 
+    <>
       <CustomModal
-      isOpen={modalOpen}
-      title="Alert"
-      message={modalMessage}
-      confirmText="OK"
-      onConfirm={modalConfirmCallback ?? undefined}
-      onClose={() => {
-        setModalConfirmCallback(null);
-        setModalOpen(false);
-      }}
-    />
-
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-
-      {/* MAIN */}
-      <main
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: "1rem",
-          color: "black",
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalConfirmCallback(null);
+          setModalOpen(false);
         }}
-      >
-        <div style={sectionCardStyle}>
-          {/* SECTION HEADER + FILTER */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "1rem",
-              marginBottom: "1.5rem",
-            }}
-          >
-            <div style={sectionHeaderStyle}>
-              <FileScan size={22} aria-hidden="true" />
-              Pending Prescriptions
-            </div>
+      />
 
-            {/* FILTER CONTROLS */}
+      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+
+        {/* MAIN */}
+        <main
+          style={{
+            maxWidth: 1200,
+            margin: "auto",
+            padding: "1rem",
+            color: "black",
+          }}
+        >
+          <div style={sectionCardStyle}>
+            {/* SECTION HEADER + FILTER */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "1rem",
+                marginBottom: "1.5rem",
               }}
             >
-              <select
-                value={filterType}
-                onChange={(e) =>
-                  setFilterType(e.target.value as "all" | "patient" | "doctor" | "specialization")
-                }
-                aria-label="Filter prescriptions"
+              <div style={sectionHeaderStyle}>
+                <FileScan size={22} aria-hidden="true" />
+                Pending Prescriptions
+              </div>
+
+              {/* FILTER CONTROLS */}
+              <div
                 style={{
-                  padding: "0.45rem",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e1",
-                  background: "white",
-                  color: "black",
-                  fontWeight: "bold"
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
                 }}
               >
-                <option value="all">All</option>
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-                <option value="specialization">Specialization</option>
-              </select>
-
-              {filterType !== "all" && (
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={`Search by ${filterType}`}
-                  aria-label={`Search by ${filterType}`}
+                <select
+                  value={filterType}
+                  onChange={(e) =>
+                    setFilterType(e.target.value as "all" | "patient" | "doctor" | "specialization")
+                  }
+                  aria-label="Filter prescriptions"
                   style={{
-                    padding: "0.45rem 0.6rem",
+                    padding: "0.45rem",
                     borderRadius: "6px",
                     border: "1px solid #cbd5e1",
-                    minWidth: 180,
                     background: "white",
                     color: "black",
                     fontWeight: "bold"
                   }}
-                />
-              )}
+                >
+                  <option value="all">All</option>
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="specialization">Specialization</option>
+                </select>
+
+                {filterType !== "all" && (
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={`Search by ${filterType}`}
+                    aria-label={`Search by ${filterType}`}
+                    style={{
+                      padding: "0.45rem 0.6rem",
+                      borderRadius: "6px",
+                      border: "1px solid #cbd5e1",
+                      minWidth: 180,
+                      background: "white",
+                      color: "black",
+                      fontWeight: "bold"
+                    }}
+                  />
+                )}
+              </div>
             </div>
+
+            {loading ? (
+              <p>Loading prescriptions...</p>
+            ) : filteredPrescriptions.length === 0 ? (
+              <p>No pending prescriptions found.</p>
+            ) : (
+              filteredPrescriptions.map((p) => (
+                <article
+                  key={p.prescription_id}
+                  style={prescriptionRowStyle}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open prescription for ${p.patient_name}`}
+                  onClick={() => {
+                    sessionStorage.setItem(
+                      "prescriptionId",
+                      p.prescription_id ? p.prescription_id.toString() : ""
+                    );
+                    navigate("/pharmacist/prescriptionsDetails");
+                  }}
+                >
+                  <div style={{ display: "flex", gap: "1.5rem" }}>
+                    <div style={iconBoxStyle}>
+                      <CircleUser size={20} aria-hidden="true" />
+                    </div>
+
+                    <div style={{ flex: 1, fontFamily: "verdana" }}>
+                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                        <PersonStanding size={18} aria-hidden="true" />
+                        <strong>Patient:</strong>{" "}
+                        {toTitleCase(p.patient_name)}
+                      </p>
+
+                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                        <Stethoscope size={18} aria-hidden="true" />
+                        <strong>Doctor:</strong>{" "}
+                        {toTitleCase(p.doctor_name)}
+                      </p>
+
+                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                        <GraduationCap size={18} aria-hidden="true" />
+                        <strong>Specialization:</strong>{" "}
+                        {toTitleCase(p.doctor_specialization)}
+                      </p>
+
+                      <p style={{ paddingBottom: "2px" }}>
+                        <strong>Issued Time:</strong>{" "}
+                        {new Date(p.created_at).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </p>
+                    </div>
+
+                  </div>
+                </article>
+              ))
+            )}
           </div>
-
-          {loading ? (
-            <p>Loading prescriptions...</p>
-          ) : filteredPrescriptions.length === 0 ? (
-            <p>No pending prescriptions found.</p>
-          ) : (
-            filteredPrescriptions.map((p) => (
-              <article
-                key={p.prescription_id}
-                style={prescriptionRowStyle}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open prescription for ${p.patient_name}`}
-                onClick={() => {
-                  sessionStorage.setItem(
-                    "prescriptionId",
-                    p.prescription_id ? p.prescription_id.toString() : ""
-                  );
-                  navigate("/pharmacist/prescriptionsDetails");
-                }}
-              >
-                <div style={{ display: "flex", gap: "1.5rem" }}>
-                  <div style={iconBoxStyle}>
-                    <CircleUser size={20} aria-hidden="true" />
-                  </div>
-
-                  <div style={{ flex: 1, fontFamily: "verdana"}}>
-                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px"}}>
-                      <PersonStanding size={18} aria-hidden="true" />
-                      <strong>Patient:</strong>{" "}
-                      {toTitleCase(p.patient_name)}
-                    </p>
-
-                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
-                      <Stethoscope size={18} aria-hidden="true" />
-                      <strong>Doctor:</strong>{" "}
-                      {toTitleCase(p.doctor_name)}
-                    </p>
-
-                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
-                      <GraduationCap size={18} aria-hidden="true" />
-                      <strong>Specialization:</strong>{" "}
-                      {toTitleCase(p.doctor_specialization)}
-                    </p>
-
-                    <p style={{paddingBottom: "2px"}}>
-                      <strong>Issued Time:</strong>{" "}
-                      {new Date(p.created_at).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                    </p>
-                  </div>
- 
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
     </>
   );
 };
@@ -285,6 +283,6 @@ const iconBoxStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "#1e40af",
-}; 
+};
 
 export default PendingPrescriptions;

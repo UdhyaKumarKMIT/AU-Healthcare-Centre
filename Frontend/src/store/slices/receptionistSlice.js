@@ -3,27 +3,9 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-const getStaffCode = () => {
-  const staffCode = localStorage.getItem('staff_code');
-  if (staffCode) return staffCode;
-  
-  const userStr = localStorage.getItem('user');
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      return user.staff_code || user.staffCode || null;
-    } catch (e) {
-      console.error('Error parsing user data:', e);
-      return null;
-    }
-  }
-  
-  return null;
-};
-
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
-  return { 
+  return {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json'
   };
@@ -37,13 +19,12 @@ export const registerPatient = createAsyncThunk(
   'receptionist/registerPatient',
   async (patientData, { rejectWithValue, dispatch }) => {
     try {
-      const staffCode = patientData.staffCode || getStaffCode();
-      
+      const staffCode = patientData.staffCode;
+
       if (!staffCode) {
-        
         return rejectWithValue('Staff code not found');
       }
-      
+
       const payload = {
         username: patientData.email,
         password: patientData.rollNo || patientData.employeeId || 'default123',
@@ -66,13 +47,13 @@ export const registerPatient = createAsyncThunk(
         payload,
         { headers: getAuthHeaders() }
       );
-      
-      
+
+
       dispatch(fetchPatients())
-return response.data
+      return response.data
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to register patient';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -88,7 +69,27 @@ export const fetchPatients = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch patients';
-      
+
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
+export const searchPatients = createAsyncThunk(
+  'receptionist/searchPatients',
+  async (query, { rejectWithValue }) => {
+    try {
+      if (!query || query.trim().length === 0) {
+        return [];
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/receptionist/patients/search`, {
+        params: { query: query.trim() },
+        headers: getAuthHeaders()
+      });
+      return response.data.data;
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Failed to search patients';
       return rejectWithValue(errorMsg);
     }
   }
@@ -108,7 +109,7 @@ export const fetchDoctors = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch doctors';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -124,7 +125,7 @@ export const fetchAvailableDoctors = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch available doctors';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -132,24 +133,26 @@ export const fetchAvailableDoctors = createAsyncThunk(
 
 export const updateDoctorAvailability = createAsyncThunk(
   'receptionist/updateDoctorAvailability',
-  async ({ doctorId, status }, { rejectWithValue }) => {
+  async ({ doctorId, status, staffCode }, { rejectWithValue }) => {
     try {
-      const staffCode = visitData.staffCode || getStaffCode();
-      
+      if (!staffCode) {
+        return rejectWithValue('Staff code not found');
+      }
+
       await axios.patch(
         `${API_BASE_URL}/receptionist/doctor/${doctorId}/availability`,
-        { 
+        {
           availability_status: status,
           updated_by_code: staffCode
         },
         { headers: getAuthHeaders() }
       );
-      
-      
+
+
       return { doctorId, status };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to update doctor availability';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -163,14 +166,20 @@ export const fetchVisits = createAsyncThunk(
   'receptionist/fetchVisits',
   async ({ from, to } = {}, { rejectWithValue }) => {
     try {
+      const queryParams = {};
+      if (from && from.trim()) queryParams.from = from;
+      if (to && to.trim()) queryParams.to = to;
+
+      console.log('🔧 DEBUG: Query params:', queryParams.from, queryParams.to);
+
       const response = await axios.get(`${API_BASE_URL}/receptionist/visits`, {
-  params: { from, to },
+        params: queryParams,
         headers: getAuthHeaders()
       });
       return response.data.data;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch visits';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -180,15 +189,14 @@ export const createVisit = createAsyncThunk(
   'receptionist/createVisit',
   async (visitData, { rejectWithValue, dispatch }) => {
     try {
-      const staffCode = visitData.staffCode || getStaffCode();
-      
+      const staffCode = visitData.staffCode;
+
       if (!staffCode) {
-        
         return rejectWithValue('Staff code not found');
       }
-      
+
       console.log('Creating visit with data:', visitData);
-      
+
       // Create visit
       const visitPayload = {
         patient_id: visitData.patientId,
@@ -231,12 +239,15 @@ export const createVisit = createAsyncThunk(
         );
       }
 
-      
-      dispatch(fetchPatients())
-return visitResponse.data    } catch (error) {
+
+      // Refresh visits list so UI updates immediately
+      dispatch(fetchVisits());
+
+      return visitResponse.data
+    } catch (error) {
       console.error('Create visit error:', error);
       const errorMsg = error.response?.data?.message || 'Failed to create visit';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -244,21 +255,23 @@ return visitResponse.data    } catch (error) {
 
 export const startVisit = createAsyncThunk(
   'receptionist/startVisit',
-  async (visitId, { rejectWithValue, dispatch }) => {
+  async ({ visitId, staffCode }, { rejectWithValue, dispatch }) => {
     try {
-      const staffCode = visitData.staffCode || getStaffCode();
-      
+      if (!staffCode) {
+        return rejectWithValue('Staff code not found');
+      }
+
       await axios.patch(
         `${API_BASE_URL}/receptionist/visit/${visitId}/start`,
         { updated_by_code: staffCode },
         { headers: getAuthHeaders() }
       );
-      
-      
+
+
       return { visitId, status: 'ONGOING' };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to start visit';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -266,22 +279,24 @@ export const startVisit = createAsyncThunk(
 
 export const cancelVisit = createAsyncThunk(
   'receptionist/cancelVisit',
-  async (visitId, { rejectWithValue, dispatch }) => {
+  async ({ visitId, staffCode }, { rejectWithValue, dispatch }) => {
     try {
-      const staffCode = visitData.staffCode || getStaffCode();
-      
+      if (!staffCode) {
+        return rejectWithValue('Staff code not found');
+      }
+
       await axios.patch(
         `${API_BASE_URL}/receptionist/visit/${visitId}/cancel`,
         { cancelled_by_code: staffCode },
         { headers: getAuthHeaders() }
       );
-      
-      
+
+
       dispatch(fetchPatients())
-return { visitId, status: 'CANCELLED' }
+      return { visitId, status: 'CANCELLED' }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to cancel visit';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -289,24 +304,26 @@ return { visitId, status: 'CANCELLED' }
 
 export const assignDoctor = createAsyncThunk(
   'receptionist/assignDoctor',
-  async ({ visitId, doctorId }, { rejectWithValue }) => {
+  async ({ visitId, doctorId, staffCode }, { rejectWithValue }) => {
     try {
-      const staffCode = visitData.staffCode || getStaffCode();
-      
+      if (!staffCode) {
+        return rejectWithValue('Staff code not found');
+      }
+
       await axios.patch(
         `${API_BASE_URL}/receptionist/visit/${visitId}/assign-doctor`,
-        { 
+        {
           doctor_id: doctorId,
           assigned_by_code: staffCode
         },
         { headers: getAuthHeaders() }
       );
-      
-      
+
+
       return { visitId, doctorId };
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to assign doctor';
-      
+
       return rejectWithValue(errorMsg);
     }
   }
@@ -321,18 +338,22 @@ const initialState = {
   patientsLoading: false,
   patientsError: null,
   registerSuccess: false,
-  
+
+  searchResults: [],
+  searchLoading: false,
+  searchError: null,
+
   doctors: [],
   availableDoctors: [],
   doctorsLoading: false,
   doctorsError: null,
   updateDoctorSuccess: false,
-  
+
   visits: [],
   visitsLoading: false,
   visitsError: null,
   createVisitSuccess: false,
-  
+
   globalLoading: false,
   globalError: null,
 };
@@ -398,7 +419,36 @@ const receptionistSlice = createSlice({
         state.patientsLoading = false;
         state.patientsError = action.payload;
       })
-      
+
+      .addCase(searchPatients.pending, (state) => {
+        state.searchLoading = true;
+        state.searchError = null;
+      })
+      .addCase(searchPatients.fulfilled, (state, action) => {
+        state.searchLoading = false;
+        console.log('🔍 Search results from API:', action.payload);
+        state.searchResults = action.payload.map(p => ({
+          id: p.patient_id,
+          patient_id: p.patient_id,
+          name: p.name,
+          phone: p.phone,
+          reg_number: p.reg_number,
+          dob: p.dob,
+          bloodGroup: p.blood_group,
+          gender: p.gender,
+          patientType: p.patient_type,
+          email: p.email,
+          department: p.department,
+          year: p.year,
+          employeeId: p.employee_id,
+          designation: p.designation,
+        }));
+      })
+      .addCase(searchPatients.rejected, (state, action) => {
+        state.searchLoading = false;
+        state.searchError = action.payload;
+      })
+
       .addCase(registerPatient.pending, (state) => {
         state.patientsLoading = true;
         state.patientsError = null;
@@ -413,7 +463,7 @@ const receptionistSlice = createSlice({
         state.patientsError = action.payload;
         state.registerSuccess = false;
       })
-      
+
       // DOCTORS
       .addCase(fetchDoctors.pending, (state) => {
         state.doctorsLoading = true;
@@ -433,7 +483,7 @@ const receptionistSlice = createSlice({
         state.doctorsLoading = false;
         state.doctorsError = action.payload;
       })
-      
+
       .addCase(fetchAvailableDoctors.pending, (state) => {
         state.doctorsLoading = true;
       })
@@ -451,7 +501,7 @@ const receptionistSlice = createSlice({
         state.doctorsLoading = false;
         state.doctorsError = action.payload;
       })
-      
+
       .addCase(updateDoctorAvailability.pending, (state) => {
         state.doctorsLoading = true;
         state.doctorsError = null;
@@ -470,7 +520,7 @@ const receptionistSlice = createSlice({
         state.doctorsError = action.payload;
         state.updateDoctorSuccess = false;
       })
-      
+
       // VISITS
       .addCase(fetchVisits.pending, (state) => {
         state.visitsLoading = true;
@@ -478,8 +528,10 @@ const receptionistSlice = createSlice({
       })
       .addCase(fetchVisits.fulfilled, (state, action) => {
         state.visitsLoading = false;
+        console.log('✅ Redux: Visits fetched from API:', action.payload);
         state.visits = action.payload.map(v => ({
           id: v.visit_id,
+          visit_id: v.visit_id,
           patientId: v.patient_id,
           doctorId: v.doctor_id,
           patientName: v.patient_name,
@@ -490,12 +542,13 @@ const receptionistSlice = createSlice({
           visitType: v.visit_type || 'OPD',
           token: v.token
         }));
+        console.log('✅ Redux: Visits mapped to state:', state.visits);
       })
       .addCase(fetchVisits.rejected, (state, action) => {
         state.visitsLoading = false;
         state.visitsError = action.payload;
       })
-      
+
       .addCase(createVisit.pending, (state) => {
         state.visitsLoading = true;
         state.visitsError = null;
@@ -510,21 +563,21 @@ const receptionistSlice = createSlice({
         state.visitsError = action.payload;
         state.createVisitSuccess = false;
       })
-      
+
       .addCase(startVisit.fulfilled, (state, action) => {
         const visit = state.visits.find(v => v.id === action.payload.visitId);
         if (visit) {
           visit.status = action.payload.status;
         }
       })
-      
+
       .addCase(cancelVisit.fulfilled, (state, action) => {
         const visit = state.visits.find(v => v.id === action.payload.visitId);
         if (visit) {
           visit.status = action.payload.status;
         }
       })
-      
+
       .addCase(assignDoctor.fulfilled, (state, action) => {
         const visit = state.visits.find(v => v.id === action.payload.visitId);
         if (visit) {
@@ -556,6 +609,10 @@ export const selectPatients = (state) => state.receptionist.patients;
 export const selectPatientsLoading = (state) => state.receptionist.patientsLoading;
 export const selectPatientsError = (state) => state.receptionist.patientsError;
 export const selectRegisterSuccess = (state) => state.receptionist.registerSuccess;
+
+export const selectSearchResults = (state) => state.receptionist.searchResults;
+export const selectSearchLoading = (state) => state.receptionist.searchLoading;
+export const selectSearchError = (state) => state.receptionist.searchError;
 
 export const selectDoctors = (state) => state.receptionist.doctors;
 export const selectAvailableDoctors = (state) => state.receptionist.availableDoctors;

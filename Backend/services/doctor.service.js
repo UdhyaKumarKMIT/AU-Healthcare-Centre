@@ -1,10 +1,10 @@
-import { 
-  Visit, 
-  Patient, 
-  Doctor, 
-  Diagnosis, 
-  Prescription, 
-  PrescriptionItem, 
+import {
+  Visit,
+  Patient,
+  Doctor,
+  Diagnosis,
+  Prescription,
+  PrescriptionItem,
   Medicine,
   Vitals,
   NurseTask,
@@ -13,7 +13,7 @@ import {
   User,
   SystemAuditLog,
   PharmacyStock,
-  sequelize 
+  sequelize
 } from '../models/sequelize/index.js';
 import { Op } from 'sequelize';
 import ApiError from '../utils/ApiError.js';
@@ -205,7 +205,7 @@ export const createPrescription = async ({ visit_id, doctor_id, meds }) => {
           where: { name: 'Others' },
           transaction: t
         });
-        
+
         if (!othersMedicine) {
           throw new ApiError(500, 'Others medicine record not found. Please run migration.');
         }
@@ -314,7 +314,7 @@ export const createPrescriptionWithTasks = async ({ visit_id, doctor_id, medicin
             where: { name: 'Others' },
             transaction: t
           });
-          
+
           if (!othersMedicine) {
             throw new ApiError(500, 'Others medicine record not found. Please run migration.');
           }
@@ -413,16 +413,16 @@ export const createPrescriptionWithTasks = async ({ visit_id, doctor_id, medicin
       action: 'CREATE_PRESCRIPTION_WITH_TASKS',
       entity_type: 'PRESCRIPTION',
       entity_id: prescriptionId,
-      new_value: { 
+      new_value: {
         regular_medicines: regularMeds.length,
         injectable_medicines: injectableMeds.length,
-        nurse_tasks: nurseTasksCreated 
+        nurse_tasks: nurseTasksCreated
       },
       remarks: `Prescription with ${nurseTasksCreated} nurse tasks created for visit ${visit_id}`
     }, { transaction: t });
 
-    return { 
-      prescription_id: prescriptionId, 
+    return {
+      prescription_id: prescriptionId,
       nurse_tasks_created: nurseTasksCreated,
       regular_medicines: regularMeds.length,
       injectable_medicines: injectableMeds.length
@@ -444,7 +444,7 @@ export const getActiveDoctorVisits = async (doctor_id) => {
     include: [
       {
         model: Patient,
-        attributes: ['patient_id', 'name', 'dob', 'gender', 'phone', 'patient_type', 'allergic_to', 'created_at']
+        attributes: ['patient_id', 'name', 'dob', 'gender', 'phone', 'patient_type', 'allergic_to', 'created_at', 'blood_group']
       },
       {
         model: Doctor,
@@ -490,7 +490,7 @@ export const getActiveDoctorVisits = async (doctor_id) => {
       patient_type: v.Patient?.patient_type,
       patient_allergies: v.Patient?.allergic_to,
       patient_created_at: v.Patient?.created_at,
-      blood_group: null, // Not in current schema
+      blood_group: v.Patient?.blood_group || null,
       chief_complaint: v.reason, // Alias for reason
       visit_type: 'OPD', // Default visit type
       doctor_name: v.Doctor?.name,
@@ -573,7 +573,7 @@ export const getPatientHistory = async (patient_id) => {
     pastVisits: pastVisits.map(v => {
       // Get the first diagnosis for main display (for backwards compatibility)
       const firstDiagnosis = v.Diagnoses?.[0];
-      
+
       return {
         visit_id: v.visit_id,
         visit_date: v.visit_date,
@@ -617,7 +617,7 @@ export const getPatientHistory = async (patient_id) => {
 // MEDICINES
 // ============================================================================
 export const searchMedicines = async (searchQuery) => {
-  const whereClause = searchQuery 
+  const whereClause = searchQuery
     ? { name: { [Op.like]: `%${searchQuery}%` } }
     : {};
 
@@ -638,7 +638,7 @@ export const searchMedicines = async (searchQuery) => {
   return medicines.map(m => {
     // Calculate total available stock across all batches
     const totalStock = m.PharmacyStocks?.reduce((sum, stock) => sum + stock.quantity, 0) || 0;
-    
+
     return {
       id: m.medicine_id,
       name: m.name,

@@ -1,4 +1,3 @@
-import pool from "../../config/db.js"
 import {
   getMedicineDetailsService,
   addMedicineBatchService,
@@ -38,20 +37,19 @@ export const getExpiredMedicineBatches = async (req, res) => {
 };
 
 export const clearMedicineBatch = async (req, res) => {
-  const connection = await pool.getConnection();
   try {
     const { batch_id } = req.params;
-    const { pharmacist_id } = req.query;
-    if (!pharmacist_id) return res.status(400).json({ message: "pharmacist_id is required" });
+    const { secret_code } = req.query;
+    if (!secret_code) return res.status(400).json({ message: "secret_code is required" });
 
-    const result = await clearMedicineBatchService(batch_id, pharmacist_id, connection);
+    const result = await clearMedicineBatchService(batch_id, secret_code);
     res.status(200).json(result);
   } catch (err) {
-    await connection.rollback();
     console.error(err);
+    if (String(err.message).toLowerCase().includes("invalid secret code")) {
+      return res.status(401).json({ message: "Invalid secret code" });
+    }
     res.status(500).json({ message: err.message || "Unable to clear medicine batch" });
-  } finally {
-    connection.release();
   }
 };
 

@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faSync, faTasks, faBoxes, 
+import {
+  faSync, faTasks, faBoxes,
   faExchangeAlt, faCheckCircle, faClock,
   faHeartbeat, faFileAlt, faPills, faTimes,
   faCheck, faExclamationCircle
@@ -13,6 +13,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
 import {
   fetchNurseTasks,
+  fetchCompletedNurseTasks,
+  fetchCompletedNurseTasksToday,
   fetchTaskDetails,
   fetchCompletedTaskDetails,
   completeTask,
@@ -22,6 +24,7 @@ import {
   clearCompletedTaskDetails,
   selectPendingTasks,
   selectCompletedTasks,
+  selectCompletedTasksToday,
   selectCurrentTask,
   selectCompletedTaskDetails,
   selectStock,
@@ -35,27 +38,28 @@ function NurseDashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
-  
+
   const pendingTasks = useSelector(selectPendingTasks);
   const completedTasks = useSelector(selectCompletedTasks);
+  const completedTasksToday = useSelector(selectCompletedTasksToday);
   const taskDetails = useSelector(selectCurrentTask);
   const completedTaskDetails = useSelector(selectCompletedTaskDetails);
   const isTasksLoading = useSelector(selectIsTasksLoading);
   const isTaskDetailsLoading = useSelector(selectIsTaskDetailsLoading);
   const isCompletingTask = useSelector(selectIsCompletingTask);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [showCompletedDetailsModal, setShowCompletedDetailsModal] = useState(false);
   const [activeTask, setActiveTask] = useState(null);
   const [activeView, setActiveView] = useState("tasks");
   const [stockType, setStockType] = useState('NURSE');
-  
+
   const availableStock = useSelector(selectStock(stockType));
   const [selectedMedications, setSelectedMedications] = useState([]);
   const [observation, setObservation] = useState('');
   const [remarks, setRemarks] = useState('');
   const [secretCode, setSecretCode] = useState('');
-  
+
   const [isCodeValid, setIsCodeValid] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
 
@@ -79,8 +83,11 @@ function NurseDashboard() {
   useEffect(() => {
     if (user && isAuthenticated) {
       dispatch(fetchNurseTasks());
+      dispatch(fetchCompletedNurseTasks());
+      dispatch(fetchCompletedNurseTasksToday());
       const interval = setInterval(() => {
         dispatch(fetchNurseTasks());
+        dispatch(fetchCompletedNurseTasksToday());
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -119,7 +126,7 @@ function NurseDashboard() {
     setSelectedMedications([]);
     setSecretCode('');
     setIsCodeValid(null);
-    
+
     setEcgReport({
       heartRate: '',
       rhythm: 'NORMAL_SINUS_RHYTHM',
@@ -132,7 +139,7 @@ function NurseDashboard() {
     });
 
     const result = await dispatch(fetchTaskDetails(task.task_id));
-    
+
     if (result.payload) {
       const isDressing = result.payload.task_type?.toLowerCase().includes('dressing');
       const stockTypeToLoad = isDressing ? 'DRESSING' : 'NURSE';
@@ -173,9 +180,9 @@ function NurseDashboard() {
   };
 
   const updateMedicationQuantity = (medicine_id, batch_no, quantity) => {
-    setSelectedMedications(prev => 
-      prev.map(m => 
-        (m.medicine_id === medicine_id && m.batch_no === batch_no) 
+    setSelectedMedications(prev =>
+      prev.map(m =>
+        (m.medicine_id === medicine_id && m.batch_no === batch_no)
           ? { ...m, quantity: parseInt(quantity) || 1 }
           : m
       )
@@ -236,6 +243,9 @@ function NurseDashboard() {
       setSecretCode('');
       dispatch(clearCurrentTask());
       dispatch(fetchNurseTasks());
+      // Keep completed list + stat cards in sync immediately
+      dispatch(fetchCompletedNurseTasks());
+      dispatch(fetchCompletedNurseTasksToday());
     } else {
       toast.error(result.payload || 'Failed to complete task');
     }
@@ -273,7 +283,7 @@ function NurseDashboard() {
   return (
     <div className={styles.dashboard}>
       <Header />
-      
+
       <div className={styles.roleSwapBar}>
         <div className={styles.roleSwapContainer}>
           <span className={styles.roleSwapText}>Switch Role:</span>
@@ -290,7 +300,7 @@ function NurseDashboard() {
             <h1 className={styles.pageTitle}>Nurse Dashboard</h1>
             <p className={styles.pageSubtitle}>Welcome back, {user.name}</p>
           </div>
-          
+
           <div className={styles.statsCards}>
             <div className={styles.statCard}>
               <div className={styles.statIcon} style={{ background: '#fee2e2', color: '#dc2626' }}>
@@ -306,7 +316,7 @@ function NurseDashboard() {
                 <FontAwesomeIcon icon={faCheckCircle} />
               </div>
               <div>
-                <div className={styles.statValue}>{completedTasks.length}</div>
+                <div className={styles.statValue}>{completedTasksToday.length}</div>
                 <div className={styles.statLabel}>Completed Today</div>
               </div>
             </div>
@@ -319,10 +329,10 @@ function NurseDashboard() {
             <span>My Tasks</span>
           </button>
           <button className={`${styles.actionCard} ${activeView === 'stock' ? styles.active : ''}`} onClick={() => {
-              setActiveView('stock');
-              setStockType('NURSE');
-              dispatch(fetchAvailableStock('NURSE'));
-            }}>
+            setActiveView('stock');
+            setStockType('NURSE');
+            dispatch(fetchAvailableStock('NURSE'));
+          }}>
             <FontAwesomeIcon icon={faBoxes} />
             <span>View Stock</span>
           </button>
@@ -478,11 +488,11 @@ function NurseDashboard() {
                         <div className={styles.formRow}>
                           <div className={styles.formGroup}>
                             <label>Heart Rate (bpm)</label>
-                            <input type="number" value={ecgReport.heartRate} onChange={(e) => setEcgReport({...ecgReport, heartRate: e.target.value})} className={styles.input} placeholder="72" />
+                            <input type="number" value={ecgReport.heartRate} onChange={(e) => setEcgReport({ ...ecgReport, heartRate: e.target.value })} className={styles.input} placeholder="72" />
                           </div>
                           <div className={styles.formGroup}>
                             <label>Rhythm</label>
-                            <select value={ecgReport.rhythm} onChange={(e) => setEcgReport({...ecgReport, rhythm: e.target.value})} className={styles.select}>
+                            <select value={ecgReport.rhythm} onChange={(e) => setEcgReport({ ...ecgReport, rhythm: e.target.value })} className={styles.select}>
                               <option value="NORMAL_SINUS_RHYTHM">Normal Sinus Rhythm</option>
                               <option value="SINUS_TACHYCARDIA">Sinus Tachycardia</option>
                               <option value="SINUS_BRADYCARDIA">Sinus Bradycardia</option>
@@ -495,20 +505,20 @@ function NurseDashboard() {
                         <div className={styles.formRow}>
                           <div className={styles.formGroup}>
                             <label>PR Interval (ms)</label>
-                            <input type="number" value={ecgReport.prInterval} onChange={(e) => setEcgReport({...ecgReport, prInterval: e.target.value})} className={styles.input} placeholder="120-200" />
+                            <input type="number" value={ecgReport.prInterval} onChange={(e) => setEcgReport({ ...ecgReport, prInterval: e.target.value })} className={styles.input} placeholder="120-200" />
                           </div>
                           <div className={styles.formGroup}>
                             <label>QRS Duration (ms)</label>
-                            <input type="number" value={ecgReport.qrsDuration} onChange={(e) => setEcgReport({...ecgReport, qrsDuration: e.target.value})} className={styles.input} placeholder="80-120" />
+                            <input type="number" value={ecgReport.qrsDuration} onChange={(e) => setEcgReport({ ...ecgReport, qrsDuration: e.target.value })} className={styles.input} placeholder="80-120" />
                           </div>
                           <div className={styles.formGroup}>
                             <label>QT Interval (ms)</label>
-                            <input type="number" value={ecgReport.qtInterval} onChange={(e) => setEcgReport({...ecgReport, qtInterval: e.target.value})} className={styles.input} placeholder="350-450" />
+                            <input type="number" value={ecgReport.qtInterval} onChange={(e) => setEcgReport({ ...ecgReport, qtInterval: e.target.value })} className={styles.input} placeholder="350-450" />
                           </div>
                         </div>
                         <div className={styles.formGroup}>
                           <label>Axis</label>
-                          <select value={ecgReport.axis} onChange={(e) => setEcgReport({...ecgReport, axis: e.target.value})} className={styles.select}>
+                          <select value={ecgReport.axis} onChange={(e) => setEcgReport({ ...ecgReport, axis: e.target.value })} className={styles.select}>
                             <option value="NORMAL">Normal Axis</option>
                             <option value="LEFT_AXIS_DEVIATION">Left Axis Deviation</option>
                             <option value="RIGHT_AXIS_DEVIATION">Right Axis Deviation</option>
@@ -517,11 +527,11 @@ function NurseDashboard() {
                         </div>
                         <div className={styles.formGroup}>
                           <label>Findings</label>
-                          <textarea value={ecgReport.findings} onChange={(e) => setEcgReport({...ecgReport, findings: e.target.value})} className={styles.textarea} rows={3} placeholder="Describe ECG findings..." />
+                          <textarea value={ecgReport.findings} onChange={(e) => setEcgReport({ ...ecgReport, findings: e.target.value })} className={styles.textarea} rows={3} placeholder="Describe ECG findings..." />
                         </div>
                         <div className={styles.formGroup}>
                           <label>Interpretation</label>
-                          <textarea value={ecgReport.interpretation} onChange={(e) => setEcgReport({...ecgReport, interpretation: e.target.value})} className={styles.textarea} rows={2} placeholder="Clinical interpretation..." />
+                          <textarea value={ecgReport.interpretation} onChange={(e) => setEcgReport({ ...ecgReport, interpretation: e.target.value })} className={styles.textarea} rows={2} placeholder="Clinical interpretation..." />
                         </div>
                       </div>
                     </div>
@@ -648,7 +658,7 @@ function NurseDashboard() {
                   </div>
                 </div>
               )}
-{completedTaskDetails.observation && (
+              {completedTaskDetails.observation && (
                 <div className={styles.infoSection}>
                   <h4><FontAwesomeIcon icon={faFileAlt} /> Observation</h4>
                   <p className={styles.observationText}>{completedTaskDetails.observation}</p>
