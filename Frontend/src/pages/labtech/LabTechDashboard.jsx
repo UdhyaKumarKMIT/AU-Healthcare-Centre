@@ -12,7 +12,7 @@ import {
   faHourglassHalf 
 } from '@fortawesome/free-solid-svg-icons';
 import { fetchLabTechStats, fetchPendingTests } from '../../store/slices/labTechSlice';
-import LabTechSidebar from '../../components/LabTech/LabTechSidebar';
+import LabTechSidebar from '../../components/labtech/LabTechSidebar';
 import Header from '../../components/Header/Header';
 import styles from './LabTechDashboard.module.css';
 import statStyles from '../../components/Admin/ReceptionistStats.module.css';

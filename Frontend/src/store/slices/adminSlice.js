@@ -1,7 +1,7 @@
 // src/store/slices/adminSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const initialState = {
   stats: {
@@ -80,7 +80,7 @@ export const fetchAdminStats = createAsyncThunk(
   'admin/fetchAdminStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/stats`, {
+      const response = await fetch(`${API_URL}/admin/stats`, {
         headers: getAuthHeaders()
       });
 
@@ -102,7 +102,7 @@ export const fetchPatientOverview = createAsyncThunk(
   'admin/fetchPatientOverview',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/patient-overview`, {
+      const response = await fetch(`${API_URL}/admin/patient-overview`, {
         headers: getAuthHeaders()
       });
 
@@ -129,7 +129,7 @@ export const fetchUsers = createAsyncThunk(
       if (params.status && params.status !== 'all') queryParams.append('status', params.status);
       if (params.search) queryParams.append('search', params.search);
       
-      const url = `${API_BASE}/api/admin/users${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `${API_URL}/admin/users${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       const response = await fetch(url, {
         headers: getAuthHeaders()
@@ -153,7 +153,7 @@ export const createUser = createAsyncThunk(
   'admin/createUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(userData)
@@ -177,7 +177,7 @@ export const createDoctor = createAsyncThunk(
   'admin/createDoctor',
   async (doctorData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...doctorData, role: 'DOCTOR' })
@@ -201,7 +201,7 @@ export const createReceptionist = createAsyncThunk(
   'admin/createReceptionist',
   async (receptionistData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...receptionistData, role: 'NURSE_RECEPTIONIST' })
@@ -225,7 +225,7 @@ export const createNurse = createAsyncThunk(
   'admin/createNurse',
   async (nurseData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...nurseData, role: 'NURSE_RECEPTIONIST' })
@@ -249,7 +249,7 @@ export const createPharmacist = createAsyncThunk(
   'admin/createPharmacist',
   async (pharmacistData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...pharmacistData, role: 'PHARMACIST' })
@@ -273,7 +273,7 @@ export const updateUserStatus = createAsyncThunk(
   'admin/updateUserStatus',
   async ({ userId, status, reason }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
+      const response = await fetch(`${API_URL}/admin/users/${userId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ status, reason })
@@ -297,7 +297,7 @@ export const deleteUser = createAsyncThunk(
   'admin/deleteUser',
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -319,7 +319,7 @@ export const fetchDoctors = createAsyncThunk(
   'admin/fetchDoctors',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/doctors`, {
+      const response = await fetch(`${API_URL}/admin/doctors`, {
         headers: getAuthHeaders()
       });
 
@@ -341,7 +341,7 @@ export const fetchReceptionists = createAsyncThunk(
   'admin/fetchReceptionists',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/receptionists`, {
+      const response = await fetch(`${API_URL}/admin/receptionists`, {
         headers: getAuthHeaders()
       });
 
@@ -363,7 +363,7 @@ export const fetchNurses = createAsyncThunk(
   'admin/fetchNurses',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/nurses`, {
+      const response = await fetch(`${API_URL}/admin/nurses`, {
         headers: getAuthHeaders()
       });
 
@@ -385,7 +385,7 @@ export const fetchPharmacists = createAsyncThunk(
   'admin/fetchPharmacists',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/pharmacists`, {
+      const response = await fetch(`${API_URL}/admin/pharmacists`, {
         headers: getAuthHeaders()
       });
 
@@ -411,7 +411,7 @@ export const fetchVisits = createAsyncThunk(
       if (params.date) queryParams.append('date', params.date);
       if (params.status && params.status !== 'all') queryParams.append('status', params.status);
       
-      const url = `${API_BASE}/api/admin/visits${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `${API_URL}/admin/visits${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       const response = await fetch(url, {
         headers: getAuthHeaders()
@@ -439,7 +439,7 @@ export const fetchInventory = createAsyncThunk(
       if (params.status && params.status !== 'all') queryParams.append('status', params.status);
       if (params.search) queryParams.append('search', params.search);
       
-      const url = `${API_BASE}/api/admin/inventory${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `${API_URL}/admin/inventory${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       const response = await fetch(url, {
         headers: getAuthHeaders()
@@ -468,7 +468,7 @@ export const fetchSystemLogs = createAsyncThunk(
       if (params.endDate) queryParams.append('endDate', params.endDate);
       if (params.action && params.action !== 'all') queryParams.append('action', params.action);
       
-      const url = `${API_BASE}/api/admin/logs${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `${API_URL}/admin/logs${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       const response = await fetch(url, {
         headers: getAuthHeaders()

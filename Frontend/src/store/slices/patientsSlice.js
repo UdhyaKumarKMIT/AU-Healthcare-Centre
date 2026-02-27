@@ -1,7 +1,7 @@
 // src/store/slices/patientsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const fetchPatients = createAsyncThunk(
   'patients/fetchPatients',
@@ -9,7 +9,7 @@ export const fetchPatients = createAsyncThunk(
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_BASE}/api/receptionist/patients`, {
+      const response = await fetch(`${API_URL}/receptionist/patients`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -60,7 +60,7 @@ export const registerPatient = createAsyncThunk(
       
       console.log('🚀 Registering patient with payload:', payload);
       
-      const response = await fetch(`${API_BASE}/api/receptionist/register/patient`, {
+      const response = await fetch(`${API_URL}/receptionist/register/patient`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

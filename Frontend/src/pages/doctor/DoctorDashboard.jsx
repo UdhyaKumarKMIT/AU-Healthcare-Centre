@@ -19,7 +19,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faHospital } from '@fortawesome/free-solid-svg-icons';
 import styles from "./DoctorDashboard.module.css";
 
-const API_BASE = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const DoctorDashboard = () => {
   const dispatch = useDispatch();
@@ -99,7 +99,7 @@ const DoctorDashboard = () => {
       const today = new Date().toISOString().split("T")[0];
 
       const response = await fetch(
-        `${API_BASE}/api/doctor/visits/today?doctor_id=${doctorId}&date=${today}`,
+        `${API_URL}/doctor/visits/today?doctor_id=${doctorId}&date=${today}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -128,7 +128,7 @@ const DoctorDashboard = () => {
   const fetchNurses = async () => {
 
     try {
-      const url = `${API_BASE}/api/doctor/nurses`;
+      const url = `${API_URL}/doctor/nurses`;
 
       const response = await fetch(url, {
         headers: {
@@ -155,7 +155,7 @@ const DoctorDashboard = () => {
 
   const fetchNurseTaskTypes = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/doctor/nurse-task-types`, {
+      const response = await fetch(`${API_URL}/doctor/nurse-task-types`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -220,7 +220,7 @@ const DoctorDashboard = () => {
 
   const fetchExistingDiagnoses = async (visitId) => {
     try {
-      const response = await fetch(`${API_BASE}/api/doctor/visit/${visitId}/diagnoses`, {
+      const response = await fetch(`${API_URL}/doctor/visit/${visitId}/diagnoses`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -335,7 +335,7 @@ const DoctorDashboard = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/doctor/diagnoses`, {
+      const response = await fetch(`${API_URL}/doctor/diagnoses`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -472,7 +472,7 @@ const DoctorDashboard = () => {
 
       // Use the new endpoint that handles both prescriptions and nurse tasks
       const prescriptionResponse = await fetch(
-        `${API_BASE}/api/doctor/prescription-with-tasks`,
+        `${API_URL}/doctor/prescription-with-tasks`,
         {
           method: "POST",
           headers: {
@@ -502,7 +502,7 @@ const DoctorDashboard = () => {
       if (nurseTasks.length > 0) {
         for (const task of nurseTasks) {
           try {
-            const taskResponse = await fetch(`${API_BASE}/api/doctor/nurse-task`, {
+            const taskResponse = await fetch(`${API_URL}/doctor/nurse-task`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -590,7 +590,7 @@ const DoctorDashboard = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE}/api/doctor/medicines?search=${encodeURIComponent(query)}`,
+        `${API_URL}/doctor/medicines?search=${encodeURIComponent(query)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1169,7 +1169,7 @@ const DoctorDashboard = () => {
                         try {
                           // Complete visit with referral note
                           const response = await fetch(
-                            `${API_BASE}/api/doctor/visit/${selectedPatient.visitId}/complete`,
+                            `${API_URL}/doctor/visit/${selectedPatient.visitId}/complete`,
                             {
                               method: "PATCH",
                               headers: {

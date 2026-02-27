@@ -9,10 +9,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/Header/Header';
-import TasksView from '../../components/nurse/TasksView';
-import StockView from '../../components/nurse/StockView';
-import TaskDetailsModal from '../../components/nurse/TaskDetailsModal';
-import CompletedTaskDetailsModal from '../../components/nurse/CompletedTaskDetailsModal';
+import TasksView from '../../components/Nurse/TasksView';
+import StockView from '../../components/Nurse/StockView';
+import TaskDetailsModal from '../../components/Nurse/TaskDetailsModal';
+import CompletedTaskDetailsModal from '../../components/Nurse/CompletedTaskDetailsModal';
 import {
   fetchNurseTasks,
   fetchTaskDetails,
@@ -27,7 +27,7 @@ import {
   selectStock,
   selectIsTasksLoading
 } from '../../store/slices/nurseSlice';
-import styles from '../../components/nurse/NurseDashboard.module.css';
+import styles from '../../components/Nurse/NurseDashboard.module.css';
 
 function NurseDashboard() {
   const navigate = useNavigate();

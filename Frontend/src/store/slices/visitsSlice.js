@@ -1,7 +1,7 @@
 // src/store/slices/visitsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const fetchVisits = createAsyncThunk(
   'visits/fetchVisits',
@@ -9,7 +9,7 @@ export const fetchVisits = createAsyncThunk(
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_BASE}/api/receptionist/visits`, {
+      const response = await fetch(`${API_URL}/receptionist/visits`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -57,7 +57,7 @@ export const createVisit = createAsyncThunk(
       
       console.log('🚀 Creating visit with payload:', payload);
       
-      const response = await fetch(`${API_BASE}/api/receptionist/visit`, {
+      const response = await fetch(`${API_URL}/receptionist/visit`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -106,7 +106,7 @@ export const createVisit = createAsyncThunk(
 // Helper function to save vitals
 const saveVitals = async (visitId, vitalsData, token) => {
   try {
-    const response = await fetch(`${API_BASE}/api/receptionist/vitals`, {
+    const response = await fetch(`${API_URL}/receptionist/vitals`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

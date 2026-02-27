@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const fetchDoctors = createAsyncThunk(
   'doctors/fetchDoctors',
@@ -10,7 +10,7 @@ export const fetchDoctors = createAsyncThunk(
       
       console.log('🔍 Fetching doctors...');
       
-      const response = await fetch(`${API_BASE}/api/receptionist/doctors`, {
+      const response = await fetch(`${API_URL}/receptionist/doctors`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -49,7 +49,7 @@ export const updateDoctorAvailability = createAsyncThunk(
       
       console.log('🔄 Updating doctor availability:', { doctorId, status });
       
-      const response = await fetch(`${API_BASE}/api/receptionist/doctor/${doctorId}/availability`, {
+      const response = await fetch(`${API_URL}/receptionist/doctor/${doctorId}/availability`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -87,7 +87,7 @@ export const updateVisitStatus = createAsyncThunk(
       
       console.log('🔄 Updating visit status:', { visitId, status });
       
-      const response = await fetch(`${API_BASE}/api/doctor/visit/${visitId}/status`, {
+      const response = await fetch(`${API_URL}/doctor/visit/${visitId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

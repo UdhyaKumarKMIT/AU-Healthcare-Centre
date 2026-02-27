@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const fetchLabTechStats = createAsyncThunk(
   'labTech/fetchStats',
@@ -8,7 +8,7 @@ export const fetchLabTechStats = createAsyncThunk(
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`${API_BASE}/api/labtech/stats`, {
+      const response = await fetch(`${API_URL}/labtech/stats`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -32,7 +32,7 @@ export const fetchPendingTests = createAsyncThunk(
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `${API_BASE}/api/labtech/tests?status=pending`,
+        `${API_URL}/labtech/tests?status=pending`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,7 +58,7 @@ export const fetchLabTests = createAsyncThunk(
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `${API_BASE}/api/labtech/tests${query}`,
+        `${API_URL}/labtech/tests${query}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,7 +84,7 @@ export const fetchTestById = createAsyncThunk(
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `${API_BASE}/api/labtech/tests/${testId}`,
+        `${API_URL}/labtech/tests/${testId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ export const submitTestResults = createAsyncThunk(
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `${API_BASE}/api/labtech/tests/${testId}/results`,
+        `${API_URL}/labtech/tests/${testId}/results`,
         {
           method: 'POST',
           headers: {

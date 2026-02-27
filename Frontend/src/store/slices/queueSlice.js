@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { updateVisitStatus } from './doctorsSlice';
 
-const API_BASE = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Fetch patient queue for a specific doctor
 export const fetchPatientQueue = createAsyncThunk(
@@ -13,7 +13,7 @@ export const fetchPatientQueue = createAsyncThunk(
       
       console.log('🔍 Fetching patient queue for doctor:', doctorId);
       
-      const response = await fetch(`${API_BASE}/api/doctor/queue/${doctorId}`, {
+      const response = await fetch(`${API_URL}/doctor/queue/${doctorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -66,7 +66,7 @@ export const fetchPatientHistory = createAsyncThunk(
       
       console.log('🔍 Fetching history for patient:', patientId);
       
-      const response = await fetch(`${API_BASE}/api/doctor/patient/${patientId}/history`, {
+      const response = await fetch(`${API_URL}/doctor/patient/${patientId}/history`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
