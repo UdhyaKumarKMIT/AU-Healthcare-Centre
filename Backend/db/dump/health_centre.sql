@@ -651,6 +651,7 @@ INSERT INTO `users` (`user_id`, `username`, `role`, `status`, `created_at`, `pas
 ('73dah5h4-e92d-11fb-b270-00155d788f6d','dr.jones','DOCTOR','ACTIVE',NOW(),'$2b$10$yQ2Kh9ko4DEBZX/nbGi00OljgM0/IMhrK.ggOun1MGxjfg3DtTJ0G',0),
 ('74ebi6i5-e92d-11fb-b270-00155d788f6e','labtech','LAB_TECHNICIAN','ACTIVE',NOW(),'$2b$10$G/JORbldk5IiLuo9OhqIouCx5m4lVwLu5hn/yHVh4nzcCiMk9EUjq',0),
 ('a78db729-e92d-11fb-b270-00155d788f6a','nurse_receptionist','NURSE_RECEPTIONIST','ACTIVE',NOW(),'$2b$10$SHLxU.5Qp9Zth1JcH1dDYexYoo01CCTXagYU40dfz23J9Ra6LeZQq',1),
+('b7991f2f-1776-11f1-b724-0a0027000014','clerical_assistant','CLERICAL_ASSISTANT','ACTIVE',NOW(),'$2a$10$cRgLybGya9hXvfTYafYZQ.rX.PPQe3HBX82bvhufGnbo0KWRriGze',0),
 ('b89ec83a-e92d-11fb-b270-00155d788f6b','pharmacist','PHARMACIST','ACTIVE',NOW(),'$2b$10$ThoCHDgmcmEtSwqMO2wZ1exB/J2.jph3tqA1eilxt762hl3JErfXy',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;

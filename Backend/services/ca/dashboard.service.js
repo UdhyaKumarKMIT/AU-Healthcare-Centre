@@ -6,12 +6,12 @@ import { QueryTypes } from "sequelize";
 ============================ */
 export const getDashboardCounts = async () => {
   try { 
-    // Expired stock
+    // Expired stock (medicines with expiry date in past)
     const expiredStockRows = await sequelize.query(
       `
       SELECT COUNT(*) AS expired_stock_count
       FROM medicine_main_stock
-      WHERE status = 'EXPIRED';
+      WHERE expiry IS NOT NULL AND expiry < NOW();
       `,
       { type: QueryTypes.SELECT }
     );
@@ -25,7 +25,7 @@ export const getDashboardCounts = async () => {
         SELECT 1
         FROM medicine_main_stock ms
         WHERE ms.medicine_id = m.medicine_id
-          AND ms.status = 'ACTIVE'
+          AND (ms.expiry IS NULL OR ms.expiry > NOW())
       );
       `,
       { type: QueryTypes.SELECT }
@@ -39,7 +39,7 @@ export const getDashboardCounts = async () => {
       JOIN (
         SELECT medicine_id, SUM(quantity) AS total_quantity
         FROM medicine_main_stock
-        WHERE status = 'ACTIVE'
+        WHERE (expiry IS NULL OR expiry > NOW())
         GROUP BY medicine_id
       ) ms_total
         ON m.medicine_id = ms_total.medicine_id
@@ -73,7 +73,6 @@ export const getMedicineTotalStock = async () => {
       FROM medicine m
       LEFT JOIN medicine_main_stock ms
         ON ms.medicine_id = m.medicine_id
-        AND ms.status = 'ACTIVE'
         AND (ms.expiry IS NULL OR ms.expiry > NOW())
       GROUP BY
         m.medicine_id,
@@ -120,8 +119,8 @@ export const getAllStockDetails = async () => {
         FROM medicine m
         LEFT JOIN ${substockType} ms 
           ON m.medicine_id = ms.medicine_id
-          AND ms.status = 'active'
           AND ms.batch_no IS NOT NULL
+          AND (ms.expiry IS NULL OR ms.expiry > NOW())
         GROUP BY m.medicine_id, m.name
         ORDER BY m.name;
       `;

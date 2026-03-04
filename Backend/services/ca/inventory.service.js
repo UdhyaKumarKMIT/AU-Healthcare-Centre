@@ -173,8 +173,8 @@ export const addMedicine = async (medicineData) => {
     await sequelize.query(
       `
       INSERT INTO medicine_main_stock
-      (main_stock_id, batch_no, medicine_id, expiry, quantity, status, mfd)
-      VALUES (UUID(), ?, ?, ?, ?, 'ACTIVE', NOW());
+      (main_stock_id, batch_no, medicine_id, expiry, quantity, mfd)
+      VALUES (UUID(), ?, ?, ?, ?, NOW());
       `,
       {
         replacements: [batch_id, medicine_id, expiry_date, in_stock],
@@ -203,7 +203,7 @@ export const getExpiredMedicineBatches = async () => {
     FROM medicine_main_stock mb
     INNER JOIN medicine m
       ON mb.medicine_id = m.medicine_id
-    WHERE mb.status = 'EXPIRED'
+    WHERE mb.expiry IS NOT NULL AND mb.expiry < NOW()
     ORDER BY mb.expiry ASC;
     `,
     { type: QueryTypes.SELECT }
@@ -214,6 +214,36 @@ export const getExpiredMedicineBatches = async () => {
     medicine_name: row.medicine_name,
     expiry_date: row.expiry_date,
     in_stock: row.in_stock
+  }));
+};
+
+/* ============================
+   Get out of stock medicines
+============================ */
+export const getOutOfStock = async () => {
+  const rows = await sequelize.query(
+    `
+    SELECT
+      m.medicine_id,
+      m.name AS medicine_name,
+      m.type,
+      COALESCE(SUM(ms.quantity), 0) AS total_stock
+    FROM medicine m
+    LEFT JOIN medicine_main_stock ms
+      ON m.medicine_id = ms.medicine_id
+      AND (ms.expiry IS NULL OR ms.expiry > NOW())
+    GROUP BY m.medicine_id, m.name, m.type
+    HAVING total_stock = 0
+    ORDER BY m.name ASC;
+    `,
+    { type: QueryTypes.SELECT }
+  );
+
+  return rows.map(row => ({
+    medicine_id: row.medicine_id,
+    medicine_name: row.medicine_name,
+    type: row.type,
+    total_stock: 0
   }));
 };
  
@@ -256,7 +286,7 @@ export const getBatches = async ({ medicine_name, total_days, quantity }) => {
         FROM pharmacy_stock
         WHERE medicine_id = ?
           AND quantity > 0
-          AND status = 'ACTIVE'
+          AND (expiry IS NULL OR expiry > NOW())
           ${minMonths > 0 || maxMonths !== null ? `AND ${condition}` : ""}
         ORDER BY expiry ASC;
         `,
