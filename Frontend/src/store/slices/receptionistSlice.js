@@ -25,25 +25,24 @@ export const registerPatient = createAsyncThunk(
         return rejectWithValue('Staff code not found');
       }
 
-const payload = {
-  username: patientData.email,
-  password: patientData.rollNo || patientData.employeeId || 'default123',
-  name: patientData.name,
-  dob: patientData.dob,
-  gender: patientData.gender.toUpperCase(),
-  phone: patientData.phone,
-  patient_type: patientData.patientType || 'STUDENT',
-  allergic_to: patientData.allergicTo || null,
-  blood_group: patientData.bloodGroup || null,
-  rollNo: patientData.rollNo || patientData.employeeId,
-  department: patientData.department,
-  year: patientData.year,
-  employeeId: patientData.employeeId,
-  designation: patientData.designation,
-  familyMembers: patientData.familyMembers || [],
-  created_by_code: staffCode
-};
-      console.log("REGISTER API PAYLOAD:", payload);
+      const payload = {
+        username: patientData.email,
+        password: patientData.rollNo || patientData.employeeId || 'default123',
+        name: patientData.name,
+        dob: patientData.dob,
+        gender: patientData.gender.toUpperCase(),
+        phone: patientData.phone,
+        patient_type: patientData.patientType || 'STUDENT',
+        allergic_to: patientData.allergicTo || null,
+        blood_group: patientData.bloodGroup || null,
+        rollNo: patientData.rollNo || patientData.employeeId,
+        department: patientData.department,
+        year: patientData.year,
+        employeeId: patientData.employeeId,
+        designation: patientData.designation,
+        familyMembers: patientData.familyMembers || [],
+        created_by_code: staffCode
+      };
 
       const response = await axios.post(
         `${API_BASE_URL}/receptionist/register/patient`,
@@ -173,7 +172,6 @@ export const fetchVisits = createAsyncThunk(
       if (from && from.trim()) queryParams.from = from;
       if (to && to.trim()) queryParams.to = to;
 
-      console.log('🔧 DEBUG: Query params:', queryParams.from, queryParams.to);
 
       const response = await axios.get(`${API_BASE_URL}/receptionist/visits`, {
         params: queryParams,
@@ -198,7 +196,6 @@ export const createVisit = createAsyncThunk(
         return rejectWithValue('Staff code not found');
       }
 
-      console.log('Creating visit with data:', visitData);
 
       // Create visit
       const visitPayload = {
@@ -209,15 +206,12 @@ export const createVisit = createAsyncThunk(
         created_by_code: staffCode
       };
 
-      console.log('Visit payload:', visitPayload);
 
       const visitResponse = await axios.post(
         `${API_BASE_URL}/receptionist/visit`,
         visitPayload,
         { headers: getAuthHeaders() }
       );
-
-      console.log('Visit response:', visitResponse.data);
       const visitId = visitResponse.data.visit_id;
 
       // Add vitals if provided
@@ -232,8 +226,6 @@ export const createVisit = createAsyncThunk(
           spo2: visitData.vitals.spo2 || null,
           recorded_by_code: staffCode
         };
-
-        console.log('Vitals payload:', vitalsPayload);
 
         await axios.post(
           `${API_BASE_URL}/receptionist/vitals`,
@@ -429,7 +421,6 @@ const receptionistSlice = createSlice({
       })
       .addCase(searchPatients.fulfilled, (state, action) => {
         state.searchLoading = false;
-        console.log('🔍 Search results from API:', action.payload);
         state.searchResults = action.payload.map(p => ({
           id: p.patient_id,
           patient_id: p.patient_id,
@@ -531,7 +522,6 @@ const receptionistSlice = createSlice({
       })
       .addCase(fetchVisits.fulfilled, (state, action) => {
         state.visitsLoading = false;
-        console.log('✅ Redux: Visits fetched from API:', action.payload);
         state.visits = action.payload.map(v => ({
           id: v.visit_id,
           visit_id: v.visit_id,
@@ -545,7 +535,6 @@ const receptionistSlice = createSlice({
           visitType: v.visit_type || 'OPD',
           token: v.token
         }));
-        console.log('✅ Redux: Visits mapped to state:', state.visits);
       })
       .addCase(fetchVisits.rejected, (state, action) => {
         state.visitsLoading = false;
