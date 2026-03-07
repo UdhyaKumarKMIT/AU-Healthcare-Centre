@@ -25,22 +25,25 @@ export const registerPatient = createAsyncThunk(
         return rejectWithValue('Staff code not found');
       }
 
-      const payload = {
-        username: patientData.email,
-        password: patientData.rollNo || patientData.employeeId || 'default123',
-        name: patientData.name,
-        dob: patientData.dob,
-        gender: patientData.gender.toUpperCase(),
-        phone: patientData.phone,
-        patient_type: patientData.patientType || 'STUDENT',
-        allergic_to: patientData.allergicTo || null,
-        department: patientData.department,
-        year: patientData.year,
-        employeeId: patientData.employeeId,
-        designation: patientData.designation,
-        familyMembers: patientData.familyMembers || [],
-        created_by_code: staffCode
-      };
+const payload = {
+  username: patientData.email,
+  password: patientData.rollNo || patientData.employeeId || 'default123',
+  name: patientData.name,
+  dob: patientData.dob,
+  gender: patientData.gender.toUpperCase(),
+  phone: patientData.phone,
+  patient_type: patientData.patientType || 'STUDENT',
+  allergic_to: patientData.allergicTo || null,
+  blood_group: patientData.bloodGroup || null,
+  rollNo: patientData.rollNo || patientData.employeeId,
+  department: patientData.department,
+  year: patientData.year,
+  employeeId: patientData.employeeId,
+  designation: patientData.designation,
+  familyMembers: patientData.familyMembers || [],
+  created_by_code: staffCode
+};
+      console.log("REGISTER API PAYLOAD:", payload);
 
       const response = await axios.post(
         `${API_BASE_URL}/receptionist/register/patient`,

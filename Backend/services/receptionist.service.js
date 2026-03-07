@@ -26,6 +26,7 @@ export const registerPatient = async ({
   phone,
   patient_type,
   allergic_to,
+  blood_group,
   email,
   rollNo,
   // Additional fields
@@ -57,6 +58,7 @@ export const registerPatient = async ({
       phone,
       patient_type,
       allergic_to: allergic_to || null,
+      blood_group: blood_group || null,
       email: email || null,
       reg_number: rollNo || null,
       department: patient_type === 'STUDENT' ? department : null,

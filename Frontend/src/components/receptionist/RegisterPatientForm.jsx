@@ -39,7 +39,7 @@ const RegisterPatientForm = () => {
     phone: '',
     patientType: 'STUDENT',
     allergicTo: '',
-
+    bloodGroup: '',
     // Student-specific
     department: '',
     year: '',
@@ -193,7 +193,7 @@ const RegisterPatientForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    console.log("FORM DATA:", formData);  
     console.log('Register patient form submitted');
     console.log('Form data:', formData);
     console.log('User:', user);
@@ -206,12 +206,14 @@ const RegisterPatientForm = () => {
 
     const payload = {
       ...formData,
+      blood_group: formData.bloodGroup || null,
       rollNo: formData.patientType === 'STUDENT' ? formData.rollNo : formData.employeeId,
       staffCode: formData.staffCode
     };
 
     console.log('Dispatching registerPatient with:', payload);
-    dispatch(registerPatient(payload));
+    console.log("REGISTER PAYLOAD SENT TO BACKEND:", payload);
+dispatch(registerPatient(payload));
   };
 
   return (
@@ -324,7 +326,26 @@ const RegisterPatientForm = () => {
               />
               {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
             </div>
-
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Blood Group</label>
+              <select
+                name="bloodGroup"
+                value={formData.bloodGroup}
+                onChange={handleChange}
+                className={styles.select}
+                disabled={loading}
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </div>
             <div className={styles.formGroup}>
               <label className={styles.label}>Allergies (Optional)</label>
               <input
