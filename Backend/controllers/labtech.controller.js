@@ -35,6 +35,7 @@ export const submitTestResults = async (req, res, next) => {
   try {
     const { test_id } = req.params;
     const { result, normal_range } = req.body;
+    const userId = req.user.user_id; // Get user ID from auth middleware
     
     if (!result) {
       return res.status(400).json({ 
@@ -43,7 +44,7 @@ export const submitTestResults = async (req, res, next) => {
       });
     }
     
-    const test = await labTechService.submitTestResults(test_id, { result, normal_range });
+    const test = await labTechService.submitTestResults(test_id, { result, normal_range }, userId);
     res.json({ 
       success: true, 
       message: 'Test results submitted successfully',

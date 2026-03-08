@@ -192,7 +192,7 @@ dispatch(fetchLabTests(query));
                           {test.testName}
                         </div>
                         <div className={tableStyles.receptionistEmail}>
-                          Visit ID: {test.visitId?.substring(0, 8)}
+                          {test.testType && `Type: ${test.testType} • `}Visit ID: {test.visitId?.substring(0, 8)}
                         </div>
                       </div>
                     </div>
@@ -240,7 +240,7 @@ dispatch(fetchLabTests(query));
                       </button>
                       {test.status !== 'completed' && (
                         <button 
-                          onClick={() => navigate(`/labtech/tests/${test.testId}/process`)}
+                          onClick={() => navigate(`/labtech/tests/${test.testId}`)}
                           style={{
                             padding: '6px 12px',
                             background: '#f0e6ff',

@@ -50,6 +50,27 @@ LabTask.init(
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        result: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        normal_range: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        completed_by_user_id: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'users',
+                key: 'user_id',
+            },
+        },
+        priority: {
+            type: DataTypes.STRING(50),
+            allowNull: true,
+            defaultValue: 'normal',
+        },
     },
     {
         sequelize,

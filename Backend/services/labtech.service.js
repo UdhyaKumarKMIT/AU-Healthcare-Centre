@@ -1,97 +1,123 @@
 // src/services/labtech.service.js
-import pool from '../config/db.js';
+import {
+  LabTask,
+  LabTest,
+  Visit,
+  Patient,
+  Doctor,
+  User,
+  sequelize
+} from '../models/sequelize/index.js';
+import { Op } from 'sequelize';
 import ApiError from '../utils/ApiError.js';
 
 export const getLabTechStats = async (timeRange = 'today') => {
   try {
-    let dateFilter = 'CURDATE()';
+    let dateFilter = new Date();
+    dateFilter.setHours(0, 0, 0, 0);
     
     switch(timeRange) {
       case 'week':
-        dateFilter = 'DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+        dateFilter.setDate(dateFilter.getDate() - 7);
         break;
       case 'month':
-        dateFilter = 'DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+        dateFilter.setDate(dateFilter.getDate() - 30);
         break;
       default:
-        dateFilter = 'CURDATE()';
+        // today - already set to start of day
     }
     
     // Get total tests
-    const [totalTests] = await pool.execute(`
-      SELECT COUNT(*) as total
-      FROM lab_tests
-      WHERE ordered_date >= ${dateFilter}
-    `);
+    const totalTests = await LabTask.count({
+      where: {
+        assigned_at: {
+          [Op.gte]: dateFilter
+        }
+      }
+    });
     
-    // Get pending tests (tests without results)
-    const [pendingTests] = await pool.execute(`
-      SELECT COUNT(*) as count
-      FROM lab_tests
-      WHERE result IS NULL OR result = ''
-    `);
+    // Get pending tests
+    const pendingTests = await LabTask.count({
+      where: {
+        status: 'PENDING'
+      }
+    });
     
-    // Get completed tests (tests with results)
-    const [completedTests] = await pool.execute(`
-      SELECT COUNT(*) as count
-      FROM lab_tests
-      WHERE result IS NOT NULL AND result != ''
-    `);
+    // Get completed tests
+    const completedTests = await LabTask.count({
+      where: {
+        status: 'COMPLETED'
+      }
+    });
     
     // Get completed today
-    const [completedToday] = await pool.execute(`
-      SELECT COUNT(*) as count
-      FROM lab_tests
-      WHERE result IS NOT NULL 
-      AND result != ''
-      AND DATE(ordered_date) = CURDATE()
-    `);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const completedToday = await LabTask.count({
+      where: {
+        status: 'COMPLETED',
+        completed_at: {
+          [Op.gte]: todayStart
+        }
+      }
+    });
     
     // Get tests this month
-    const [testsMonth] = await pool.execute(`
-      SELECT COUNT(*) as count
-      FROM lab_tests
-      WHERE MONTH(ordered_date) = MONTH(CURDATE())
-      AND YEAR(ordered_date) = YEAR(CURDATE())
-    `);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    
+    const testsMonth = await LabTask.count({
+      where: {
+        assigned_at: {
+          [Op.gte]: monthStart
+        }
+      }
+    });
     
     // Calculate completion rate
-    const total = totalTests[0].total || 0;
-    const completed = completedTests[0].count || 0;
-    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const completionRate = totalTests > 0 ? Math.round((completedTests / totalTests) * 100) : 0;
     
-    // Get recent activity (last 10 tests with results)
-    const [recentActivity] = await pool.execute(`
-      SELECT 
-        lt.lab_test_id,
-        lt.test_name,
-        lt.ordered_date,
-        lt.result,
-        p.name as patient_name
-      FROM lab_tests lt
-      LEFT JOIN visit v ON lt.visit_id = v.visit_id
-      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
-      WHERE lt.result IS NOT NULL AND lt.result != ''
-      ORDER BY lt.ordered_date DESC
-      LIMIT 10
-    `);
+    // Get recent activity (last 10 completed tests)
+    const recentActivity = await LabTask.findAll({
+      where: {
+        status: 'COMPLETED'
+      },
+      include: [
+        {
+          model: LabTest,
+          attributes: ['test_name', 'test_type']
+        },
+        {
+          model: Visit,
+          attributes: ['visit_id'],
+          include: [{
+            model: Patient,
+            attributes: ['name']
+          }]
+        }
+      ],
+      order: [['completed_at', 'DESC']],
+      limit: 10
+    });
     
     // Format recent activity
     const formattedActivity = recentActivity.map(activity => ({
       type: 'completed',
-      description: `Completed ${activity.test_name} for ${activity.patient_name || 'Unknown Patient'}`,
-      timestamp: activity.ordered_date
+      description: `Completed ${activity.LabTest?.test_name || 'Unknown Test'} (${activity.LabTest?.test_type || 'N/A'}) for ${activity.Visit?.Patient?.name || 'Unknown Patient'}`,
+      timestamp: activity.completed_at || activity.assigned_at
     }));
     
     return {
-      totalTests: total,
-      pendingTests: pendingTests[0].count || 0,
+      totalTests,
+      pendingTests,
       inProgress: 0,
-      completedToday: completedToday[0].count || 0,
+      completedToday,
       urgentTests: 0,
-      samplesCollected: total,
+      samplesCollected: totalTests,
       avgTurnaroundTime: '2.5',
-      testsThisMonth: testsMonth[0].count || 0,
+      testsThisMonth: testsMonth,
       completionRate,
       recentActivity: formattedActivity
     };
@@ -104,57 +130,84 @@ export const getLabTechStats = async (timeRange = 'today') => {
 
 export const getAllLabTests = async ({ status, priority, search }) => {
   try {
-    let query = `
-      SELECT 
-        lt.lab_test_id as testId,
-        lt.visit_id as visitId,
-        lt.test_name as testName,
-        lt.ordered_date as orderedDate,
-        lt.result,
-        lt.normal_range as normalRange,
-        p.name as patientName,
-        p.roll_no as patientRollNo,
-        p.dob,
-        p.gender,
-        p.phone as patientPhone,
-        d.name as doctorName,
-        CASE 
-          WHEN lt.result IS NULL OR lt.result = '' THEN 'pending'
-          ELSE 'completed'
-        END as status,
-        'normal' as priority
-      FROM lab_tests lt
-      LEFT JOIN visit v ON lt.visit_id = v.visit_id
-      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
-      LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
-      WHERE 1=1
-    `;
-    
-    const params = [];
+    const whereClause = {};
     
     if (status && status !== 'all') {
-      if (status === 'pending') {
-        query += ` AND (lt.result IS NULL OR lt.result = '')`;
-      } else if (status === 'completed') {
-        query += ` AND lt.result IS NOT NULL AND lt.result != ''`;
+      whereClause.status = status.toUpperCase();
+    }
+    
+    if (priority && priority !== 'all') {
+      whereClause.priority = priority.toLowerCase();
+    }
+    
+    const includeClause = [
+      {
+        model: LabTest,
+        attributes: ['test_name', 'test_type'],
+        where: search ? {
+          test_name: {
+            [Op.like]: `%${search}%`
+          }
+        } : undefined
+      },
+      {
+        model: Visit,
+        attributes: ['visit_date', 'reason'],
+        include: [{
+          model: Patient,
+          attributes: ['name', 'reg_number', 'dob', 'gender', 'phone'],
+          where: search ? {
+            [Op.or]: [
+              { name: { [Op.like]: `%${search}%` } },
+              { reg_number: { [Op.like]: `%${search}%` } }
+            ]
+          } : undefined,
+          required: false
+        }],
+        required: false
+      },
+      {
+        model: Doctor,
+        as: 'assignedByDoctor',
+        attributes: ['name', 'specialization'],
+        where: search ? {
+          name: {
+            [Op.like]: `%${search}%`
+          }
+        } : undefined,
+        required: false
       }
-    }
+    ];
     
-    if (search) {
-      query += ` AND (
-        lt.test_name LIKE ? OR 
-        p.name LIKE ? OR 
-        p.roll_no LIKE ? OR 
-        lt.lab_test_id LIKE ?
-      )`;
-      const searchParam = `%${search}%`;
-      params.push(searchParam, searchParam, searchParam, searchParam);
-    }
+    const tests = await LabTask.findAll({
+      where: whereClause,
+      include: includeClause,
+      order: [['assigned_at', 'DESC']]
+    });
     
-    query += ` ORDER BY lt.ordered_date DESC`;
+    // Transform results to match frontend expectations
+    const formattedTests = tests.map(test => ({
+      testId: test.id,
+      visitId: test.visit_id,
+      testName: test.LabTest?.test_name,
+      testType: test.LabTest?.test_type,
+      orderedDate: test.assigned_at,
+      completedDate: test.completed_at,
+      result: test.result,
+      normalRange: test.normal_range,
+      instructions: test.instructions,
+      status: test.status,
+      priority: test.priority,
+      patientName: test.Visit?.Patient?.name,
+      patientRollNo: test.Visit?.Patient?.reg_number,
+      dob: test.Visit?.Patient?.dob,
+      gender: test.Visit?.Patient?.gender,
+      patientPhone: test.Visit?.Patient?.phone,
+      doctorName: test.assignedByDoctor?.name,
+      doctorSpecialization: test.assignedByDoctor?.specialization
+    }));
     
-    const [tests] = await pool.execute(query, params);
-    return tests;
+    return formattedTests;
     
   } catch (error) {
     console.error('Error fetching lab tests:', error);
@@ -164,43 +217,67 @@ export const getAllLabTests = async ({ status, priority, search }) => {
 
 export const getLabTestById = async (testId) => {
   try {
-    const [tests] = await pool.execute(`
-      SELECT 
-        lt.lab_test_id as testId,
-        lt.visit_id as visitId,
-        lt.test_name as testName,
-        lt.ordered_date as orderedDate,
-        lt.result,
-        lt.normal_range as normalRange,
-        p.patient_id as patientId,
-        p.name as patientName,
-        p.roll_no as patientRollNo,
-        p.dob,
-        p.gender,
-        p.blood_group as bloodGroup,
-        p.phone as patientPhone,
-        p.emergency_contact as emergencyContact,
-        d.doctor_id as doctorId,
-        d.name as doctorName,
-        d.specialization,
-        v.visit_date as visitDate,
-        v.reason as visitReason,
-        CASE 
-          WHEN lt.result IS NULL OR lt.result = '' THEN 'pending'
-          ELSE 'completed'
-        END as status
-      FROM lab_tests lt
-      LEFT JOIN visit v ON lt.visit_id = v.visit_id
-      LEFT JOIN patient_profile p ON v.patient_id = p.patient_id
-      LEFT JOIN doctor d ON v.doctor_id = d.doctor_id
-      WHERE lt.lab_test_id = ?
-    `, [testId]);
+    const test = await LabTask.findByPk(testId, {
+      include: [
+        {
+          model: LabTest,
+          attributes: ['lab_test_id', 'test_name', 'test_type']
+        },
+        {
+          model: Visit,
+          attributes: ['visit_date', 'reason'],
+          include: [{
+            model: Patient,
+            attributes: ['patient_id', 'name', 'reg_number', 'dob', 'gender', 'blood_group', 'phone', 'email']
+          }]
+        },
+        {
+          model: Doctor,
+          as: 'assignedByDoctor',
+          attributes: ['doctor_id', 'name', 'specialization']
+        },
+        {
+          model: User,
+          as: 'completedBy',
+          attributes: ['username'],
+          required: false
+        }
+      ]
+    });
     
-    if (tests.length === 0) {
+    if (!test) {
       throw new ApiError(404, 'Lab test not found');
     }
     
-    return tests[0];
+    // Transform to match frontend expectations
+    return {
+      testId: test.id,
+      visitId: test.visit_id,
+      labTestId: test.LabTest?.lab_test_id,
+      testName: test.LabTest?.test_name,
+      testType: test.LabTest?.test_type,
+      orderedDate: test.assigned_at,
+      completedDate: test.completed_at,
+      result: test.result,
+      normalRange: test.normal_range,
+      instructions: test.instructions,
+      status: test.status,
+      priority: test.priority,
+      patientId: test.Visit?.Patient?.patient_id,
+      patientName: test.Visit?.Patient?.name,
+      patientRollNo: test.Visit?.Patient?.reg_number,
+      dob: test.Visit?.Patient?.dob,
+      gender: test.Visit?.Patient?.gender,
+      bloodGroup: test.Visit?.Patient?.blood_group,
+      patientPhone: test.Visit?.Patient?.phone,
+      patientEmail: test.Visit?.Patient?.email,
+      doctorId: test.assignedByDoctor?.doctor_id,
+      doctorName: test.assignedByDoctor?.name,
+      specialization: test.assignedByDoctor?.specialization,
+      visitDate: test.Visit?.visit_date,
+      visitReason: test.Visit?.reason,
+      completedByName: test.completedBy?.username
+    };
     
   } catch (error) {
     if (error instanceof ApiError) {
@@ -211,24 +288,21 @@ export const getLabTestById = async (testId) => {
   }
 };
 
-export const submitTestResults = async (testId, { result, normal_range }) => {
+export const submitTestResults = async (testId, { result, normal_range }, userId) => {
   try {
-    const [existing] = await pool.execute(
-      `SELECT lab_test_id FROM lab_tests WHERE lab_test_id = ?`,
-      [testId]
-    );
+    const labTask = await LabTask.findByPk(testId);
     
-    if (existing.length === 0) {
-      throw new ApiError(404, 'Lab test not found');
+    if (!labTask) {
+      throw new ApiError(404, 'Lab test task not found');
     }
     
-    await pool.execute(`
-      UPDATE lab_tests 
-      SET 
-        result = ?,
-        normal_range = ?
-      WHERE lab_test_id = ?
-    `, [result, normal_range || null, testId]);
+    await labTask.update({
+      result,
+      normal_range: normal_range || null,
+      status: 'COMPLETED',
+      completed_at: new Date(),
+      completed_by_user_id: userId
+    });
     
     return await getLabTestById(testId);
     
@@ -243,22 +317,25 @@ export const submitTestResults = async (testId, { result, normal_range }) => {
 
 export const getAllLabTechnicians = async () => {
   try {
-    const [technicians] = await pool.execute(`
-      SELECT 
-        lt.lab_technician_id as technicianId,
-        lt.user_id as userId,
-        lt.name,
-        lt.phone,
-        lt.specialization,
-        lt.status,
-        lt.created_at as createdAt,
-        u.email
-      FROM lab_technician lt
-      LEFT JOIN users u ON lt.user_id = u.user_id
-      ORDER BY lt.name ASC
-    `);
+    const technicians = await User.findAll({
+      where: {
+        role: 'LAB_TECHNICIAN'
+      },
+      attributes: ['user_id', 'username', 'email', 'role', 'created_at'],
+      order: [['username', 'ASC']]
+    });
     
-    return technicians;
+    // Transform to match frontend expectations
+    const formattedTechnicians = technicians.map(tech => ({
+      technicianId: tech.user_id,
+      userId: tech.user_id,
+      name: tech.username,
+      email: tech.email,
+      role: tech.role,
+      createdAt: tech.created_at
+    }));
+    
+    return formattedTechnicians;
     
   } catch (error) {
     console.error('Error fetching lab technicians:', error);

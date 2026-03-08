@@ -235,14 +235,20 @@ CREATE TABLE `lab_tasks` (
   `status` varchar(50) DEFAULT NULL,
   `completed_at` datetime DEFAULT NULL,
   `instructions` text DEFAULT NULL,
+  `result` text DEFAULT NULL,
+  `normal_range` varchar(255) DEFAULT NULL,
+  `completed_by_user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `priority` varchar(50) DEFAULT 'normal',
   PRIMARY KEY (`id`),
   KEY `idx_lab_tasks_visit_id` (`visit_id`),
   KEY `idx_lab_tasks_lab_test_id` (`lab_test_id`),
   KEY `idx_lab_tasks_assigned_by_doctor_id` (`assigned_by_doctor_id`),
   KEY `idx_lab_tasks_status` (`status`),
+  KEY `idx_lab_tasks_completed_by_user_id` (`completed_by_user_id`),
   CONSTRAINT `lab_tasks_ibfk_1` FOREIGN KEY (`visit_id`) REFERENCES `visit` (`visit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `lab_tasks_ibfk_2` FOREIGN KEY (`lab_test_id`) REFERENCES `lab_tests` (`lab_test_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `lab_tasks_ibfk_3` FOREIGN KEY (`assigned_by_doctor_id`) REFERENCES `doctor` (`doctor_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `lab_tasks_ibfk_3` FOREIGN KEY (`assigned_by_doctor_id`) REFERENCES `doctor` (`doctor_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `lab_tasks_ibfk_4` FOREIGN KEY (`completed_by_user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
