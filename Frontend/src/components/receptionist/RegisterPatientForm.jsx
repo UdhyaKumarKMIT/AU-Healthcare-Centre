@@ -193,27 +193,19 @@ const RegisterPatientForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("FORM DATA:", formData);  
-    console.log('Register patient form submitted');
-    console.log('Form data:', formData);
-    console.log('User:', user);
 
     if (!validateForm()) {
-      console.log('Validation failed:', errors);
       toast.error('Fix validation errors');
       return;
     }
 
     const payload = {
       ...formData,
-      blood_group: formData.bloodGroup || null,
       rollNo: formData.patientType === 'STUDENT' ? formData.rollNo : formData.employeeId,
       staffCode: formData.staffCode
     };
 
-    console.log('Dispatching registerPatient with:', payload);
-    console.log("REGISTER PAYLOAD SENT TO BACKEND:", payload);
-dispatch(registerPatient(payload));
+    dispatch(registerPatient(payload));
   };
 
   return (
