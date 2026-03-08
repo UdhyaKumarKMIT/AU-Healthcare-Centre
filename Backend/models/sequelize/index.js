@@ -22,6 +22,8 @@ import PharmacyStock from './PharmacyStock.js';
 import NurseStock from './NurseStock.js';
 import DressingStock from './DressingStock.js';
 import LabtechStock from './LabtechStock.js';
+import LabTest from './LabTest.js';
+import LabTask from './LabTask.js';
 
 // User relations
 User.hasOne(Doctor, { foreignKey: 'user_id' });
@@ -97,6 +99,13 @@ DressingStock.belongsTo(Medicine, { foreignKey: 'medicine_id' });
 Medicine.hasMany(LabtechStock, { foreignKey: 'medicine_id' });
 LabtechStock.belongsTo(Medicine, { foreignKey: 'medicine_id' });
 
+// Lab relations
+LabTest.hasMany(LabTask, { foreignKey: 'lab_test_id' });
+LabTask.belongsTo(LabTest, { foreignKey: 'lab_test_id' });
+
+Doctor.hasMany(LabTask, { foreignKey: 'assigned_by_doctor_id' });
+LabTask.belongsTo(Doctor, { foreignKey: 'assigned_by_doctor_id' });
+
 User.hasMany(SystemAuditLog, { foreignKey: 'actor_user_id' });
 SystemAuditLog.belongsTo(User, { foreignKey: 'actor_user_id' });
 
@@ -125,4 +134,6 @@ export {
     NurseStock,
     DressingStock,
     LabtechStock,
+    LabTest,
+    LabTask,
 };
