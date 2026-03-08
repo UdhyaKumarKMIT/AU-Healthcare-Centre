@@ -77,6 +77,8 @@ const DoctorDashboard = () => {
   const [todayVisitsCount, setTodayVisitsCount] = useState(0); // Today's visits count
   const [nurseTaskTypes, setNurseTaskTypes] = useState([]); // Available nurse task types
   const [nurseTasks, setNurseTasks] = useState([]); // Nurse tasks to be created
+  const [labTests, setLabTests] = useState([]); // Available lab tests
+  const [labTasks, setLabTasks] = useState([]); // Lab tests to be assigned
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
@@ -193,6 +195,28 @@ const DoctorDashboard = () => {
     } catch (error) {
       console.error("❌ Error fetching nurse task types:", error);
       setNurseTaskTypes([]);
+    }
+  };
+
+  const fetchLabTests = async () => {
+    try {
+      const response = await fetch(`${API_URL}/doctor/lab-tests`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLabTests(data.data || []);
+      } else {
+        console.error("❌ Failed to fetch lab tests");
+        setLabTests([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching lab tests:", error);
+      setLabTests([]);
     }
   };
 
@@ -566,13 +590,37 @@ const DoctorDashboard = () => {
         }
       }
 
-      // Show success message with nurse task info
+      // Save lab tasks if any
+      if (labTasks.length > 0) {
+        for (const task of labTasks) {
+          try {
+            const labTaskResponse = await fetch(`${API_URL}/doctor/lab-task`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                visit_id: selectedPatient.visitId,
+                doctor_id: doctorId,
+                lab_test_id: task.lab_test_id,
+                instructions: task.instructions || ""
+              }),
+            });
+          } catch (error) {
+            // Lab task creation failed
+          }
+        }
+      }
+
+      // Show success message with nurse task and lab task info
       const nurseTaskMsg =
         result.data.nurse_tasks_created > 0 || nurseTasks.length > 0
           ? ` ${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
           : "";
+      const labTaskMsg = labTasks.length > 0 ? ` ${labTasks.length} lab test(s) assigned.` : "";
 
-      toast.success(`Visit completed successfully!${nurseTaskMsg}`);
+      toast.success(`Visit completed successfully!${nurseTaskMsg}${labTaskMsg}`);
 
       // Update status to COMPLETED
       await handleStatusUpdate(selectedPatient.visitId, "COMPLETED");
@@ -593,6 +641,7 @@ const DoctorDashboard = () => {
       setCustomDiagnosisText('');
       setEditingId(null);
       setNurseTasks([]); // Clear nurse tasks
+      setLabTasks([]); // Clear lab tasks
       setMedicines([
         {
           medicineId: null,
@@ -1307,6 +1356,7 @@ const DoctorDashboard = () => {
                 onProceedToPrescription={() => {
                   setShowPrescriptionModal(true);
                   fetchNurseTaskTypes();
+                  fetchLabTests();
                 }}
               />
 
@@ -1634,6 +1684,148 @@ const DoctorDashboard = () => {
               {nurseTaskTypes.length === 0 && (
                 <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
                   No task types available. Please populate the nurse_task_master table.
+                </p>
+              )}
+            </div>
+
+            {/* Lab Tests Section */}
+            <div style={{ marginTop: "32px", padding: "24px", background: "#f1f5f9", borderRadius: "8px" }}>
+              <h3 style={{ color: "#1a237e", marginBottom: "16px", fontSize: "16px", fontWeight: 600 }}>
+                Lab Tests
+              </h3>
+
+              {labTasks.map((task, idx) => (
+                <div key={idx} style={{
+                  background: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  marginBottom: "12px",
+                  border: "1px solid #e2e8f0"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ color: "#1a237e" }}>
+                        {labTests.find(t => t.lab_test_id === task.lab_test_id)?.test_name || 'Unknown Test'}
+                      </strong>
+                      <span style={{ marginLeft: "12px", color: "#64748b", fontSize: "13px" }}>
+                        ({labTests.find(t => t.lab_test_id === task.lab_test_id)?.test_type || ''})
+                      </span>
+                      {task.instructions && (
+                        <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>
+                          {task.instructions}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setLabTasks(labTasks.filter((_, i) => i !== idx))}
+                      style={{
+                        padding: "6px 12px",
+                        background: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        marginLeft: "12px"
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{
+                background: "white",
+                padding: "16px",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                      Select Lab Test
+                    </label>
+                    <select
+                      id="labTestSelect"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "2px solid #e2e8f0",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        color: "#1e293b"
+                      }}
+                    >
+                      <option value="">Select a test...</option>
+                      {labTests.map(test => (
+                        <option key={test.lab_test_id} value={test.lab_test_id}>
+                          {test.test_name} ({test.test_type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                      Instructions
+                    </label>
+                    <input
+                      type="text"
+                      id="labTestInstructions"
+                      placeholder="Enter instructions..."
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "2px solid #e2e8f0",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        color: "#1e293b"
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const labTestSelect = document.getElementById('labTestSelect');
+                      const instructionsInput = document.getElementById('labTestInstructions');
+                      const lab_test_id = labTestSelect.value;
+                      const instructions = instructionsInput.value;
+
+                      if (!lab_test_id) {
+                        toast.error('Please select a lab test');
+                        return;
+                      }
+
+                      // Check if test already added
+                      if (labTasks.some(t => t.lab_test_id === lab_test_id)) {
+                        toast.error('This test is already added');
+                        return;
+                      }
+
+                      setLabTasks([...labTasks, { lab_test_id, instructions }]);
+                      labTestSelect.value = '';
+                      instructionsInput.value = '';
+                    }}
+                    style={{
+                      marginTop: "28px",
+                      padding: "10px 20px",
+                      background: "#10b981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    Add Test
+                  </button>
+                </div>
+              </div>
+
+              {labTests.length === 0 && (
+                <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                  No lab tests available. Please populate the lab_tests table.
                 </p>
               )}
             </div>

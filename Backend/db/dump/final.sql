@@ -191,8 +191,31 @@ CREATE TABLE `lab_tests` (
 
 LOCK TABLES `lab_tests` WRITE;
 /*!40000 ALTER TABLE `lab_tests` DISABLE KEYS */;
-/* sample lab tests */
-INSERT INTO `lab_tests` VALUES ('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d','Complete Blood Count (CBC)','Blood Test'),('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e','Urine Analysis','Urine Test');
+/* MIT Campus Health Centre Lab Tests - 23 Tests */
+INSERT INTO `lab_tests` VALUES 
+('f47ac10b-58cc-4372-a567-0e02b2c3d479','GCT','Bio Chemistry'),
+('e8b3f21c-69dd-4283-b678-1f13c3e4e5a0','GIT','Bio Chemistry'),
+('d9c4e32d-7aee-4394-c789-2e24d4f5f6b1','FBS - FASTING','Sugar'),
+('c0d5f43e-8bff-4405-d890-3f35e5a61c2e','PPBS - POSTPRANDIAL','Sugar'),
+('b1e6054f-9c00-4516-e901-4036161a2d3f','UREA','RFT - Renal Function Test'),
+('a2f71650-ad11-4627-f012-514727b83e40','CREATININE','RFT - Renal Function Test'),
+('93082761-be22-4738-0123-625838c94f51','BILIRUBIN','LFT - Liver Function Test'),
+('84193872-cf33-4849-1234-7369494a5062','TOTAL','LFT - Liver Function Test'),
+('752a4983-d044-4950-2345-847a5a5b6173','DIRECT','LFT - Liver Function Test'),
+('663b5a94-e155-4a61-3456-958b6b6c7284','SGOT','LFT - Liver Function Test'),
+('574c6ba5-f266-4b72-4567-a69c7c7d8395','SGPT','LFT - Liver Function Test'),
+('485d7cb6-0377-4c83-5678-b7ad8d8e94a6','ALP','LFT - Liver Function Test'),
+('396e8dc7-1488-4d94-6789-c8be9e9fa5b7','PROTEIN','LFT - Liver Function Test'),
+('2a7f9ed8-2599-4ea5-789a-d9cfafa0b6c8','ALBUMIN','LFT - Liver Function Test'),
+('1b80afe9-36aa-4fb6-890b-ead0b0c1c7d9','WIDAL','Serological Test'),
+('0c91b0ff-47bb-40c7-901c-fbe1c1d2d8ea','MALARIAL MP/MF','Serological Test'),
+('fda2c100-58cc-41d8-a12d-0cf2d2e3e9fb','DENGUE','Serological Test'),
+('eeb3d211-69dd-42e9-b23e-1d03e3f4fa0c','BLOOD GROUPING TYPING','Serological Test'),
+('dfc4e322-7aee-43fa-c34f-2e14f4a51b1d','CBC - COMPLETE BLOOD COUNT','Haematology'),
+('c0d5f433-8bff-4405-d450-3f25056b2c2e','ESR','Haematology'),
+('b1e60544-9c00-4516-e561-4036167c3d3f','PERIPHERAL SMEAR','Haematology'),
+('a2f71655-ad11-4627-f672-5147278d4e40','STOOL EXAMINATION','Clinical Pathology'),
+('93082766-be22-4738-0783-6258389e5f51','URINE COMPLETE EXAMINATION','Clinical Pathology');
 /*!40000 ALTER TABLE `lab_tests` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -205,17 +228,21 @@ DROP TABLE IF EXISTS `lab_tasks`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `lab_tasks` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `visit_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `lab_test_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `assigned_by_doctor_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `assigned_at` datetime DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,
   `completed_at` datetime DEFAULT NULL,
+  `instructions` text DEFAULT NULL,
   PRIMARY KEY (`id`),
+  KEY `idx_lab_tasks_visit_id` (`visit_id`),
   KEY `idx_lab_tasks_lab_test_id` (`lab_test_id`),
   KEY `idx_lab_tasks_assigned_by_doctor_id` (`assigned_by_doctor_id`),
   KEY `idx_lab_tasks_status` (`status`),
-  CONSTRAINT `lab_tasks_ibfk_1` FOREIGN KEY (`lab_test_id`) REFERENCES `lab_tests` (`lab_test_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `lab_tasks_ibfk_2` FOREIGN KEY (`assigned_by_doctor_id`) REFERENCES `doctor` (`doctor_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `lab_tasks_ibfk_1` FOREIGN KEY (`visit_id`) REFERENCES `visit` (`visit_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `lab_tasks_ibfk_2` FOREIGN KEY (`lab_test_id`) REFERENCES `lab_tests` (`lab_test_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `lab_tasks_ibfk_3` FOREIGN KEY (`assigned_by_doctor_id`) REFERENCES `doctor` (`doctor_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

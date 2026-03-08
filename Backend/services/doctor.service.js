@@ -9,6 +9,8 @@ import {
   Vitals,
   NurseTask,
   NurseTaskMaster,
+  LabTest,
+  LabTask,
   StaffDetails,
   User,
   SystemAuditLog,
@@ -707,6 +709,43 @@ export const createNurseTask = async (visit_id, doctor_id, task_type_id, instruc
     instructions: task.instructions,
     status: task.status,
     assigned_at: task.assigned_at
+  };
+};
+
+// ============================================================================
+// LAB TEST MANAGEMENT
+// ============================================================================
+export const getLabTests = async () => {
+  const labTests = await LabTest.findAll({
+    attributes: ['lab_test_id', 'test_name', 'test_type'],
+    order: [['test_name', 'ASC']]
+  });
+
+  return labTests.map(test => ({
+    lab_test_id: test.lab_test_id,
+    test_name: test.test_name,
+    test_type: test.test_type
+  }));
+};
+
+export const createLabTask = async (visit_id, doctor_id, lab_test_id, instructions) => {
+  const labTask = await LabTask.create({
+    visit_id,
+    lab_test_id,
+    assigned_by_doctor_id: doctor_id,
+    status: 'PENDING',
+    assigned_at: new Date(),
+    instructions: instructions || null
+  });
+
+  return {
+    id: labTask.id,
+    visit_id: labTask.visit_id,
+    lab_test_id: labTask.lab_test_id,
+    assigned_by_doctor_id: labTask.assigned_by_doctor_id,
+    status: labTask.status,
+    assigned_at: labTask.assigned_at,
+    instructions: labTask.instructions
   };
 };
 
