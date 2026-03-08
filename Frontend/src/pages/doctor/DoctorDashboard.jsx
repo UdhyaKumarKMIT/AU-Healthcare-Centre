@@ -21,6 +21,35 @@ import styles from "./DoctorDashboard.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Common diagnoses for college healthcare center
+const COMMON_DIAGNOSES = [
+  "Fever",
+  "Common Cold",
+  "Cough",
+  "Flu/Influenza",
+  "Stomach Pain/Gastritis",
+  "Headache/Migraine",
+  "Allergic Reaction",
+  "Skin Rash/Dermatitis",
+  "Minor Injury/Wound",
+  "Sprain/Strain",
+  "Food Poisoning",
+  "Viral Infection",
+  "Bacterial Infection",
+  "Conjunctivitis (Pink Eye)",
+  "Ear Infection",
+  "Throat Infection/Pharyngitis",
+  "Urinary Tract Infection",
+  "Asthma/Breathing Problem",
+  "Anxiety/Stress",
+  "Fatigue/Weakness",
+  "Dehydration",
+  "Menstrual Cramps",
+  "Back Pain",
+  "Dental Problem",
+  "Others"
+];
+
 const DoctorDashboard = () => {
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -48,6 +77,9 @@ const DoctorDashboard = () => {
     complaints: '',
     remarks: ''
   });
+  const [selectedDiagnoses, setSelectedDiagnoses] = useState([]);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customDiagnosisText, setCustomDiagnosisText] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -255,16 +287,19 @@ const DoctorDashboard = () => {
   };
 
   const addDiagnosis = () => {
-    if (!currentDiagnosis.diagnosis_name.trim()) {
-      toast.error('Please enter diagnosis name');
+    if (selectedDiagnoses.length === 0) {
+      toast.error('Please select at least one diagnosis');
       return;
     }
+    
+    // Combine multiple diagnoses into one string
+    const combinedDiagnosisName = selectedDiagnoses.join(', ');
 
     if (editingId) {
       // Update existing diagnosis
       setDiagnoses(diagnoses.map(d =>
         d.id === editingId
-          ? { ...currentDiagnosis, id: editingId, createdAt: d.createdAt }
+          ? { ...currentDiagnosis, diagnosis_name: combinedDiagnosisName, id: editingId, createdAt: d.createdAt }
           : d
       ));
       setEditingId(null);
@@ -272,6 +307,7 @@ const DoctorDashboard = () => {
       // Add new diagnosis
       const newDiagnosis = {
         ...currentDiagnosis,
+        diagnosis_name: combinedDiagnosisName,
         id: Date.now(), // Temporary ID for frontend
         createdAt: new Date().toISOString()
       };
@@ -284,6 +320,9 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    setSelectedDiagnoses([]);
+    setShowCustomInput(false);
+    setCustomDiagnosisText('');
 
     // Hide form after adding diagnosis
     setShowDiagnosisForm(false);
@@ -300,18 +339,29 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
     }
   };
 
   const editDiagnosis = (id) => {
     const diagnosis = diagnoses.find(d => d.id === id);
     if (diagnosis) {
+      // Parse comma-separated diagnoses back into array
+      const diagnosisNames = diagnosis.diagnosis_name.split(',').map(d => d.trim());
+      const commonDiags = diagnosisNames.filter(d => COMMON_DIAGNOSES.includes(d));
+      const customDiags = diagnosisNames.filter(d => !COMMON_DIAGNOSES.includes(d));
+      
       setCurrentDiagnosis({
         diagnosis_name: diagnosis.diagnosis_name,
         diagnosis_code: diagnosis.diagnosis_code,
         complaints: diagnosis.complaints,
         remarks: diagnosis.remarks
       });
+      setSelectedDiagnoses(diagnosisNames);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(id);
       setShowDiagnosisForm(true); // Show form when editing
     }
@@ -325,6 +375,9 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    setSelectedDiagnoses([]);
+    setShowCustomInput(false);
+    setCustomDiagnosisText('');
     setShowDiagnosisForm(false); // Hide form when canceling edit
   };
 
@@ -370,6 +423,9 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(null);
     } catch (error) {
       console.error("Error saving diagnoses:", error);
@@ -543,6 +599,9 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(null);
       setNurseTasks([]); // Clear nurse tasks
       setMedicines([
@@ -939,44 +998,158 @@ const DoctorDashboard = () => {
                         >
                           Diagnosis Name *
                         </label>
-                        <input
-                          type="text"
-                          value={currentDiagnosis.diagnosis_name}
-                          onChange={(e) => setCurrentDiagnosis({ ...currentDiagnosis, diagnosis_name: e.target.value })}
-                          placeholder="e.g., Common Cold, Fever"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            border: "2px solid #e2e8f0",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div style={{ marginBottom: "16px" }}>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Diagnosis Code
-                        </label>
-                        <input
-                          type="text"
-                          value={currentDiagnosis.diagnosis_code}
-                          onChange={(e) => setCurrentDiagnosis({ ...currentDiagnosis, diagnosis_code: e.target.value })}
-                          placeholder="e.g., J00, R50.9"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            border: "2px solid #e2e8f0",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
+                        
+                        {/* Container with chips and dropdown */}
+                        <div style={{
+                          width: "100%",
+                          minHeight: "48px",
+                          padding: "8px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          backgroundColor: "white",
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          alignItems: "center",
+                        }}>
+                          {/* Selected diagnoses as chips */}
+                          {selectedDiagnoses.map((diag, index) => (
+                            <span
+                              key={index}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 12px",
+                                backgroundColor: "#3b82f6",
+                                color: "white",
+                                borderRadius: "20px",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {diag}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDiagnoses(selectedDiagnoses.filter((_, i) => i !== index))}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "white",
+                                  cursor: "pointer",
+                                  padding: "0",
+                                  fontSize: "16px",
+                                  lineHeight: "1",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                          
+                          {/* Dropdown for adding more */}
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "Others") {
+                                setShowCustomInput(true);
+                              } else if (value && !selectedDiagnoses.includes(value)) {
+                                setSelectedDiagnoses([...selectedDiagnoses, value]);
+                              }
+                            }}
+                            style={{
+                              flex: selectedDiagnoses.length === 0 ? "1" : "0 0 auto",
+                              minWidth: "150px",
+                              padding: "8px",
+                              border: "none",
+                              backgroundColor: "transparent",
+                              fontSize: "14px",
+                              cursor: "pointer",
+                              outline: "none",
+                            }}
+                          >
+                            <option value="">
+                              {selectedDiagnoses.length === 0 ? "-- Select Diagnosis --" : "Add more..."}
+                            </option>
+                            {COMMON_DIAGNOSES.filter(d => d !== "Others").map((diagnosis) => (
+                              <option key={diagnosis} value={diagnosis}>
+                                {diagnosis}
+                              </option>
+                            ))}
+                            <option value="Others">Others (Custom)</option>
+                          </select>
+                        </div>
+                        
+                        {/* Custom diagnosis input */}
+                        {showCustomInput && (
+                          <div style={{ marginTop: "10px" }}>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <input
+                                type="text"
+                                value={customDiagnosisText}
+                                onChange={(e) => setCustomDiagnosisText(e.target.value)}
+                                placeholder="Enter custom diagnosis"
+                                style={{
+                                  flex: 1,
+                                  padding: "10px",
+                                  border: "2px solid #3b82f6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                                autoFocus
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && customDiagnosisText.trim()) {
+                                    setSelectedDiagnoses([...selectedDiagnoses, customDiagnosisText.trim()]);
+                                    setCustomDiagnosisText('');
+                                    setShowCustomInput(false);
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (customDiagnosisText.trim()) {
+                                    setSelectedDiagnoses([...selectedDiagnoses, customDiagnosisText.trim()]);
+                                    setCustomDiagnosisText('');
+                                    setShowCustomInput(false);
+                                  }
+                                }}
+                                style={{
+                                  padding: "10px 20px",
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowCustomInput(false);
+                                  setCustomDiagnosisText('');
+                                }}
+                                style={{
+                                  padding: "10px 20px",
+                                  backgroundColor: "#6b7280",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div style={{ marginBottom: "16px" }}>
                         <label
@@ -1094,7 +1267,6 @@ const DoctorDashboard = () => {
                           </div>
                           <div style={{ fontSize: "13px", marginBottom: "4px" }}>
                             <strong>#{index + 1}: {diag.diagnosis_name}</strong>
-                            {diag.diagnosis_code && <span style={{ marginLeft: "8px", color: "#64748b" }}>({diag.diagnosis_code})</span>}
                           </div>
                           {diag.complaints && (
                             <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
@@ -1197,6 +1369,9 @@ const DoctorDashboard = () => {
                           complaints: '',
                           remarks: ''
                         });
+                        setSelectedDiagnoses([]);
+                        setShowCustomInput(false);
+                        setCustomDiagnosisText('');
                         setEditingId(null);
                         dispatch(fetchPatientQueue(doctorId));
                         await fetchTodayVisitsCount();
