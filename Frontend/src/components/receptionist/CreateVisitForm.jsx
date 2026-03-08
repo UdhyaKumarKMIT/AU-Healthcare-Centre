@@ -146,9 +146,17 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
 
-    // CBG validation (optional, but validate range if provided)
-    if (formData.cbg && (formData.cbg < 40 || formData.cbg > 600)) {
-      newErrors.cbg = 'CBG must be between 40-600 mg/dL';
+    // CBG validation (mandatory, accepts numbers or 'high')
+    if (!formData.cbg) {
+      newErrors.cbg = 'CBG is required';
+    } else {
+      const cbgLower = formData.cbg.toString().toLowerCase().trim();
+      if (cbgLower !== 'high') {
+        const cbgNum = parseFloat(formData.cbg);
+        if (isNaN(cbgNum) || cbgNum < 40 || cbgNum > 600) {
+          newErrors.cbg = 'CBG must be between 40-600 mg/dL or "high"';
+        }
+      }
     }
 
     if (!formData.spo2) {
@@ -180,7 +188,7 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
         bpSystolic: formData.bpSystolic ? parseInt(formData.bpSystolic) : null,
         bpDiastolic: formData.bpDiastolic ? parseInt(formData.bpDiastolic) : null,
         heartRate: parseInt(formData.heartRate),
-        cbg: formData.cbg ? parseFloat(formData.cbg) : null,
+        cbg: formData.cbg.toLowerCase().trim() === 'high' ? 'high' : parseFloat(formData.cbg).toString(),
         spo2: parseFloat(formData.spo2)
       }
     }
@@ -500,19 +508,16 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
+                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL)
               </label>
               <div style={styles.inputWithUnit}>
                 <input
-                  type="number"
+                  type="text"
                   name="cbg"
                   value={formData.cbg}
                   onChange={handleChange}
                   style={{ ...styles.input, ...(errors.cbg && styles.errorInput) }}
-                  placeholder="100"
-                  min="40"
-                  max="600"
-                  step="0.1"
+                  placeholder="100 or 'high'"
                 />
                 <span style={styles.unit}>mg/dL</span>
               </div>

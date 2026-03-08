@@ -20,7 +20,7 @@ Vitals.init(
         },
         temperature: {
             type: DataTypes.FLOAT,
-            allowNull: true,
+            allowNull: false,
         },
         bp_systolic: {
             type: DataTypes.INTEGER,
@@ -32,15 +32,15 @@ Vitals.init(
         },
         heart_rate: {
             type: DataTypes.INTEGER,
-            allowNull: true,
+            allowNull: false,
         },
         cbg: {
-            type: DataTypes.FLOAT,
-            allowNull: true,
+            type: DataTypes.STRING(20),
+            allowNull: false,
         },
         spo2: {
             type: DataTypes.FLOAT,
-            allowNull: true,
+            allowNull: false,
         },
         recorded_by_code: {
             type: DataTypes.STRING(50),
