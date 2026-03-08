@@ -9,6 +9,7 @@ import {
   NurseTaskMaster,
   StaffDetails,
   SystemAuditLog,
+  Medicine,
   sequelize
 } from '../models/sequelize/index.js';
 import { Op } from 'sequelize';
@@ -453,8 +454,14 @@ export const completeTask = async ({
 export const getAvailableStock = async (stock_type = 'NURSE') => {
   const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
 
-  const stock = await StockModel.findAll({ where: { quantity: { [Op.gt]: 0 } }, order: [['expiry', 'ASC']] })
-
+  const stock = await StockModel.findAll({
+  where: { quantity: { [Op.gt]: 0 } },
+  include: [{
+    model: Medicine,
+    attributes: ['name', 'type']
+  }],
+  order: [['expiry', 'ASC']]
+})
 
   return stock.map(s => ({
     sub_stock_id: s.sub_stock_id,
