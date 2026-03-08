@@ -130,10 +130,7 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.temperature = 'Temperature must be between 90°F and 110°F';
     }
 
-    // Blood Pressure validation
-    if (!formData.bpSystolic) newErrors.bpSystolic = 'Systolic BP is required';
-    if (!formData.bpDiastolic) newErrors.bpDiastolic = 'Diastolic BP is required';
-
+    // Blood Pressure validation (optional, but validate range if provided)
     if (formData.bpSystolic && (formData.bpSystolic < 70 || formData.bpSystolic > 200)) {
       newErrors.bpSystolic = 'Systolic BP must be between 70-200 mmHg';
     }
@@ -149,9 +146,8 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
 
-    if (!formData.cbg) {
-      newErrors.cbg = 'CBG is required';
-    } else if (formData.cbg < 40 || formData.cbg > 600) {
+    // CBG validation (optional, but validate range if provided)
+    if (formData.cbg && (formData.cbg < 40 || formData.cbg > 600)) {
       newErrors.cbg = 'CBG must be between 40-600 mg/dL';
     }
 
@@ -181,11 +177,11 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       staffCode: formData.secretCode,
       vitals: {
         temperature: parseFloat(formData.temperature),
-        bpSystolic: parseInt(formData.bpSystolic),
-        bpDiastolic: parseInt(formData.bpDiastolic),
+        bpSystolic: formData.bpSystolic ? parseInt(formData.bpSystolic) : null,
+        bpDiastolic: formData.bpDiastolic ? parseInt(formData.bpDiastolic) : null,
         heartRate: parseInt(formData.heartRate),
         cbg: formData.cbg ? parseFloat(formData.cbg) : null,
-        spo2: formData.spo2 ? parseFloat(formData.spo2) : null
+        spo2: parseFloat(formData.spo2)
       }
     }
 
@@ -423,7 +419,27 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faTint} /> BP Systolic (mmHg)
+                <FontAwesomeIcon icon={faHeartbeat} /> Heart Rate (bpm)
+              </label>
+              <div style={styles.inputWithUnit}>
+                <input
+                  type="number"
+                  name="heartRate"
+                  value={formData.heartRate}
+                  onChange={handleChange}
+                  style={{ ...styles.input, ...(errors.heartRate && styles.errorInput) }}
+                  placeholder="72"
+                  min="40"
+                  max="200"
+                />
+                <span style={styles.unit}>bpm</span>
+              </div>
+              {errors.heartRate && <span style={styles.errorText}>{errors.heartRate}</span>}
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <FontAwesomeIcon icon={faTint} /> BP Systolic (mmHg) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
               </label>
               <div style={styles.inputWithUnit}>
                 <input
@@ -443,7 +459,7 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faTint} /> BP Diastolic (mmHg)
+                <FontAwesomeIcon icon={faTint} /> BP Diastolic (mmHg) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
               </label>
               <div style={styles.inputWithUnit}>
                 <input
@@ -463,22 +479,23 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faHeartbeat} /> Heart Rate (bpm)
+                <FontAwesomeIcon icon={faLungs} /> SpO2 (%)
               </label>
               <div style={styles.inputWithUnit}>
                 <input
                   type="number"
-                  name="heartRate"
-                  value={formData.heartRate}
+                  name="spo2"
+                  value={formData.spo2}
                   onChange={handleChange}
-                  style={{ ...styles.input, ...(errors.heartRate && styles.errorInput) }}
-                  placeholder="72"
-                  min="40"
-                  max="200"
+                  style={{ ...styles.input, ...(errors.spo2 && styles.errorInput) }}
+                  placeholder="98"
+                  min="70"
+                  max="100"
+                  step="0.1"
                 />
-                <span style={styles.unit}>bpm</span>
+                <span style={styles.unit}>%</span>
               </div>
-              {errors.heartRate && <span style={styles.errorText}>{errors.heartRate}</span>}
+              {errors.spo2 && <span style={styles.errorText}>{errors.spo2}</span>}
             </div>
 
             <div style={styles.formGroup}>
@@ -500,27 +517,6 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
                 <span style={styles.unit}>mg/dL</span>
               </div>
               {errors.cbg && <span style={styles.errorText}>{errors.cbg}</span>}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <FontAwesomeIcon icon={faLungs} /> SpO2 (%) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
-              </label>
-              <div style={styles.inputWithUnit}>
-                <input
-                  type="number"
-                  name="spo2"
-                  value={formData.spo2}
-                  onChange={handleChange}
-                  style={{ ...styles.input, ...(errors.spo2 && styles.errorInput) }}
-                  placeholder="98"
-                  min="70"
-                  max="100"
-                  step="0.1"
-                />
-                <span style={styles.unit}>%</span>
-              </div>
-              {errors.spo2 && <span style={styles.errorText}>{errors.spo2}</span>}
             </div>
           </div>
         </div>
@@ -630,7 +626,7 @@ const styles = {
   },
   vitalsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '20px'
   },
   formGroup: {
