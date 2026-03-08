@@ -198,6 +198,12 @@ const LabTestReport = () => {
                 <span className={styles.infoLabel}>Test Name:</span>
                 <span className={styles.infoValue}><strong>{currentTest.testName}</strong></span>
               </div>
+              {currentTest.testType && (
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Test Type:</span>
+                  <span className={styles.infoValue}>{currentTest.testType}</span>
+                </div>
+              )}
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Sample Collected:</span>
                 <span className={styles.infoValue}>
@@ -271,7 +277,10 @@ const LabTestReport = () => {
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>{currentTest.testName}</strong></td>
+                      <td>
+                        <strong>{currentTest.testName}</strong>
+                        {currentTest.testType && <div style={{fontSize: '0.85em', color: '#666', marginTop: '4px'}}>({currentTest.testType})</div>}
+                      </td>
                       <td className={styles.resultValue}>
                         {currentTest.result || 'Pending'}
                       </td>

@@ -107,21 +107,9 @@ export const login = async (username, password, role) => {
     }
   }
 
-  // If lab technician, fetch lab_technician_id and profile from lab_technician table
+  // If lab technician, use basic user info (no separate profile table)
   if (user.role === ROLES.LAB_TECHNICIAN) {
-    const [labTechRows] = await pool.execute(
-      'SELECT lab_technician_id, name, u.username as email, phone FROM lab_technician l JOIN users u ON l.user_id = u.user_id WHERE l.user_id = ?',
-      [user.user_id]
-    )
-
-    if (labTechRows.length > 0) {
-      response.user.lab_technician_id = labTechRows[0].lab_technician_id
-      response.user.name = labTechRows[0].name
-      response.user.email = labTechRows[0].email
-      response.user.phone = labTechRows[0].phone
-    } else {
-      console.warn('⚠️ Lab Technician user found but no profile exists for user_id:', user.user_id)
-    }
+    response.user.name = user.name || user.username;
   }
 
   // If admin, use username as name

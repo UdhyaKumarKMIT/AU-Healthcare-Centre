@@ -211,6 +211,9 @@ const LabTechDashboard = () => {
                           <span className={styles.urgentBadge}>URGENT</span>
                         )}
                       </div>
+                      {test.testType && (
+                        <p className={styles.testType}>Type: {test.testType}</p>
+                      )}
                       <p className={styles.patientName}>Patient: {test.patientName}</p>
                       <p className={styles.orderedDate}>
                         Ordered: {new Date(test.orderedDate).toLocaleString()}

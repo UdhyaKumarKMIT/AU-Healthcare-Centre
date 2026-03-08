@@ -10,6 +10,14 @@ LabTask.init(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
         },
+        visit_id: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: 'visit',
+                key: 'visit_id',
+            },
+        },
         lab_test_id: {
             type: DataTypes.UUID,
             allowNull: false,
@@ -38,6 +46,31 @@ LabTask.init(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        instructions: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        result: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        normal_range: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        completed_by_user_id: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'users',
+                key: 'user_id',
+            },
+        },
+        priority: {
+            type: DataTypes.STRING(50),
+            allowNull: true,
+            defaultValue: 'normal',
+        },
     },
     {
         sequelize,
@@ -45,6 +78,7 @@ LabTask.init(
         tableName: 'lab_tasks',
         timestamps: false,
         indexes: [
+            { fields: ['visit_id'], name: 'idx_lab_tasks_visit_id' },
             { fields: ['lab_test_id'], name: 'idx_lab_tasks_lab_test_id' },
             { fields: ['assigned_by_doctor_id'], name: 'idx_lab_tasks_assigned_by_doctor_id' },
             { fields: ['status'], name: 'idx_lab_tasks_status' },

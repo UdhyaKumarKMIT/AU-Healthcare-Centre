@@ -130,10 +130,7 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.temperature = 'Temperature must be between 90°F and 110°F';
     }
 
-    // Blood Pressure validation
-    if (!formData.bpSystolic) newErrors.bpSystolic = 'Systolic BP is required';
-    if (!formData.bpDiastolic) newErrors.bpDiastolic = 'Diastolic BP is required';
-
+    // Blood Pressure validation (optional, but validate range if provided)
     if (formData.bpSystolic && (formData.bpSystolic < 70 || formData.bpSystolic > 200)) {
       newErrors.bpSystolic = 'Systolic BP must be between 70-200 mmHg';
     }
@@ -149,10 +146,17 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
 
+    // CBG validation (mandatory, accepts numbers or 'high')
     if (!formData.cbg) {
       newErrors.cbg = 'CBG is required';
-    } else if (formData.cbg < 40 || formData.cbg > 600) {
-      newErrors.cbg = 'CBG must be between 40-600 mg/dL';
+    } else {
+      const cbgLower = formData.cbg.toString().toLowerCase().trim();
+      if (cbgLower !== 'high') {
+        const cbgNum = parseFloat(formData.cbg);
+        if (isNaN(cbgNum) || cbgNum < 40 || cbgNum > 600) {
+          newErrors.cbg = 'CBG must be between 40-600 mg/dL or "high"';
+        }
+      }
     }
 
     if (!formData.spo2) {
@@ -181,11 +185,11 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       staffCode: formData.secretCode,
       vitals: {
         temperature: parseFloat(formData.temperature),
-        bpSystolic: parseInt(formData.bpSystolic),
-        bpDiastolic: parseInt(formData.bpDiastolic),
+        bpSystolic: formData.bpSystolic ? parseInt(formData.bpSystolic) : null,
+        bpDiastolic: formData.bpDiastolic ? parseInt(formData.bpDiastolic) : null,
         heartRate: parseInt(formData.heartRate),
-        cbg: formData.cbg ? parseFloat(formData.cbg) : null,
-        spo2: formData.spo2 ? parseFloat(formData.spo2) : null
+        cbg: formData.cbg.toLowerCase().trim() === 'high' ? 'high' : parseFloat(formData.cbg).toString(),
+        spo2: parseFloat(formData.spo2)
       }
     }
 
@@ -423,46 +427,6 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faTint} /> BP Systolic (mmHg)
-              </label>
-              <div style={styles.inputWithUnit}>
-                <input
-                  type="number"
-                  name="bpSystolic"
-                  value={formData.bpSystolic}
-                  onChange={handleChange}
-                  style={{ ...styles.input, ...(errors.bpSystolic && styles.errorInput) }}
-                  placeholder="120"
-                  min="70"
-                  max="200"
-                />
-                <span style={styles.unit}>mmHg</span>
-              </div>
-              {errors.bpSystolic && <span style={styles.errorText}>{errors.bpSystolic}</span>}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <FontAwesomeIcon icon={faTint} /> BP Diastolic (mmHg)
-              </label>
-              <div style={styles.inputWithUnit}>
-                <input
-                  type="number"
-                  name="bpDiastolic"
-                  value={formData.bpDiastolic}
-                  onChange={handleChange}
-                  style={{ ...styles.input, ...(errors.bpDiastolic && styles.errorInput) }}
-                  placeholder="80"
-                  min="40"
-                  max="130"
-                />
-                <span style={styles.unit}>mmHg</span>
-              </div>
-              {errors.bpDiastolic && <span style={styles.errorText}>{errors.bpDiastolic}</span>}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
                 <FontAwesomeIcon icon={faHeartbeat} /> Heart Rate (bpm)
               </label>
               <div style={styles.inputWithUnit}>
@@ -483,28 +447,47 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
+                <FontAwesomeIcon icon={faTint} /> BP Systolic (mmHg) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
               </label>
               <div style={styles.inputWithUnit}>
                 <input
                   type="number"
-                  name="cbg"
-                  value={formData.cbg}
+                  name="bpSystolic"
+                  value={formData.bpSystolic}
                   onChange={handleChange}
-                  style={{ ...styles.input, ...(errors.cbg && styles.errorInput) }}
-                  placeholder="100"
-                  min="40"
-                  max="600"
-                  step="0.1"
+                  style={{ ...styles.input, ...(errors.bpSystolic && styles.errorInput) }}
+                  placeholder="120"
+                  min="70"
+                  max="200"
                 />
-                <span style={styles.unit}>mg/dL</span>
+                <span style={styles.unit}>mmHg</span>
               </div>
-              {errors.cbg && <span style={styles.errorText}>{errors.cbg}</span>}
+              {errors.bpSystolic && <span style={styles.errorText}>{errors.bpSystolic}</span>}
             </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>
-                <FontAwesomeIcon icon={faLungs} /> SpO2 (%) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
+                <FontAwesomeIcon icon={faTint} /> BP Diastolic (mmHg) <span style={{ fontSize: '12px', color: '#64748b' }}>Optional</span>
+              </label>
+              <div style={styles.inputWithUnit}>
+                <input
+                  type="number"
+                  name="bpDiastolic"
+                  value={formData.bpDiastolic}
+                  onChange={handleChange}
+                  style={{ ...styles.input, ...(errors.bpDiastolic && styles.errorInput) }}
+                  placeholder="80"
+                  min="40"
+                  max="130"
+                />
+                <span style={styles.unit}>mmHg</span>
+              </div>
+              {errors.bpDiastolic && <span style={styles.errorText}>{errors.bpDiastolic}</span>}
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <FontAwesomeIcon icon={faLungs} /> SpO2 (%)
               </label>
               <div style={styles.inputWithUnit}>
                 <input
@@ -521,6 +504,24 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
                 <span style={styles.unit}>%</span>
               </div>
               {errors.spo2 && <span style={styles.errorText}>{errors.spo2}</span>}
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                <FontAwesomeIcon icon={faGlucose} /> CBG (mg/dL)
+              </label>
+              <div style={styles.inputWithUnit}>
+                <input
+                  type="text"
+                  name="cbg"
+                  value={formData.cbg}
+                  onChange={handleChange}
+                  style={{ ...styles.input, ...(errors.cbg && styles.errorInput) }}
+                  placeholder="100 or 'high'"
+                />
+                <span style={styles.unit}>mg/dL</span>
+              </div>
+              {errors.cbg && <span style={styles.errorText}>{errors.cbg}</span>}
             </div>
           </div>
         </div>
@@ -630,7 +631,7 @@ const styles = {
   },
   vitalsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '20px'
   },
   formGroup: {

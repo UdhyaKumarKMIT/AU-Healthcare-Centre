@@ -103,8 +103,14 @@ LabtechStock.belongsTo(Medicine, { foreignKey: 'medicine_id' });
 LabTest.hasMany(LabTask, { foreignKey: 'lab_test_id' });
 LabTask.belongsTo(LabTest, { foreignKey: 'lab_test_id' });
 
+Visit.hasMany(LabTask, { foreignKey: 'visit_id' });
+LabTask.belongsTo(Visit, { foreignKey: 'visit_id' });
+
 Doctor.hasMany(LabTask, { foreignKey: 'assigned_by_doctor_id' });
-LabTask.belongsTo(Doctor, { foreignKey: 'assigned_by_doctor_id' });
+LabTask.belongsTo(Doctor, { foreignKey: 'assigned_by_doctor_id', as: 'assignedByDoctor' });
+
+User.hasMany(LabTask, { foreignKey: 'completed_by_user_id' });
+LabTask.belongsTo(User, { foreignKey: 'completed_by_user_id', as: 'completedBy' });
 
 User.hasMany(SystemAuditLog, { foreignKey: 'actor_user_id' });
 SystemAuditLog.belongsTo(User, { foreignKey: 'actor_user_id' });

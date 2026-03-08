@@ -454,3 +454,41 @@ export const createNurseTask = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getLabTests = async (req, res, next) => {
+  try {
+    const labTests = await doctorService.getLabTests();
+
+    res.json({
+      success: true,
+      data: labTests
+    });
+  } catch (error) {
+    console.error('Error fetching lab tests:', error);
+    next(error);
+  }
+};
+
+export const createLabTask = async (req, res, next) => {
+  try {
+    const { visit_id, doctor_id, lab_test_id, instructions } = req.body;
+
+    if (!visit_id || !doctor_id || !lab_test_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'visit_id, doctor_id, and lab_test_id are required'
+      });
+    }
+
+    const labTask = await doctorService.createLabTask(visit_id, doctor_id, lab_test_id, instructions);
+
+    res.json({
+      success: true,
+      data: labTask,
+      message: 'Lab test assigned successfully'
+    });
+  } catch (error) {
+    console.error('Error creating lab task:', error);
+    next(error);
+  }
+};

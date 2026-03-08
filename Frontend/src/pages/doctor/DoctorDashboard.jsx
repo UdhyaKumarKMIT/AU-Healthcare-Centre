@@ -21,6 +21,24 @@ import styles from "./DoctorDashboard.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Common diagnoses for college healthcare center
+const COMMON_DIAGNOSES = [
+  "Fever",
+  "Common Cold",
+  "Cough",
+  "Flu/Influenza",
+  "Stomach Pain/Gastritis",
+  "Headache/Migraine",
+  "Throat Infection",
+  "Minor Injury/Wound",
+  "Allergic Reaction",
+  "Food Poisoning",
+  "Viral Infection",
+  "Fatigue/Weakness",
+  "Menstrual Cramps",
+  "Others"
+];
+
 const DoctorDashboard = () => {
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -48,6 +66,9 @@ const DoctorDashboard = () => {
     complaints: '',
     remarks: ''
   });
+  const [selectedDiagnoses, setSelectedDiagnoses] = useState([]);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customDiagnosisText, setCustomDiagnosisText] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -56,6 +77,8 @@ const DoctorDashboard = () => {
   const [todayVisitsCount, setTodayVisitsCount] = useState(0); // Today's visits count
   const [nurseTaskTypes, setNurseTaskTypes] = useState([]); // Available nurse task types
   const [nurseTasks, setNurseTasks] = useState([]); // Nurse tasks to be created
+  const [labTests, setLabTests] = useState([]); // Available lab tests
+  const [labTasks, setLabTasks] = useState([]); // Lab tests to be assigned
   const [medicines, setMedicines] = useState([
     {
       medicineId: null,
@@ -175,6 +198,28 @@ const DoctorDashboard = () => {
     }
   };
 
+  const fetchLabTests = async () => {
+    try {
+      const response = await fetch(`${API_URL}/doctor/lab-tests`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLabTests(data.data || []);
+      } else {
+        console.error("❌ Failed to fetch lab tests");
+        setLabTests([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching lab tests:", error);
+      setLabTests([]);
+    }
+  };
+
   // Sync selected patient with Redux state
   useEffect(() => {
     if (selectedPatient) {
@@ -255,16 +300,19 @@ const DoctorDashboard = () => {
   };
 
   const addDiagnosis = () => {
-    if (!currentDiagnosis.diagnosis_name.trim()) {
-      toast.error('Please enter diagnosis name');
+    if (selectedDiagnoses.length === 0) {
+      toast.error('Please select at least one diagnosis');
       return;
     }
+    
+    // Combine multiple diagnoses into one string
+    const combinedDiagnosisName = selectedDiagnoses.join(', ');
 
     if (editingId) {
       // Update existing diagnosis
       setDiagnoses(diagnoses.map(d =>
         d.id === editingId
-          ? { ...currentDiagnosis, id: editingId, createdAt: d.createdAt }
+          ? { ...currentDiagnosis, diagnosis_name: combinedDiagnosisName, id: editingId, createdAt: d.createdAt }
           : d
       ));
       setEditingId(null);
@@ -272,6 +320,7 @@ const DoctorDashboard = () => {
       // Add new diagnosis
       const newDiagnosis = {
         ...currentDiagnosis,
+        diagnosis_name: combinedDiagnosisName,
         id: Date.now(), // Temporary ID for frontend
         createdAt: new Date().toISOString()
       };
@@ -284,6 +333,9 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    setSelectedDiagnoses([]);
+    setShowCustomInput(false);
+    setCustomDiagnosisText('');
 
     // Hide form after adding diagnosis
     setShowDiagnosisForm(false);
@@ -300,18 +352,29 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
     }
   };
 
   const editDiagnosis = (id) => {
     const diagnosis = diagnoses.find(d => d.id === id);
     if (diagnosis) {
+      // Parse comma-separated diagnoses back into array
+      const diagnosisNames = diagnosis.diagnosis_name.split(',').map(d => d.trim());
+      const commonDiags = diagnosisNames.filter(d => COMMON_DIAGNOSES.includes(d));
+      const customDiags = diagnosisNames.filter(d => !COMMON_DIAGNOSES.includes(d));
+      
       setCurrentDiagnosis({
         diagnosis_name: diagnosis.diagnosis_name,
         diagnosis_code: diagnosis.diagnosis_code,
         complaints: diagnosis.complaints,
         remarks: diagnosis.remarks
       });
+      setSelectedDiagnoses(diagnosisNames);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(id);
       setShowDiagnosisForm(true); // Show form when editing
     }
@@ -325,6 +388,9 @@ const DoctorDashboard = () => {
       complaints: '',
       remarks: ''
     });
+    setSelectedDiagnoses([]);
+    setShowCustomInput(false);
+    setCustomDiagnosisText('');
     setShowDiagnosisForm(false); // Hide form when canceling edit
   };
 
@@ -370,6 +436,9 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(null);
     } catch (error) {
       console.error("Error saving diagnoses:", error);
@@ -521,13 +590,37 @@ const DoctorDashboard = () => {
         }
       }
 
-      // Show success message with nurse task info
+      // Save lab tasks if any
+      if (labTasks.length > 0) {
+        for (const task of labTasks) {
+          try {
+            const labTaskResponse = await fetch(`${API_URL}/doctor/lab-task`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                visit_id: selectedPatient.visitId,
+                doctor_id: doctorId,
+                lab_test_id: task.lab_test_id,
+                instructions: task.instructions || ""
+              }),
+            });
+          } catch (error) {
+            // Lab task creation failed
+          }
+        }
+      }
+
+      // Show success message with nurse task and lab task info
       const nurseTaskMsg =
         result.data.nurse_tasks_created > 0 || nurseTasks.length > 0
           ? ` ${result.data.nurse_tasks_created + nurseTasks.length} nurse task(s) created.`
           : "";
+      const labTaskMsg = labTasks.length > 0 ? ` ${labTasks.length} lab test(s) assigned.` : "";
 
-      toast.success(`Visit completed successfully!${nurseTaskMsg}`);
+      toast.success(`Visit completed successfully!${nurseTaskMsg}${labTaskMsg}`);
 
       // Update status to COMPLETED
       await handleStatusUpdate(selectedPatient.visitId, "COMPLETED");
@@ -543,8 +636,12 @@ const DoctorDashboard = () => {
         complaints: '',
         remarks: ''
       });
+      setSelectedDiagnoses([]);
+      setShowCustomInput(false);
+      setCustomDiagnosisText('');
       setEditingId(null);
       setNurseTasks([]); // Clear nurse tasks
+      setLabTasks([]); // Clear lab tasks
       setMedicines([
         {
           medicineId: null,
@@ -939,44 +1036,158 @@ const DoctorDashboard = () => {
                         >
                           Diagnosis Name *
                         </label>
-                        <input
-                          type="text"
-                          value={currentDiagnosis.diagnosis_name}
-                          onChange={(e) => setCurrentDiagnosis({ ...currentDiagnosis, diagnosis_name: e.target.value })}
-                          placeholder="e.g., Common Cold, Fever"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            border: "2px solid #e2e8f0",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div style={{ marginBottom: "16px" }}>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Diagnosis Code
-                        </label>
-                        <input
-                          type="text"
-                          value={currentDiagnosis.diagnosis_code}
-                          onChange={(e) => setCurrentDiagnosis({ ...currentDiagnosis, diagnosis_code: e.target.value })}
-                          placeholder="e.g., J00, R50.9"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            border: "2px solid #e2e8f0",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
+                        
+                        {/* Container with chips and dropdown */}
+                        <div style={{
+                          width: "100%",
+                          minHeight: "48px",
+                          padding: "8px",
+                          border: "2px solid #e2e8f0",
+                          borderRadius: "6px",
+                          backgroundColor: "white",
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          alignItems: "center",
+                        }}>
+                          {/* Selected diagnoses as chips */}
+                          {selectedDiagnoses.map((diag, index) => (
+                            <span
+                              key={index}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 12px",
+                                backgroundColor: "#3b82f6",
+                                color: "white",
+                                borderRadius: "20px",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {diag}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDiagnoses(selectedDiagnoses.filter((_, i) => i !== index))}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "white",
+                                  cursor: "pointer",
+                                  padding: "0",
+                                  fontSize: "16px",
+                                  lineHeight: "1",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                          
+                          {/* Dropdown for adding more */}
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "Others") {
+                                setShowCustomInput(true);
+                              } else if (value && !selectedDiagnoses.includes(value)) {
+                                setSelectedDiagnoses([...selectedDiagnoses, value]);
+                              }
+                            }}
+                            style={{
+                              flex: selectedDiagnoses.length === 0 ? "1" : "0 0 auto",
+                              minWidth: "150px",
+                              padding: "8px",
+                              border: "none",
+                              backgroundColor: "transparent",
+                              fontSize: "14px",
+                              cursor: "pointer",
+                              outline: "none",
+                            }}
+                          >
+                            <option value="">
+                              {selectedDiagnoses.length === 0 ? "-- Select Diagnosis --" : "Add more..."}
+                            </option>
+                            {COMMON_DIAGNOSES.filter(d => d !== "Others").map((diagnosis) => (
+                              <option key={diagnosis} value={diagnosis}>
+                                {diagnosis}
+                              </option>
+                            ))}
+                            <option value="Others">Others (Custom)</option>
+                          </select>
+                        </div>
+                        
+                        {/* Custom diagnosis input */}
+                        {showCustomInput && (
+                          <div style={{ marginTop: "10px" }}>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <input
+                                type="text"
+                                value={customDiagnosisText}
+                                onChange={(e) => setCustomDiagnosisText(e.target.value)}
+                                placeholder="Enter custom diagnosis"
+                                style={{
+                                  flex: 1,
+                                  padding: "10px",
+                                  border: "2px solid #3b82f6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                                autoFocus
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && customDiagnosisText.trim()) {
+                                    setSelectedDiagnoses([...selectedDiagnoses, customDiagnosisText.trim()]);
+                                    setCustomDiagnosisText('');
+                                    setShowCustomInput(false);
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (customDiagnosisText.trim()) {
+                                    setSelectedDiagnoses([...selectedDiagnoses, customDiagnosisText.trim()]);
+                                    setCustomDiagnosisText('');
+                                    setShowCustomInput(false);
+                                  }
+                                }}
+                                style={{
+                                  padding: "10px 20px",
+                                  backgroundColor: "#3b82f6",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowCustomInput(false);
+                                  setCustomDiagnosisText('');
+                                }}
+                                style={{
+                                  padding: "10px 20px",
+                                  backgroundColor: "#6b7280",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div style={{ marginBottom: "16px" }}>
                         <label
@@ -1094,7 +1305,6 @@ const DoctorDashboard = () => {
                           </div>
                           <div style={{ fontSize: "13px", marginBottom: "4px" }}>
                             <strong>#{index + 1}: {diag.diagnosis_name}</strong>
-                            {diag.diagnosis_code && <span style={{ marginLeft: "8px", color: "#64748b" }}>({diag.diagnosis_code})</span>}
                           </div>
                           {diag.complaints && (
                             <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
@@ -1146,6 +1356,7 @@ const DoctorDashboard = () => {
                 onProceedToPrescription={() => {
                   setShowPrescriptionModal(true);
                   fetchNurseTaskTypes();
+                  fetchLabTests();
                 }}
               />
 
@@ -1197,6 +1408,9 @@ const DoctorDashboard = () => {
                           complaints: '',
                           remarks: ''
                         });
+                        setSelectedDiagnoses([]);
+                        setShowCustomInput(false);
+                        setCustomDiagnosisText('');
                         setEditingId(null);
                         dispatch(fetchPatientQueue(doctorId));
                         await fetchTodayVisitsCount();
@@ -1470,6 +1684,148 @@ const DoctorDashboard = () => {
               {nurseTaskTypes.length === 0 && (
                 <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
                   No task types available. Please populate the nurse_task_master table.
+                </p>
+              )}
+            </div>
+
+            {/* Lab Tests Section */}
+            <div style={{ marginTop: "32px", padding: "24px", background: "#f1f5f9", borderRadius: "8px" }}>
+              <h3 style={{ color: "#1a237e", marginBottom: "16px", fontSize: "16px", fontWeight: 600 }}>
+                Lab Tests
+              </h3>
+
+              {labTasks.map((task, idx) => (
+                <div key={idx} style={{
+                  background: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  marginBottom: "12px",
+                  border: "1px solid #e2e8f0"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ color: "#1a237e" }}>
+                        {labTests.find(t => t.lab_test_id === task.lab_test_id)?.test_name || 'Unknown Test'}
+                      </strong>
+                      <span style={{ marginLeft: "12px", color: "#64748b", fontSize: "13px" }}>
+                        ({labTests.find(t => t.lab_test_id === task.lab_test_id)?.test_type || ''})
+                      </span>
+                      {task.instructions && (
+                        <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>
+                          {task.instructions}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setLabTasks(labTasks.filter((_, i) => i !== idx))}
+                      style={{
+                        padding: "6px 12px",
+                        background: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        marginLeft: "12px"
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{
+                background: "white",
+                padding: "16px",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                      Select Lab Test
+                    </label>
+                    <select
+                      id="labTestSelect"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "2px solid #e2e8f0",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        color: "#1e293b"
+                      }}
+                    >
+                      <option value="">Select a test...</option>
+                      {labTests.map(test => (
+                        <option key={test.lab_test_id} value={test.lab_test_id}>
+                          {test.test_name} ({test.test_type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "#475569" }}>
+                      Instructions
+                    </label>
+                    <input
+                      type="text"
+                      id="labTestInstructions"
+                      placeholder="Enter instructions..."
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "2px solid #e2e8f0",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        color: "#1e293b"
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const labTestSelect = document.getElementById('labTestSelect');
+                      const instructionsInput = document.getElementById('labTestInstructions');
+                      const lab_test_id = labTestSelect.value;
+                      const instructions = instructionsInput.value;
+
+                      if (!lab_test_id) {
+                        toast.error('Please select a lab test');
+                        return;
+                      }
+
+                      // Check if test already added
+                      if (labTasks.some(t => t.lab_test_id === lab_test_id)) {
+                        toast.error('This test is already added');
+                        return;
+                      }
+
+                      setLabTasks([...labTasks, { lab_test_id, instructions }]);
+                      labTestSelect.value = '';
+                      instructionsInput.value = '';
+                    }}
+                    style={{
+                      marginTop: "28px",
+                      padding: "10px 20px",
+                      background: "#10b981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    Add Test
+                  </button>
+                </div>
+              </div>
+
+              {labTests.length === 0 && (
+                <p style={{ color: "#64748b", fontSize: "14px", fontStyle: "italic", marginTop: "12px" }}>
+                  No lab tests available. Please populate the lab_tests table.
                 </p>
               )}
             </div>
