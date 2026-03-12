@@ -91,7 +91,14 @@ const ReceptionistDashboard = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className={styles.loading}>
+        <div className={styles.spinner}></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.dashboard}>

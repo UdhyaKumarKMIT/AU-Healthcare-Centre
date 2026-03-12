@@ -146,16 +146,14 @@ const CreateVisitForm = ({ availableDoctors = [] }) => {
       newErrors.heartRate = 'Heart rate must be between 40-200 bpm';
     }
 
-    // CBG validation (mandatory, accepts numbers or 'high')
-    if (!formData.cbg) {
-      newErrors.cbg = 'CBG is required';
-    } else {
+    // CBG validation (accepts numbers or 'high')
+    if (formData.cbg) {
       const cbgLower = formData.cbg.toString().toLowerCase().trim();
       if (cbgLower !== 'high') {
-        const cbgNum = parseFloat(formData.cbg);
-        if (isNaN(cbgNum) || cbgNum < 40 || cbgNum > 600) {
-          newErrors.cbg = 'CBG must be between 40-600 mg/dL or "high"';
-        }
+      const cbgNum = parseFloat(formData.cbg);
+      if (isNaN(cbgNum) || cbgNum < 40 || cbgNum > 600) {
+        newErrors.cbg = 'CBG must be between 40-600 mg/dL or "high"';
+      }
       }
     }
 

@@ -24,18 +24,61 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 // Common diagnoses for college healthcare center
 const COMMON_DIAGNOSES = [
   "Fever",
+  "Fever for Evaluation",
+  "Acute Febrile Illness",
   "Common Cold",
   "Cough",
   "Flu/Influenza",
+  "Upper Respiratory Tract Infection",
+  "Lower Respiratory Tract Infection",
   "Stomach Pain/Gastritis",
+  "Acute Abdomen (F/E)",
+  "GERD",
+  "Gastritis",
+  "Acute Gastroenteritis",
+  "Urinary Tract Infection",
+  "Renal Calculi",
   "Headache/Migraine",
+  "Headache (P/E)",
+  "Giddiness (P/E)",
+  "BPPV",
   "Throat Infection",
+  "Pharyngitis",
   "Minor Injury/Wound",
+  "Laceration",
+  "Injury",
+  "Soft Tissue Injury",
+  "Low Back Pain",
+  "Sciatica",
+  "Muscle Spasm",
   "Allergic Reaction",
+  "Urticaria",
   "Food Poisoning",
   "Viral Infection",
   "Fatigue/Weakness",
+  "Tiredness",
+  "Fatigue",
   "Menstrual Cramps",
+  "Dysmenorrhea (P/E)",
+  "Menorrhagia (F/E)",
+  "Myalgia (F/E)",
+  "Leucorrhea",
+  "Otalgia (F/E)",
+  "Eye Pain (F/E)",
+  "Acute Sinusitis",
+  "Anemia (F/E)",
+  "Dental Caries",
+  "Gingivitis",
+  "Chest Pain (P/E)",
+  "Conjunctivitis (Viral)",
+  "Conjunctivitis (Bacterial)",
+  "Scabies",
+  "Tinea",
+  "Varicella Infection",
+  "Herpes Zoster Infection",
+  "Acute Asthma",
+  "Dog Bite",
+  "Animal Bite",
   "Others"
 ];
 
@@ -304,7 +347,7 @@ const DoctorDashboard = () => {
       toast.error('Please select at least one diagnosis');
       return;
     }
-    
+
     // Combine multiple diagnoses into one string
     const combinedDiagnosisName = selectedDiagnoses.join(', ');
 
@@ -365,7 +408,7 @@ const DoctorDashboard = () => {
       const diagnosisNames = diagnosis.diagnosis_name.split(',').map(d => d.trim());
       const commonDiags = diagnosisNames.filter(d => COMMON_DIAGNOSES.includes(d));
       const customDiags = diagnosisNames.filter(d => !COMMON_DIAGNOSES.includes(d));
-      
+
       setCurrentDiagnosis({
         diagnosis_name: diagnosis.diagnosis_name,
         diagnosis_code: diagnosis.diagnosis_code,
@@ -852,10 +895,10 @@ const DoctorDashboard = () => {
                       <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>GENDER</span>
                       <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.gender}</div>
                     </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>BLOOD GROUP</span>
-                        <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.bloodGroup || selectedPatient.blood_group || 'N/A'}</div>
-                      </div>
+                    <div>
+                      <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>BLOOD GROUP</span>
+                      <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.bloodGroup || selectedPatient.blood_group || 'N/A'}</div>
+                    </div>
                     <div>
                       <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "4px" }}>VISIT TYPE</span>
                       <div style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{selectedPatient.visitType}</div>
@@ -1036,7 +1079,7 @@ const DoctorDashboard = () => {
                         >
                           Diagnosis Name *
                         </label>
-                        
+
                         {/* Container with chips and dropdown */}
                         <div style={{
                           width: "100%",
@@ -1085,7 +1128,7 @@ const DoctorDashboard = () => {
                               </button>
                             </span>
                           ))}
-                          
+
                           {/* Dropdown for adding more */}
                           <select
                             value=""
@@ -1119,7 +1162,7 @@ const DoctorDashboard = () => {
                             <option value="Others">Others (Custom)</option>
                           </select>
                         </div>
-                        
+
                         {/* Custom diagnosis input */}
                         {showCustomInput && (
                           <div style={{ marginTop: "10px" }}>

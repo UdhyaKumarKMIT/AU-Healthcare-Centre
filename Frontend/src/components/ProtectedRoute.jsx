@@ -1,13 +1,44 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../contexts/AuthContext";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { user, loading, getRoleBasedRoute } = useAuth();
+  const { user, loading, getRoleBasedRoute, login } = useAuth();
   const token = localStorage.getItem("token");
+  const [didTryRehydrate, setDidTryRehydrate] = useState(false);
+
+  // If we have a token but the in-memory user is missing (common immediately
+  // after login/navigation), rehydrate the user from localStorage to avoid a
+  // blank screen or spurious redirects.
+  useEffect(() => {
+    if (loading) return;
+    if (!token) return;
+    if (user) return;
+    if (didTryRehydrate) return;
+
+    setDidTryRehydrate(true);
+
+    const storedUser =
+      localStorage.getItem("mitHealthUser") || localStorage.getItem("user");
+
+    if (!storedUser) return;
+
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      // Leverage existing login() to keep storage keys consistent.
+      login(parsedUser, token);
+    } catch {
+      // Ignore parse errors and let normal redirect logic handle it.
+    }
+  }, [loading, token, user, didTryRehydrate, login]);
 
   if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // While we attempt a one-time rehydrate, keep UI stable.
+  if (token && !user && !didTryRehydrate) {
     return <div>Loading...</div>;
   }
 
