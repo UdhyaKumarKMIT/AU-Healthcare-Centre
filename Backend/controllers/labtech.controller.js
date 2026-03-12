@@ -36,19 +36,19 @@ export const submitTestResults = async (req, res, next) => {
     const { test_id } = req.params;
     const { result, normal_range } = req.body;
     const userId = req.user.user_id; // Get user ID from auth middleware
-    
+
     if (!result) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Test result is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Test result is required'
       });
     }
-    
+
     const test = await labTechService.submitTestResults(test_id, { result, normal_range }, userId);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Test results submitted successfully',
-      data: test 
+      data: test
     });
   } catch (err) {
     next(err);
@@ -59,6 +59,34 @@ export const getAllLabTechnicians = async (req, res, next) => {
   try {
     const technicians = await labTechService.getAllLabTechnicians();
     res.json({ success: true, data: technicians, count: technicians.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAvailableStock = async (req, res, next) => {
+  try {
+    const stock = await labTechService.getAvailableLabtechStock();
+    res.json({ success: true, data: stock, count: stock.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getPendingVerificationStock = async (req, res, next) => {
+  try {
+    const pending = await labTechService.getPendingLabtechVerificationStock();
+    res.json({ success: true, data: pending, count: pending.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifyStock = async (req, res, next) => {
+  try {
+    const { sub_stock_id, secret_code } = req.body;
+    const result = await labTechService.verifyLabtechSubStock({ sub_stock_id, secret_code });
+    res.json({ success: true, message: 'Stock verified successfully', ...result });
   } catch (err) {
     next(err);
   }

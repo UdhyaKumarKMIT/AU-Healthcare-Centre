@@ -20,6 +20,8 @@ import {
   fetchTaskDetails,
   fetchCompletedTaskDetails,
   fetchAvailableStock,
+  fetchPendingVerificationStock,
+  verifySubStock,
   clearCurrentTask,
   clearCompletedTaskDetails,
   selectPendingTasks,
@@ -28,6 +30,7 @@ import {
   selectCurrentTask,
   selectCompletedTaskDetails,
   selectStock,
+  selectPendingStock,
   selectIsTasksLoading,
   selectIsCompletedTasksLoading
 } from '../../store/slices/nurseSlice';
@@ -51,8 +54,10 @@ function NurseDashboard() {
   const [activeTask, setActiveTask] = useState(null);
   const [activeView, setActiveView] = useState("tasks");
   const [stockType, setStockType] = useState('NURSE');
+  const [stockSecretCode, setStockSecretCode] = useState('');
 
   const availableStock = useSelector(selectStock(stockType));
+  const pendingStock = useSelector(selectPendingStock(stockType));
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -112,6 +117,31 @@ function NurseDashboard() {
   const handleStockTypeChange = (type) => {
     setStockType(type);
     dispatch(fetchAvailableStock(type));
+    dispatch(fetchPendingVerificationStock(type));
+  };
+
+  const handleVerifyStock = async (subStockId) => {
+    const normalized = stockSecretCode.trim();
+    if (!normalized) {
+      toast.error('Enter secret code to verify stock');
+      return false;
+    }
+
+    const result = await dispatch(verifySubStock({
+      sub_stock_id: subStockId,
+      stockType,
+      secret_code: normalized
+    }));
+
+    if (result.type.includes('fulfilled')) {
+      toast.success('Stock verified');
+      dispatch(fetchAvailableStock(stockType));
+      dispatch(fetchPendingVerificationStock(stockType));
+      return true;
+    } else {
+      toast.error(result.payload || 'Failed to verify stock');
+      return false;
+    }
   };
 
   const handleCloseModal = () => {
@@ -215,6 +245,7 @@ function NurseDashboard() {
               setActiveView('stock');
               setStockType('NURSE');
               dispatch(fetchAvailableStock('NURSE'));
+              dispatch(fetchPendingVerificationStock('NURSE'));
             }}
           >
             <FontAwesomeIcon icon={faBoxes} />
@@ -238,8 +269,12 @@ function NurseDashboard() {
         {activeView === 'stock' && (
           <StockView
             availableStock={availableStock}
+            pendingStock={pendingStock}
             stockType={stockType}
             onStockTypeChange={handleStockTypeChange}
+            secretCode={stockSecretCode}
+            onSecretCodeChange={setStockSecretCode}
+            onVerify={handleVerifyStock}
           />
         )}
       </div>

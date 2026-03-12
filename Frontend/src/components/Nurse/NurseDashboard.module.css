@@ -557,6 +557,15 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.modalSmall {
+  background: white;
+  border-radius: 16px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -614,6 +623,28 @@
 
 .modalBody {
   padding: 24px;
+}
+
+.modalLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.modalInput:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
 }
 
 .errorMessage {

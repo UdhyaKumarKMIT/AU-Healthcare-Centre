@@ -60,6 +60,7 @@ import StudentDashboard from './pages/student/StudentDashboard.jsx';
 import LabTechDashboard from './pages/labtech/LabTechDashboard';
 import LabTestsManagement from './pages/labtech/LabTestsManagement';
 import LabTestReport from './pages/labtech/LabTestReport';
+import LabTechStock from './pages/labtech/LabTechStock.jsx';
 
 // Nurse Pages
 import NurseDashboard from './pages/Nurse/NurseDashboard.jsx';
@@ -156,6 +157,7 @@ function App() {
               <Route path="/labtech/dashboard" element={<LabTechDashboard />} />
               <Route path="/labtech/tests" element={<LabTestsManagement />} />
               <Route path="/labtech/tests/:testId" element={<LabTestReport />} />
+              <Route path="/labtech/stock" element={<LabTechStock />} />
             </Route>
 
             {/* Catch-all Redirect */}

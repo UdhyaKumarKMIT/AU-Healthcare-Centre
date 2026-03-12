@@ -89,6 +89,26 @@ export const getAvailableStock = async (req, res, next) => {
   }
 };
 
+export const getPendingVerificationStock = async (req, res, next) => {
+  try {
+    const { stock_type } = req.query; // 'NURSE' or 'DRESSING'
+    const pending = await nurseService.getPendingVerificationStock(stock_type);
+    res.json({ pendingStocks: pending });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifyStock = async (req, res, next) => {
+  try {
+    const { sub_stock_id, stock_type, secret_code } = req.body;
+    const result = await nurseService.verifySubStock({ sub_stock_id, stock_type, secret_code });
+    res.json({ message: 'Stock verified successfully', ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const verifySecretCode = async (req, res, next) => {
   try {
     const { secret_code } = req.body;

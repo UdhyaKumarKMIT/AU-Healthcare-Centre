@@ -183,6 +183,49 @@ export const fetchAvailableStock = createAsyncThunk(
   }
 );
 
+export const fetchPendingVerificationStock = createAsyncThunk(
+  'nurse/fetchPendingStock',
+  async (stockType = 'NURSE', { getState, rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/nurse/stock/pending?stock_type=${stockType}`, {
+        headers: getAuthHeaders(getState)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return rejectWithValue(error.message || 'Failed to fetch pending stock');
+      }
+
+      const data = await response.json();
+      return { stockType, data: data.pendingStocks || [] };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const verifySubStock = createAsyncThunk(
+  'nurse/verifySubStock',
+  async ({ sub_stock_id, stockType = 'NURSE', secret_code }, { getState, rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE}/nurse/stock/verify`, {
+        method: 'POST',
+        headers: getAuthHeaders(getState),
+        body: JSON.stringify({ sub_stock_id, stock_type: stockType, secret_code })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return rejectWithValue(error.message || 'Failed to verify stock');
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const verifySecretCode = createAsyncThunk(
   'nurse/verifyCode',
   async (secretCode, { getState, rejectWithValue }) => {
@@ -216,6 +259,10 @@ const initialState = {
     NURSE: [],
     DRESSING: []
   },
+  pendingStock: {
+    NURSE: [],
+    DRESSING: []
+  },
   loading: {
     tasks: false,
     completedTasks: false,
@@ -224,6 +271,8 @@ const initialState = {
     completedTaskDetails: false,
     completeTask: false,
     stock: false,
+    pendingStock: false,
+    verifyStock: false,
     verifyCode: false
   },
   error: {
@@ -234,6 +283,8 @@ const initialState = {
     completedTaskDetails: null,
     completeTask: null,
     stock: null,
+    pendingStock: null,
+    verifyStock: null,
     verifyCode: null
   },
   lastRefresh: null,
@@ -373,6 +424,33 @@ const nurseSlice = createSlice({
         state.error.stock = action.payload;
       })
 
+      // Fetch Pending Stock
+      .addCase(fetchPendingVerificationStock.pending, (state) => {
+        state.loading.pendingStock = true;
+        state.error.pendingStock = null;
+      })
+      .addCase(fetchPendingVerificationStock.fulfilled, (state, action) => {
+        state.loading.pendingStock = false;
+        state.pendingStock[action.payload.stockType] = action.payload.data;
+      })
+      .addCase(fetchPendingVerificationStock.rejected, (state, action) => {
+        state.loading.pendingStock = false;
+        state.error.pendingStock = action.payload;
+      })
+
+      // Verify Stock
+      .addCase(verifySubStock.pending, (state) => {
+        state.loading.verifyStock = true;
+        state.error.verifyStock = null;
+      })
+      .addCase(verifySubStock.fulfilled, (state) => {
+        state.loading.verifyStock = false;
+      })
+      .addCase(verifySubStock.rejected, (state, action) => {
+        state.loading.verifyStock = false;
+        state.error.verifyStock = action.payload;
+      })
+
       // Verify Secret Code
       .addCase(verifySecretCode.pending, (state) => {
         state.loading.verifyCode = true;
@@ -412,6 +490,8 @@ export const selectNurseStock = (state) => state.nurse.stock.NURSE;
 export const selectDressingStock = (state) => state.nurse.stock.DRESSING;
 export const selectStock = (stockType) => (state) =>
   state.nurse.stock[stockType] || [];
+export const selectPendingStock = (stockType) => (state) =>
+  state.nurse.pendingStock[stockType] || [];
 export const selectLoading = (state) => state.nurse.loading;
 export const selectError = (state) => state.nurse.error;
 export const selectIsTasksLoading = (state) => state.nurse.loading.tasks;

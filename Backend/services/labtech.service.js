@@ -6,17 +6,116 @@ import {
   Patient,
   Doctor,
   User,
+  LabtechStock,
+  StaffDetails,
+  Medicine,
   sequelize
 } from '../models/sequelize/index.js';
 import { Op } from 'sequelize';
 import ApiError from '../utils/ApiError.js';
 
+const verifyLabTechStaffCode = async (secret_code) => {
+  if (!secret_code) return false;
+
+  const staff = await StaffDetails.findOne({
+    attributes: ['staff_id'],
+    where: {
+      code: secret_code,
+      role: 'LAB_TECHNICIAN',
+      status: 'ACTIVE'
+    }
+  });
+
+  return !!staff;
+};
+
+export const getAvailableLabtechStock = async () => {
+  const rows = await LabtechStock.findAll({
+    where: {
+      quantity: { [Op.gt]: 0 },
+      verification: 'done',
+      status: 'ACTIVE'
+    },
+    include: [{
+      model: Medicine,
+      attributes: ['name', 'type']
+    }],
+    order: [['expiry', 'ASC']]
+  });
+
+  return rows.map(r => ({
+    sub_stock_id: r.sub_stock_id,
+    medicine_id: r.medicine_id,
+    medicine_name: r.Medicine?.name,
+    medicine_type: r.Medicine?.type,
+    batch_no: r.batch_no,
+    expiry: r.expiry,
+    quantity: r.quantity
+  }));
+};
+
+export const getPendingLabtechVerificationStock = async () => {
+  const rows = await LabtechStock.findAll({
+    where: {
+      quantity: { [Op.gt]: 0 },
+      verification: 'waiting',
+      status: 'ACTIVE'
+    },
+    include: [{
+      model: Medicine,
+      attributes: ['medicine_id', 'name', 'type']
+    }],
+    order: [['expiry', 'ASC']]
+  });
+
+  const grouped = {};
+  for (const row of rows) {
+    const medId = row.medicine_id;
+    if (!grouped[medId]) {
+      grouped[medId] = {
+        medicine_id: medId,
+        medicine_name: row.Medicine?.name,
+        medicine_type: row.Medicine?.type,
+        batches: []
+      };
+    }
+    grouped[medId].batches.push({
+      sub_stock_id: row.sub_stock_id,
+      batch_no: row.batch_no,
+      expiry: row.expiry,
+      quantity: row.quantity
+    });
+  }
+
+  return Object.values(grouped);
+};
+
+export const verifyLabtechSubStock = async ({ sub_stock_id, secret_code }) => {
+  if (!sub_stock_id) throw new ApiError(400, 'sub_stock_id is required');
+  if (!secret_code) throw new ApiError(400, 'secret_code is required');
+
+  const isValid = await verifyLabTechStaffCode(secret_code);
+  if (!isValid) throw new ApiError(401, 'Invalid secret code');
+
+  const [updatedCount] = await LabtechStock.update(
+    { verification: 'done' },
+    {
+      where: {
+        sub_stock_id,
+        verification: 'waiting'
+      }
+    }
+  );
+
+  return { updated: updatedCount > 0 };
+};
+
 export const getLabTechStats = async (timeRange = 'today') => {
   try {
     let dateFilter = new Date();
     dateFilter.setHours(0, 0, 0, 0);
-    
-    switch(timeRange) {
+
+    switch (timeRange) {
       case 'week':
         dateFilter.setDate(dateFilter.getDate() - 7);
         break;
@@ -24,9 +123,9 @@ export const getLabTechStats = async (timeRange = 'today') => {
         dateFilter.setDate(dateFilter.getDate() - 30);
         break;
       default:
-        // today - already set to start of day
+      // today - already set to start of day
     }
-    
+
     // Get total tests
     const totalTests = await LabTask.count({
       where: {
@@ -35,25 +134,25 @@ export const getLabTechStats = async (timeRange = 'today') => {
         }
       }
     });
-    
+
     // Get pending tests
     const pendingTests = await LabTask.count({
       where: {
         status: 'PENDING'
       }
     });
-    
+
     // Get completed tests
     const completedTests = await LabTask.count({
       where: {
         status: 'COMPLETED'
       }
     });
-    
+
     // Get completed today
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    
+
     const completedToday = await LabTask.count({
       where: {
         status: 'COMPLETED',
@@ -62,12 +161,12 @@ export const getLabTechStats = async (timeRange = 'today') => {
         }
       }
     });
-    
+
     // Get tests this month
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
-    
+
     const testsMonth = await LabTask.count({
       where: {
         assigned_at: {
@@ -75,10 +174,10 @@ export const getLabTechStats = async (timeRange = 'today') => {
         }
       }
     });
-    
+
     // Calculate completion rate
     const completionRate = totalTests > 0 ? Math.round((completedTests / totalTests) * 100) : 0;
-    
+
     // Get recent activity (last 10 completed tests)
     const recentActivity = await LabTask.findAll({
       where: {
@@ -101,14 +200,14 @@ export const getLabTechStats = async (timeRange = 'today') => {
       order: [['completed_at', 'DESC']],
       limit: 10
     });
-    
+
     // Format recent activity
     const formattedActivity = recentActivity.map(activity => ({
       type: 'completed',
       description: `Completed ${activity.LabTest?.test_name || 'Unknown Test'} (${activity.LabTest?.test_type || 'N/A'}) for ${activity.Visit?.Patient?.name || 'Unknown Patient'}`,
       timestamp: activity.completed_at || activity.assigned_at
     }));
-    
+
     return {
       totalTests,
       pendingTests,
@@ -121,7 +220,7 @@ export const getLabTechStats = async (timeRange = 'today') => {
       completionRate,
       recentActivity: formattedActivity
     };
-    
+
   } catch (error) {
     console.error('Error fetching lab tech stats:', error);
     throw new ApiError(500, 'Failed to fetch lab tech statistics: ' + error.message);
@@ -131,15 +230,15 @@ export const getLabTechStats = async (timeRange = 'today') => {
 export const getAllLabTests = async ({ status, priority, search }) => {
   try {
     const whereClause = {};
-    
+
     if (status && status !== 'all') {
       whereClause.status = status.toUpperCase();
     }
-    
+
     if (priority && priority !== 'all') {
       whereClause.priority = priority.toLowerCase();
     }
-    
+
     const includeClause = [
       {
         model: LabTest,
@@ -178,13 +277,13 @@ export const getAllLabTests = async ({ status, priority, search }) => {
         required: false
       }
     ];
-    
+
     const tests = await LabTask.findAll({
       where: whereClause,
       include: includeClause,
       order: [['assigned_at', 'DESC']]
     });
-    
+
     // Transform results to match frontend expectations
     const formattedTests = tests.map(test => ({
       testId: test.id,
@@ -206,9 +305,9 @@ export const getAllLabTests = async ({ status, priority, search }) => {
       doctorName: test.assignedByDoctor?.name,
       doctorSpecialization: test.assignedByDoctor?.specialization
     }));
-    
+
     return formattedTests;
-    
+
   } catch (error) {
     console.error('Error fetching lab tests:', error);
     throw new ApiError(500, 'Failed to fetch lab tests: ' + error.message);
@@ -244,11 +343,11 @@ export const getLabTestById = async (testId) => {
         }
       ]
     });
-    
+
     if (!test) {
       throw new ApiError(404, 'Lab test not found');
     }
-    
+
     // Transform to match frontend expectations
     return {
       testId: test.id,
@@ -278,7 +377,7 @@ export const getLabTestById = async (testId) => {
       visitReason: test.Visit?.reason,
       completedByName: test.completedBy?.username
     };
-    
+
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -291,11 +390,11 @@ export const getLabTestById = async (testId) => {
 export const submitTestResults = async (testId, { result, normal_range }, userId) => {
   try {
     const labTask = await LabTask.findByPk(testId);
-    
+
     if (!labTask) {
       throw new ApiError(404, 'Lab test task not found');
     }
-    
+
     await labTask.update({
       result,
       normal_range: normal_range || null,
@@ -303,9 +402,9 @@ export const submitTestResults = async (testId, { result, normal_range }, userId
       completed_at: new Date(),
       completed_by_user_id: userId
     });
-    
+
     return await getLabTestById(testId);
-    
+
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -324,7 +423,7 @@ export const getAllLabTechnicians = async () => {
       attributes: ['user_id', 'username', 'email', 'role', 'created_at'],
       order: [['username', 'ASC']]
     });
-    
+
     // Transform to match frontend expectations
     const formattedTechnicians = technicians.map(tech => ({
       technicianId: tech.user_id,
@@ -334,9 +433,9 @@ export const getAllLabTechnicians = async () => {
       role: tech.role,
       createdAt: tech.created_at
     }));
-    
+
     return formattedTechnicians;
-    
+
   } catch (error) {
     console.error('Error fetching lab technicians:', error);
     throw new ApiError(500, 'Failed to fetch lab technicians: ' + error.message);

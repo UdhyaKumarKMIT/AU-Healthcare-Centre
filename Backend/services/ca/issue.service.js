@@ -17,7 +17,7 @@ export const issueMedicineService = async (medicine_id, batches) => {
     for (const batch of batches) {
       const { batch_id, quantity, substockCode } = batch;
 
-      const substockTable = SUBSTOCK_TABLE_MAP[substockCode]; 
+      const substockTable = SUBSTOCK_TABLE_MAP[substockCode];
 
       if (!substockTable) {
         throw new Error(`Invalid substock code: ${substockCode}`);
@@ -88,7 +88,7 @@ export const issueMedicineService = async (medicine_id, batches) => {
         await sequelize.query(
           `
           UPDATE ${substockTable}
-          SET quantity = quantity + ? AND verification = 'waiting'
+          SET quantity = quantity + ?, verification = 'waiting'
           WHERE medicine_id = ? AND batch_no = ?
           `,
           {

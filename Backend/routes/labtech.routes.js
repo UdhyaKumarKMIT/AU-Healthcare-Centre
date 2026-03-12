@@ -21,6 +21,11 @@ router.get('/tests', labTechController.getAllLabTests);
 router.get('/tests/:test_id', labTechController.getLabTestById);
 router.post('/tests/:test_id/results', labTechController.submitTestResults);
 
+// Stock (verified) + verification
+router.get('/stock', labTechController.getAvailableStock);
+router.get('/stock/pending', labTechController.getPendingVerificationStock);
+router.post('/stock/verify', labTechController.verifyStock);
+
 // Lab technicians list (for admin)
 router.get('/technicians', labTechController.getAllLabTechnicians);
 

@@ -19,6 +19,11 @@ const LabTechSidebar = () => {
       title: 'Lab Tests',
       icon: faMicroscope,
       path: '/labtech/tests'
+    },
+    {
+      title: 'Stock Verification',
+      icon: faClipboardList,
+      path: '/labtech/stock'
     }
   ];
 

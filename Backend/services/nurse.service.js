@@ -390,7 +390,7 @@ export const completeTask = async ({
 
         // Find stock entry
         const stock = await StockModel.findOne({
-          where: { medicine_id, batch_no },
+          where: { medicine_id, batch_no, verification: 'done' },
           transaction: t,
           lock: t.LOCK.UPDATE
         })
@@ -455,13 +455,17 @@ export const getAvailableStock = async (stock_type = 'NURSE') => {
   const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
 
   const stock = await StockModel.findAll({
-  where: { quantity: { [Op.gt]: 0 } },
-  include: [{
-    model: Medicine,
-    attributes: ['name', 'type']
-  }],
-  order: [['expiry', 'ASC']]
-})
+    where: {
+      quantity: { [Op.gt]: 0 },
+      verification: 'done',
+      status: 'ACTIVE'
+    },
+    include: [{
+      model: Medicine,
+      attributes: ['name', 'type']
+    }],
+    order: [['expiry', 'ASC']]
+  })
 
   return stock.map(s => ({
     sub_stock_id: s.sub_stock_id,
@@ -472,6 +476,67 @@ export const getAvailableStock = async (stock_type = 'NURSE') => {
     expiry: s.expiry,
     quantity: s.quantity
   }));
+};
+
+// Get pending (unverified) stock for nurse/dressing
+export const getPendingVerificationStock = async (stock_type = 'NURSE') => {
+  const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
+
+  const rows = await StockModel.findAll({
+    where: {
+      quantity: { [Op.gt]: 0 },
+      verification: 'waiting',
+      status: 'ACTIVE'
+    },
+    include: [{
+      model: Medicine,
+      attributes: ['medicine_id', 'name', 'type']
+    }],
+    order: [['expiry', 'ASC']]
+  });
+
+  const grouped = {};
+  for (const row of rows) {
+    const medId = row.medicine_id;
+    if (!grouped[medId]) {
+      grouped[medId] = {
+        medicine_id: medId,
+        medicine_name: row.Medicine?.name,
+        medicine_type: row.Medicine?.type,
+        batches: []
+      };
+    }
+    grouped[medId].batches.push({
+      sub_stock_id: row.sub_stock_id,
+      batch_no: row.batch_no,
+      expiry: row.expiry,
+      quantity: row.quantity
+    });
+  }
+
+  return Object.values(grouped);
+};
+
+export const verifySubStock = async ({ sub_stock_id, stock_type = 'NURSE', secret_code }) => {
+  if (!sub_stock_id) throw new ApiError(400, 'sub_stock_id is required');
+  if (!secret_code) throw new ApiError(400, 'secret_code is required');
+
+  const isValid = await verifyStaffCode(secret_code);
+  if (!isValid) throw new ApiError(401, 'Invalid secret code');
+
+  const StockModel = stock_type === 'DRESSING' ? DressingStock : NurseStock;
+
+  const [updatedCount] = await StockModel.update(
+    { verification: 'done' },
+    {
+      where: {
+        sub_stock_id,
+        verification: 'waiting'
+      }
+    }
+  );
+
+  return { updated: updatedCount > 0 };
 };
 
 // Verify staff code - WITH DEBUGGING

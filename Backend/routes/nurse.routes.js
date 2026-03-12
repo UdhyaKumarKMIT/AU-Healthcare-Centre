@@ -15,7 +15,7 @@ router.use((req, res, next) => {
   console.log('🏥 [NURSE ROUTE] Body:', req.body);
   console.log('🏥 [NURSE ROUTE] Body type:', typeof req.body);
   console.log('🏥 [NURSE ROUTE] Body keys:', Object.keys(req.body || {}));
-  
+
   if (req.method === 'POST' || req.method === 'PUT') {
     console.log('🏥 [NURSE ROUTE] POST/PUT Data:');
     console.log('  - observation:', req.body?.observation);
@@ -45,6 +45,12 @@ router.post('/task/:task_id/complete', nurseController.completeTask);
 
 // Get available stock
 router.get('/stock', nurseController.getAvailableStock);
+
+// Get pending (unverified) stock
+router.get('/stock/pending', nurseController.getPendingVerificationStock);
+
+// Verify stock
+router.post('/stock/verify', nurseController.verifyStock);
 
 // Verify secret code
 router.post('/verify-code', nurseController.verifySecretCode);
