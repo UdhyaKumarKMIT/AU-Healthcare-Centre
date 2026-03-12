@@ -25,10 +25,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const askSecretCode = () => {
-    const code = window.prompt("Enter Pharmacist Secret Code");
-    return code ? code.trim() : "";
-  };
+  const [secretCode, setSecretCode] = useState("");
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Fetch pharmacist details
   useEffect(() => {
@@ -36,34 +34,35 @@ const Profile = () => {
       navigate("/login/pharmacist");
       return;
     }
+    // Profile is loaded only after the user enters secret code in-page.
+    setLoading(false);
+  }, [navigate, user]);
 
-    const secretCode = askSecretCode();
-    if (!secretCode) {
+  const handleLoadProfile = async () => {
+    const normalizedSecretCode = secretCode.trim();
+    if (!normalizedSecretCode) {
       setModalMessage("Secret code is required to view profile.");
       setModalOpen(true);
-      navigate("/pharmacist/dashboard");
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/pharmacy/pharmacistDetails", {
-          params: { secret_code: secretCode }
-        });
-        setProfile(res.data);
-        setFormData(res.data);
-      } catch (err) {
-        console.error(err);
-        setModalMessage("Failed to fetch profile. Please login again.");
-        setModalOpen(true);
-        navigate("/login/pharmacist");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [navigate, user]);
+    setLoading(true);
+    try {
+      const res = await api.get("/pharmacy/pharmacistDetails", {
+        params: { secret_code: normalizedSecretCode }
+      });
+      setProfile(res.data);
+      setFormData(res.data);
+      setProfileLoaded(true);
+    } catch (err) {
+      console.error(err);
+      setModalMessage("Failed to fetch profile. Please login again.");
+      setModalOpen(true);
+      navigate("/login/pharmacist");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handlers
   const handleEdit = () => setIsEditing(true);
@@ -75,15 +74,15 @@ const Profile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const secretCode = askSecretCode();
-      if (!secretCode) {
+      const normalizedSecretCode = secretCode.trim();
+      if (!normalizedSecretCode) {
         setModalMessage("Secret code is required to update profile.");
         setModalOpen(true);
         return;
       }
 
       const res = await api.patch("/pharmacy/updatePharmacistDetails", {
-        secret_code: secretCode,
+        secret_code: normalizedSecretCode,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -111,6 +110,70 @@ const Profile = () => {
 
   if (loading) return <p style={{ textAlign: "center" }}>Loading...</p>;
 
+  if (!profileLoaded) {
+    return (
+      <>
+        <CustomModal
+          isOpen={modalOpen}
+          title="Alert"
+          message={modalMessage}
+          confirmText="OK"
+          onConfirm={modalConfirmCallback ?? undefined}
+          onClose={() => {
+            setModalConfirmCallback(null);
+            setModalOpen(false);
+          }}
+        />
+
+        <div style={{ minHeight: "100vh", background: "#f9fafb", padding: "2rem" }}>
+          <div style={{ maxWidth: 1200, margin: "auto", padding: "1rem", color: "black" }}>
+            <div
+              style={{
+                background: "white",
+                borderRadius: "16px",
+                padding: "2rem",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h2 style={{ marginTop: 0, color: "#111827" }}>Pharmacist Profile</h2>
+              <p style={{ marginTop: 0, color: "#334155" }}>
+                Enter your secret code to view and edit profile.
+              </p>
+
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  type="password"
+                  placeholder="Enter secret code"
+                  value={secretCode}
+                  onChange={(e) => setSecretCode(e.target.value)}
+                  style={{
+                    width: 320,
+                    padding: "0.75rem 1rem",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    fontSize: "0.95rem",
+                    color: "black",
+                    background: "white",
+                  }}
+                  autoComplete="off"
+                />
+
+                <button
+                  onClick={handleLoadProfile}
+                  style={primaryButtonStyle}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  Load Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <CustomModal
@@ -132,6 +195,26 @@ const Profile = () => {
           padding: "1rem",
           color: "black",
         }}>
+
+          {/* Secret Code */}
+          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+            <input
+              type="password"
+              placeholder="Enter secret code"
+              value={secretCode}
+              onChange={(e) => setSecretCode(e.target.value)}
+              style={{
+                width: 320,
+                padding: "0.75rem 1rem",
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0",
+                fontSize: "0.95rem",
+                color: "black",
+                background: "white",
+              }}
+              autoComplete="off"
+            />
+          </div>
 
           {/* Profile Card */}
           <div

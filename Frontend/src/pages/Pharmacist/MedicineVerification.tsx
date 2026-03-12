@@ -23,6 +23,8 @@ const MedicineVerification = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
 
+  const [secretCode, setSecretCode] = useState("");
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -54,6 +56,13 @@ const MedicineVerification = () => {
   }, [navigate, user]);
 
   const handleVerify = (batchNo: string) => {
+    if (!secretCode.trim()) {
+      setModalMessage("Enter a secret code to verify stock.");
+      setModalConfirmCallback(null);
+      setModalOpen(true);
+      return;
+    }
+
     setModalMessage("Are you sure you want to verify this batch?");
     setModalConfirmCallback(() => () => {
       verifyBatchConfirmed(batchNo);
@@ -68,8 +77,8 @@ const MedicineVerification = () => {
 
   const verifyBatchConfirmed = async (batchNo: string) => {
     try {
-      const secretCode = window.prompt("Enter pharmacist secret code to verify stock:");
-      if (!secretCode) {
+      const normalizedSecretCode = secretCode.trim();
+      if (!normalizedSecretCode) {
         setModalMessage("Secret code is required to verify stock.");
         setModalOpen(true);
         return;
@@ -77,7 +86,7 @@ const MedicineVerification = () => {
 
       await api.post("/pharmacy/verifyStock", {
         batch_no: batchNo,
-        secret_code: secretCode,
+        secret_code: normalizedSecretCode,
       });
 
       const res = await api.get("/pharmacy/getVerificationStock");
@@ -133,7 +142,7 @@ const MedicineVerification = () => {
             </div>
 
             {/* SEARCH BAR */}
-            <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               <input
                 type="text"
                 placeholder="Search by medicine name"
@@ -146,6 +155,21 @@ const MedicineVerification = () => {
                   border: "1px solid #cbd5e1",
                   fontSize: "1rem",
                 }}
+              />
+
+              <input
+                type="password"
+                placeholder="Enter secret code"
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value)}
+                style={{
+                  width: 260,
+                  padding: "0.6rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "1rem",
+                }}
+                autoComplete="off"
               />
 
               <button

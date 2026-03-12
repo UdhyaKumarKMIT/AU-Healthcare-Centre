@@ -38,6 +38,8 @@ const PrescriptionDetailsPage = () => {
   const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
   const [navigateOnClose, setNavigateOnClose] = useState(false);
 
+  const [secretCode, setSecretCode] = useState("");
+
   const id = sessionStorage.getItem("prescriptionId");
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -151,15 +153,15 @@ const PrescriptionDetailsPage = () => {
     try {
       setIsSubmitting(true);
 
-      const secretCode = window.prompt("Enter pharmacist secret code to issue medicine:");
-      if (!secretCode) {
+      const normalizedSecretCode = secretCode.trim();
+      if (!normalizedSecretCode) {
         setModalMessage("Secret code is required to issue medicine.");
         setModalOpen(true);
         return;
       }
 
       await api.post("/pharmacy/issue", {
-        secret_code: secretCode,
+        secret_code: normalizedSecretCode,
         prescription_id: id,
         issued_days: Number(issuedDays),
         batches: items.flatMap((med) =>
@@ -222,6 +224,25 @@ const PrescriptionDetailsPage = () => {
           }}
         >
           <div style={enhancedPrescriptionCard}>
+            {/* SECRET CODE */}
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap" }}>
+              <label style={{ fontWeight: 700 }}>Secret Code:</label>
+              <input
+                type="password"
+                placeholder="Enter secret code"
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value)}
+                style={{
+                  width: 260,
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "6px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.95rem",
+                }}
+                autoComplete="off"
+              />
+            </div>
+
             {/* HEADER */}
             <div style={prescriptionHeader}>
               <h1 style={{ margin: 0 }}>Anna University Health Center</h1>

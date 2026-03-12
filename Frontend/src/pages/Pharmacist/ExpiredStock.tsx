@@ -11,6 +11,8 @@ const ExpiredStockPage = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [modalConfirmCallback, setModalConfirmCallback] = useState<(() => void) | null>(null);
 
+  const [secretCode, setSecretCode] = useState("");
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -41,6 +43,13 @@ const ExpiredStockPage = () => {
   }, [navigate, user]);
 
   const handleClear = (batchId: string) => {
+    if (!secretCode.trim()) {
+      setModalMessage("Enter a secret code to clear stock.");
+      setModalConfirmCallback(null);
+      setModalOpen(true);
+      return;
+    }
+
     setModalMessage("Are you sure you want to clear this batch?");
     setModalConfirmCallback(() => () => {
       clearBatchConfirmed(batchId);
@@ -56,8 +65,8 @@ const ExpiredStockPage = () => {
 
   const clearBatchConfirmed = async (batchId: string) => {
     try {
-      const secretCode = window.prompt("Enter pharmacist secret code to clear this batch:");
-      if (!secretCode) {
+      const normalizedSecretCode = secretCode.trim();
+      if (!normalizedSecretCode) {
         setModalMessage("Secret code is required to clear stock.");
         setModalOpen(true);
         return;
@@ -66,7 +75,7 @@ const ExpiredStockPage = () => {
       const response = await api.delete(
         `/pharmacy/clearMedicineBatch/${batchId}`,
         {
-          params: { secret_code: secretCode }
+          params: { secret_code: normalizedSecretCode }
         }
       );
       if (response.status === 200) {
@@ -122,7 +131,7 @@ const ExpiredStockPage = () => {
             </div>
 
             {/* SEARCH BAR */}
-            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               <input
                 type="text"
                 placeholder="Search medicine name..."
@@ -135,6 +144,21 @@ const ExpiredStockPage = () => {
                   border: "1px solid #cbd5e1",
                   fontSize: "0.95rem"
                 }}
+              />
+
+              <input
+                type="password"
+                placeholder="Enter secret code"
+                value={secretCode}
+                onChange={(e) => setSecretCode(e.target.value)}
+                style={{
+                  width: 260,
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "6px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.95rem"
+                }}
+                autoComplete="off"
               />
               <button
                 onClick={() => setSearchTerm("")}

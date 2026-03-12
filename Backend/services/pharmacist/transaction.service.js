@@ -125,13 +125,13 @@ export const verifyPharmacyStockService = async (batch_no, secret_code) => {
     throw new Error("Secret code is required");
   }
 
-  // Validate secret code exists as an active PHARMACIST staff
+  // Validate secret code exists as an active staff (PHARMACIST or NURSE_RECEPTIONIST)
   const staffRows = await sequelize.query(
     `
     SELECT staff_id
     FROM staff_details
     WHERE code = ?
-      AND role = 'PHARMACIST'
+      AND role IN ('PHARMACIST', 'NURSE_RECEPTIONIST')
       AND status = 'ACTIVE'
     `,
     {
