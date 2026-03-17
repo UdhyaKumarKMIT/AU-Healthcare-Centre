@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import api from "../../api/axios"; 
+import api from "../../api/axios";
 import CustomModal from "./CustomModal";
+import { toast } from "react-toastify";
+import pageStyles from "../shared/RolePage.module.css";
 
 const AddMedicineStockPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -18,7 +20,7 @@ const AddMedicineStockPage = () => {
   const [expiryDate, setExpiryDate] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
 
     try {
       const response = await api.post("/clerical_assistant/medicine/addStock", {
@@ -30,82 +32,59 @@ const AddMedicineStockPage = () => {
 
       if (response.status === 201) {
         setModalMessage("Stock added successfully!");
-        setModalConfirmCallback(null);  
+        setModalConfirmCallback(null);
         setModalOpen(true);
-        setNavigateOnClose(true); 
+        setNavigateOnClose(true);
+        toast.success("Stock added successfully");
       } else {
         setModalMessage(`Unexpected response: ${response.status}`);
         setModalOpen(true);
-        setNavigateOnClose(false); 
+        setNavigateOnClose(false);
+        toast.error(`Unexpected response: ${response.status}`);
       }
     } catch (err) {
       console.error("Failed to add stock:", err);
       setModalMessage("Failed to add stock. Please try again.");
       setModalOpen(true);
-      setNavigateOnClose(false); 
+      setNavigateOnClose(false);
+      toast.error("Failed to add stock");
     }
   };
 
   return (
-    <> 
+    <>
       <CustomModal
-      isOpen={modalOpen}
-      title="Alert"
-      message={modalMessage}
-      confirmText="OK"
-      onConfirm={modalConfirmCallback ?? undefined}
-      onClose={() => {
-        setModalOpen(false);
-        if (navigateOnClose) {
-          navigate(-1);
-          setNavigateOnClose(false);
-        }
-      }}
-    />
-
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* HEADER */}
-      <header
-        style={{
-          background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-          color: "white",
+        isOpen={modalOpen}
+        title="Alert"
+        message={modalMessage}
+        confirmText="OK"
+        onConfirm={modalConfirmCallback ?? undefined}
+        onClose={() => {
+          setModalOpen(false);
+          if (navigateOnClose) {
+            navigate(-1);
+            setNavigateOnClose(false);
+          }
         }}
-      >   
-      </header>
+      />
 
-      {/* MAIN */}
-      <main
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: "1rem",
-          color: "black",
-        }}
-      >
-        <div style={cardStyle}>
-          {/* TITLE + BACK */}
-          <div style={cardHeaderStyle}>
-            <h3 style={{ margin: 0, color: "#1e40af" }}>
-              Add Medicine Stock
-            </h3>
-
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              aria-label="Go back"
-              style={backButtonStyle}
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
-          </div>
-
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+      <section className={pageStyles.card}>
+        <div className={pageStyles.cardHeader}>
+          <h3 className={pageStyles.cardHeaderTitle}>Add Medicine Stock</h3>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className={pageStyles.button}
           >
-            {/* Medicine Name */}
+            <ArrowLeft size={16} /> Back
+          </button>
+        </div>
+
+        <div className={pageStyles.cardBody}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div>
-              <label htmlFor="medicineName" style={labelStyle}>
+              <label htmlFor="medicineName" style={{ display: "block", marginBottom: 6, fontWeight: 700 }}>
                 Medicine Name
               </label>
               <input
@@ -113,13 +92,13 @@ const AddMedicineStockPage = () => {
                 type="text"
                 value={name}
                 readOnly
-                style={{...inputStyle, fontWeight: "bold"}}
+                className={pageStyles.input}
+                style={{ width: "100%", fontWeight: 700 }}
               />
             </div>
 
-            {/* Batch ID */}
             <div>
-              <label htmlFor="batchId" style={labelStyle}>
+              <label htmlFor="batchId" style={{ display: "block", marginBottom: 6, fontWeight: 700 }}>
                 Batch No
               </label>
               <input
@@ -128,13 +107,13 @@ const AddMedicineStockPage = () => {
                 value={batchId}
                 onChange={(e) => setBatchId(e.target.value)}
                 required
-                style={inputStyle}
+                className={pageStyles.input}
+                style={{ width: "100%" }}
               />
             </div>
 
-            {/* Quantity */}
             <div>
-              <label htmlFor="quantity" style={labelStyle}>
+              <label htmlFor="quantity" style={{ display: "block", marginBottom: 6, fontWeight: 700 }}>
                 Quantity Added
               </label>
               <input
@@ -144,13 +123,13 @@ const AddMedicineStockPage = () => {
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 required
-                style={inputStyle}
+                className={pageStyles.input}
+                style={{ width: "100%" }}
               />
             </div>
 
-            {/* Expiry Date */}
             <div>
-              <label htmlFor="expiryDate" style={labelStyle}>
+              <label htmlFor="expiryDate" style={{ display: "block", marginBottom: 6, fontWeight: 700 }}>
                 Expiry Date
               </label>
               <input
@@ -161,80 +140,20 @@ const AddMedicineStockPage = () => {
                 required
                 min={new Date(new Date().setMonth(new Date().getMonth() + 1))
                   .toISOString()
-                  .split("T")[0]} // sets min date to 1 month from today
-                style={{ ...inputStyle, color: "white", backgroundColor: "#0962bcff" }}
+                  .split("T")[0]}
+                className={pageStyles.input}
+                style={{ width: "100%" }}
               />
             </div>
 
-            <button type="submit" style={primaryButtonStyle}>
+            <button type="submit" className={`${pageStyles.button} ${pageStyles.buttonPrimary}`}>
               Add Stock
             </button>
           </form>
         </div>
-      </main>
-    </div>
+      </section>
     </>
   );
-};
-
-/* ---------- STYLES ---------- */
-
-const cardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  borderRadius: "10px",
-  padding: "2rem",
-  border: "1px solid #cbd5e1",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-};
-
-const cardHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "1.5rem",
-  fontSize: "1.2rem"
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  marginBottom: "0.25rem",
-  fontWeight: 700,
-  color: "#1e40af",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  display: "block",
-  padding: "0.6rem 0rem 0.6rem 0rem",
-  borderRadius: "6px",
-  border: "1px solid #cbd5e1",
-  background: "white",
-  color: "black",
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  marginTop: "1rem",
-  width: "100%",
-  padding: "0.75rem 1rem",
-  borderRadius: "8px",
-  border: "none",
-  background: "#1e40af",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const backButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.25rem",
-  background: "#dbeafe",
-  color: "#1e40af",
-  border: "1px solid #93c5fd",
-  padding: "0.4rem 0.75rem",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontWeight: 600,
 };
 
 export default AddMedicineStockPage;

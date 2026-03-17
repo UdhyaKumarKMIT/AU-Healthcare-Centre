@@ -10,6 +10,7 @@ import api from "../../api/axios";
 import { replace, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import CustomModal from "./CustomModal";
+import pageStyles from "../shared/RolePage.module.css";
 
 /* ---------- Types ---------- */
 interface Prescription {
@@ -100,148 +101,105 @@ const PendingPrescriptions = () => {
         }}
       />
 
-      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      <section className={pageStyles.card}>
+        <div className={pageStyles.cardHeader}>
+          <div className={pageStyles.cardHeaderTitle}>
+            <FileScan size={20} aria-hidden="true" />
+            Pending Prescriptions
+          </div>
 
-        {/* MAIN */}
-        <main
-          style={{
-            maxWidth: 1200,
-            margin: "auto",
-            padding: "1rem",
-            color: "black",
-          }}
-        >
-          <div style={sectionCardStyle}>
-            {/* SECTION HEADER + FILTER */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "1rem",
-                marginBottom: "1.5rem",
-              }}
+          <div className={pageStyles.controls}>
+            <select
+              value={filterType}
+              onChange={(e) =>
+                setFilterType(e.target.value as "all" | "patient" | "doctor" | "specialization")
+              }
+              aria-label="Filter prescriptions"
+              className={pageStyles.select}
             >
-              <div style={sectionHeaderStyle}>
-                <FileScan size={22} aria-hidden="true" />
-                Pending Prescriptions
-              </div>
+              <option value="all">All</option>
+              <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+              <option value="specialization">Specialization</option>
+            </select>
 
-              {/* FILTER CONTROLS */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <select
-                  value={filterType}
-                  onChange={(e) =>
-                    setFilterType(e.target.value as "all" | "patient" | "doctor" | "specialization")
-                  }
-                  aria-label="Filter prescriptions"
-                  style={{
-                    padding: "0.45rem",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    background: "white",
-                    color: "black",
-                    fontWeight: "bold"
-                  }}
-                >
-                  <option value="all">All</option>
-                  <option value="patient">Patient</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="specialization">Specialization</option>
-                </select>
-
-                {filterType !== "all" && (
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={`Search by ${filterType}`}
-                    aria-label={`Search by ${filterType}`}
-                    style={{
-                      padding: "0.45rem 0.6rem",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
-                      minWidth: 180,
-                      background: "white",
-                      color: "black",
-                      fontWeight: "bold"
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            {loading ? (
-              <p>Loading prescriptions...</p>
-            ) : filteredPrescriptions.length === 0 ? (
-              <p>No pending prescriptions found.</p>
-            ) : (
-              filteredPrescriptions.map((p) => (
-                <article
-                  key={p.prescription_id}
-                  style={prescriptionRowStyle}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open prescription for ${p.patient_name}`}
-                  onClick={() => {
-                    sessionStorage.setItem(
-                      "prescriptionId",
-                      p.prescription_id ? p.prescription_id.toString() : ""
-                    );
-                    navigate("/pharmacist/prescriptionsDetails");
-                  }}
-                >
-                  <div style={{ display: "flex", gap: "1.5rem" }}>
-                    <div style={iconBoxStyle}>
-                      <CircleUser size={20} aria-hidden="true" />
-                    </div>
-
-                    <div style={{ flex: 1, fontFamily: "verdana" }}>
-                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
-                        <PersonStanding size={18} aria-hidden="true" />
-                        <strong>Patient:</strong>{" "}
-                        {toTitleCase(p.patient_name)}
-                      </p>
-
-                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
-                        <Stethoscope size={18} aria-hidden="true" />
-                        <strong>Doctor:</strong>{" "}
-                        {toTitleCase(p.doctor_name)}
-                      </p>
-
-                      <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
-                        <GraduationCap size={18} aria-hidden="true" />
-                        <strong>Specialization:</strong>{" "}
-                        {toTitleCase(p.doctor_specialization)}
-                      </p>
-
-                      <p style={{ paddingBottom: "2px" }}>
-                        <strong>Issued Time:</strong>{" "}
-                        {new Date(p.created_at).toLocaleString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </p>
-                    </div>
-
-                  </div>
-                </article>
-              ))
+            {filterType !== "all" && (
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={`Search by ${filterType}`}
+                aria-label={`Search by ${filterType}`}
+                className={pageStyles.input}
+              />
             )}
           </div>
-        </main>
-      </div>
+        </div>
+
+        <div className={pageStyles.cardBody}>
+          {loading ? (
+            <p className={pageStyles.muted}>Loading prescriptions...</p>
+          ) : filteredPrescriptions.length === 0 ? (
+            <p className={pageStyles.muted}>No pending prescriptions found.</p>
+          ) : (
+            filteredPrescriptions.map((p) => (
+              <article
+                key={p.prescription_id}
+                style={prescriptionRowStyle}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open prescription for ${p.patient_name}`}
+                onClick={() => {
+                  sessionStorage.setItem(
+                    "prescriptionId",
+                    p.prescription_id ? p.prescription_id.toString() : ""
+                  );
+                  navigate("/pharmacist/prescriptionsDetails");
+                }}
+              >
+                <div style={{ display: "flex", gap: "1.5rem" }}>
+                  <div style={iconBoxStyle}>
+                    <CircleUser size={20} aria-hidden="true" />
+                  </div>
+
+                  <div style={{ flex: 1, fontFamily: "verdana" }}>
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                      <PersonStanding size={18} aria-hidden="true" />
+                      <strong>Patient:</strong>{" "}
+                      {toTitleCase(p.patient_name)}
+                    </p>
+
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                      <Stethoscope size={18} aria-hidden="true" />
+                      <strong>Doctor:</strong>{" "}
+                      {toTitleCase(p.doctor_name)}
+                    </p>
+
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: "2px" }}>
+                      <GraduationCap size={18} aria-hidden="true" />
+                      <strong>Specialization:</strong>{" "}
+                      {toTitleCase(p.doctor_specialization)}
+                    </p>
+
+                    <p style={{ paddingBottom: "2px" }}>
+                      <strong>Issued Time:</strong>{" "}
+                      {new Date(p.created_at).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </p>
+                  </div>
+
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
     </>
   );
 };

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../contexts/AuthContext";
 import CustomModal from "./CustomModal";
+import { toast } from "react-toastify";
+import pageStyles from "../shared/RolePage.module.css";
 
 interface Batch {
   batch_no: string;
@@ -35,7 +37,7 @@ const MedicineVerification = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/login/pharmacist");
+      navigate("/login");
       return;
     }
 
@@ -47,6 +49,7 @@ const MedicineVerification = () => {
         console.error("Failed to fetch medicine:", err);
         setModalMessage("Failed to fetch medicine.");
         setModalOpen(true);
+        toast.error("Failed to fetch medicines for verification");
       } finally {
         setLoading(false);
       }
@@ -60,6 +63,7 @@ const MedicineVerification = () => {
       setModalMessage("Enter a secret code to verify stock.");
       setModalConfirmCallback(null);
       setModalOpen(true);
+      toast.info("Secret code required to verify stock");
       return;
     }
 
@@ -94,10 +98,12 @@ const MedicineVerification = () => {
 
       setModalMessage("Stock verified successfully!");
       setModalOpen(true);
+      toast.success("Stock verified successfully");
     } catch (err) {
       console.error("Verification failed:", err);
       setModalMessage("Failed to verify stock.");
       setModalOpen(true);
+      toast.error("Failed to verify stock");
     }
   };
 
@@ -115,46 +121,23 @@ const MedicineVerification = () => {
           setModalOpen(false);
         }}
       />
-      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-        {/* HEADER */}
-        <div
-          style={{
-            background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-            color: "white",
-          }}
-        >
+
+      <section className={pageStyles.card}>
+        <div className={pageStyles.cardHeader}>
+          <h2 className={pageStyles.cardHeaderTitle}>
+            <PillBottleIcon size={20} /> Issued Medicine Stock
+          </h2>
         </div>
 
-        {/* MAIN */}
-        <main
-          style={{
-            maxWidth: 1200,
-            margin: "auto",
-            padding: "1rem",
-            color: "black",
-          }}
-        >
-          <div style={sectionCardStyle}>
-            {/* SECTION HEADER */}
-            <div style={sectionHeaderStyle}>
-              <PillBottleIcon size={22} />
-              Issued Medicine Stock
-            </div>
-
-            {/* SEARCH BAR */}
-            <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        <div className={pageStyles.cardBody}>
+          <div className={pageStyles.toolbar}>
+            <div className={pageStyles.controls}>
               <input
                 type="text"
                 placeholder="Search by medicine name"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: "0.6rem 1rem",
-                  borderRadius: "8px",
-                  border: "1px solid #cbd5e1",
-                  fontSize: "1rem",
-                }}
+                className={pageStyles.input}
               />
 
               <input
@@ -162,112 +145,81 @@ const MedicineVerification = () => {
                 placeholder="Enter secret code"
                 value={secretCode}
                 onChange={(e) => setSecretCode(e.target.value)}
-                style={{
-                  width: 260,
-                  padding: "0.6rem 1rem",
-                  borderRadius: "8px",
-                  border: "1px solid #cbd5e1",
-                  fontSize: "1rem",
-                }}
+                className={pageStyles.input}
                 autoComplete="off"
               />
-
-              <button
-                onClick={() => setSearch("")}
-                style={{
-                  padding: "0.6rem 1.2rem",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#1e40af",
-                  color: "white",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Clear
-              </button>
             </div>
 
+            <button
+              onClick={() => setSearch("")}
+              className={`${pageStyles.button} ${pageStyles.buttonPrimary}`}
+              type="button"
+            >
+              Clear
+            </button>
+          </div>
 
-            {/* CONTENT */}
-            {loading ? (
-              <p>Loading medicines for verification...</p>
-            ) : filteredMedicines.length === 0 ? (
-              <p>No medicines found for verification</p>
-            ) : (
-              filteredMedicines.map((med, idx) => (
-                med.batches.map((batch, bIdx) => (
-                  <article key={batch.batch_no} style={prescriptionRowStyle}>
-                    <div style={{ display: "flex", gap: "1.5rem", fontFamily: "verdana" }}>
-                      <div style={iconBoxStyle}>
-                        <Pill size={20} />
-                      </div>
+          <div style={{ height: 16 }} />
 
-                      <div style={{ flex: 1 }}>
-                        <p style={{ paddingBottom: "2px" }}>
-                          <strong>Medicine:</strong> {med.medicine_name}
-                        </p>
-                        <p style={{ paddingBottom: "2px" }}>
-                          <strong>Batch ID:</strong> {batch.batch_no}
-                        </p>
-                        <p style={{ paddingBottom: "2px" }}>
-                          <strong>Expiry Date:</strong>{" "}
-                          {new Date(batch.expiry).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                        <p>
-                          <strong>In Stock:</strong> {batch.quantity} units
-                        </p>
+          {loading ? (
+            <p className={pageStyles.muted}>Loading medicines for verification...</p>
+          ) : filteredMedicines.length === 0 ? (
+            <p className={pageStyles.muted}>No medicines found for verification</p>
+          ) : (
+            filteredMedicines.map((med) =>
+              med.batches.map((batch) => (
+                <article key={batch.batch_no} style={prescriptionRowStyle}>
+                  <div style={{ display: "flex", gap: "1.25rem", fontFamily: "verdana" }}>
+                    <div style={iconBoxStyle}>
+                      <Pill size={20} />
+                    </div>
 
-                        {/* CLEAR BUTTON AT BOTTOM */}
-                        <div style={{ display: "flex", justifyContent: "flex-start", marginTop: "1rem" }}>
-                          <button
-                            onClick={() => handleVerify(batch.batch_no)}
-                            style={clearButtonStyle}
-                          >
-                            Verified
-                          </button>
-                        </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ paddingBottom: 2 }}>
+                        <strong>Medicine:</strong> {med.medicine_name}
+                      </p>
+                      <p style={{ paddingBottom: 2 }}>
+                        <strong>Batch ID:</strong> {batch.batch_no}
+                      </p>
+                      <p style={{ paddingBottom: 2 }}>
+                        <strong>Expiry Date:</strong>{" "}
+                        {new Date(batch.expiry).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                      <p>
+                        <strong>In Stock:</strong> {batch.quantity} units
+                      </p>
+
+                      <div style={{ display: "flex", justifyContent: "flex-start", marginTop: "1rem" }}>
+                        <button
+                          onClick={() => handleVerify(batch.batch_no)}
+                          className={`${pageStyles.button} ${pageStyles.buttonDanger}`}
+                          type="button"
+                        >
+                          Verified
+                        </button>
                       </div>
                     </div>
-                  </article>
-                )))
-              )
-            )}
-          </div>
-        </main>
-      </div>
+                  </div>
+                </article>
+              ))
+            )
+          )}
+        </div>
+      </section>
     </>
   );
 };
 
 /* ---------- STYLES ---------- */
 
-const sectionCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  borderRadius: "10px",
-  padding: "2rem",
-  border: "1px solid #cbd5e1",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-};
-
-const sectionHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  fontSize: "1.5rem",
-  fontWeight: 700,
-  color: "#1e40af",
-  marginBottom: "1.5rem",
-};
-
 const prescriptionRowStyle: React.CSSProperties = {
-  background: "#f9fafb",
-  border: "1px solid #e5e7eb",
-  borderRadius: "8px",
+  background: "#ffffff",
+  border: "1px solid #e2e8f0",
+  borderRadius: "12px",
   padding: "1.25rem",
   marginBottom: "1rem",
   display: "flex",
@@ -283,17 +235,6 @@ const iconBoxStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "#dc2626",
-};
-
-const clearButtonStyle: React.CSSProperties = {
-  background: "#dc2626",
-  color: "white",
-  border: "none",
-  padding: "0.5rem 1rem",
-  borderRadius: "6px",
-  fontWeight: 700,
-  cursor: "pointer",
-  height: "fit-content",
 };
 
 export default MedicineVerification;

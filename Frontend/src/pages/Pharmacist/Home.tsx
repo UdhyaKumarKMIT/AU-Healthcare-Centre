@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../api/axios";
+import { toast } from "react-toastify";
+import { FileScan, FileCheck, ShieldX, PillBottleIcon, ChartNoAxesColumn } from "lucide-react";
+import pageStyles from "../shared/RolePage.module.css";
 
 import {
   BarChart,
@@ -37,30 +40,8 @@ function toTitleCase(str: string) {
 /* ---------- No of Data Per Page ---------- */
 const ITEMS_PER_PAGE = 5;
 
-
-/* ---------- Styles ---------- */
-const statsCardStyle: React.CSSProperties = {
-  flex: 1,
-  background: "#ffffff",
-  borderRadius: "10px",
-  padding: "1.5rem",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-};
-
-const statsValueStyle: React.CSSProperties = {
-  fontSize: "2rem",
-  fontWeight: 700,
-  color: "#1e40af",
-  marginTop: "0.5rem",
-};
-
 /* ---------- Component ---------- */
-const Home = () => {
+const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userName = user?.name || "";
@@ -98,6 +79,7 @@ const Home = () => {
         setDashboardCounts(res.data);
       } catch (error) {
         console.error("Failed to fetch dashboard counts:", error);
+        toast.error("Failed to load pharmacy dashboard counts");
       }
     };
 
@@ -120,6 +102,7 @@ const Home = () => {
         setPage(0)
       } catch (err) {
         console.error("Failed to fetch stock data", err);
+        toast.error("Failed to load stock analysis");
       }
     };
 
@@ -128,177 +111,116 @@ const Home = () => {
 
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1 style={{ fontSize: "2rem", fontWeight: 700 }}>
-        Welcome back, {toTitleCase(userName)} 👋
-      </h1>
-      <p>
-        <b>{message}</b>
-      </p>
-      <br />
-      <br />
-
-      <h2
-        style={{
-          fontSize: "2rem",
-          fontWeight: 700,
-          textAlign: "center",
-          background: "linear-gradient(90deg, #1e40af, #3b82f6)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          marginBottom: "1.5rem",
-          letterSpacing: "1px",
-        }}
-      >
-        Today’s Pharmacy Status
-      </h2>
-
-      {/* Stats Cards */}
-      <div style={{ display: "flex", gap: "2rem", marginBottom: "2rem" }}>
-        <div style={statsCardStyle}>
-          <h3>Pending Prescriptions</h3>
-          <p style={statsValueStyle}>
-            {dashboardCounts.total_prescriptions}
-          </p>
-        </div>
-        <div style={statsCardStyle}>
-          <h3>Prescriptions Issued Today</h3>
-          <p style={statsValueStyle}>
-            {dashboardCounts.today_issued_transactions}
-          </p>
-        </div>
-        <div style={statsCardStyle}>
-          <h3>Medicines Issued</h3>
-          <p style={statsValueStyle}>
-            {dashboardCounts.medicine_issued_count}
-          </p>
-        </div>
-        <div style={statsCardStyle}>
-          <h3>Expired Medicines</h3>
-          <p style={statsValueStyle}>
-            {dashboardCounts.expired_stock_count}
-          </p>
+    <div>
+      <div className={pageStyles.pageHeader}>
+        <div>
+          <h1 className={pageStyles.title}>Pharmacy Dashboard</h1>
+          <p className={pageStyles.subtitle}>Welcome back, {toTitleCase(userName)}. {message}</p>
         </div>
       </div>
-      <br />
-      <br />
 
-      <h2
-        style={{
-          fontSize: "2rem",
-          fontWeight: 700,
-          textAlign: "center",
-          background: "linear-gradient(90deg, #1e40af, #3b82f6)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          marginBottom: "1.5rem",
-          letterSpacing: "1px",
-        }}
-      >
-        Medicine Stock Analysis
-      </h2>
+      <div className={pageStyles.statsGrid}>
+        <div className={pageStyles.statCard}>
+          <div className={pageStyles.statIcon} style={{ background: '#e0f2fe', color: '#0369a1' }}>
+            <FileScan size={20} />
+          </div>
+          <div>
+            <p className={pageStyles.statValue}>{dashboardCounts.total_prescriptions}</p>
+            <div className={pageStyles.statLabel}>Pending Prescriptions</div>
+          </div>
+        </div>
 
-      {/* STOCK ANALYSIS CHARTS */}
-      <div style={{ textAlign: "center" }}>
+        <div className={pageStyles.statCard}>
+          <div className={pageStyles.statIcon} style={{ background: '#d1fae5', color: '#059669' }}>
+            <FileCheck size={20} />
+          </div>
+          <div>
+            <p className={pageStyles.statValue}>{dashboardCounts.today_issued_transactions}</p>
+            <div className={pageStyles.statLabel}>Issued Today</div>
+          </div>
+        </div>
 
-        {/* Bar Chart */}
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={currentData}
-            layout="vertical"
-            margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
-            barSize={27}
-          >
-            <YAxis
-              dataKey="name"
-              type="category"
-              width={100}
-              tick={{ fontSize: 16, fill: "#333" }}
-            />
-            <XAxis type="number" />
-            <Tooltip />
-            <Bar dataKey="stock" fill="#1e40af" />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className={pageStyles.statCard}>
+          <div className={pageStyles.statIcon} style={{ background: '#ede9fe', color: '#6d28d9' }}>
+            <PillBottleIcon size={20} />
+          </div>
+          <div>
+            <p className={pageStyles.statValue}>{dashboardCounts.medicine_issued_count}</p>
+            <div className={pageStyles.statLabel}>Medicines Issued</div>
+          </div>
+        </div>
 
-        {/* Pagination Controls */}
-        <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "0.5rem" }}>
-          {/* Previous Button */}
-          <button
-            disabled={page === 0} // disable when on the first page
-            onClick={() => setPage((p) => p - 1)} // go back one page
-            style={{
-              padding: "0.6rem 1.2rem",
-              cursor: page === 0 ? "not-allowed" : "pointer",
-              borderRadius: "8px",
-              border: "none",
-              fontWeight: 600,
-              background: page === 0
-                ? "#cbd5e1" // gray when disabled
-                : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-              color: "white",
-              boxShadow: page === 0 ? "none" : "0 4px 10px rgba(37,99,235,0.3)",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (page !== 0) {
-                e.currentTarget.style.transform = "scale(1.05)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-          >
-            ← Previous
-          </button>
+        <div className={pageStyles.statCard}>
+          <div className={pageStyles.statIcon} style={{ background: '#fee2e2', color: '#dc2626' }}>
+            <ShieldX size={20} />
+          </div>
+          <div>
+            <p className={pageStyles.statValue}>{dashboardCounts.expired_stock_count}</p>
+            <div className={pageStyles.statLabel}>Expired Medicines</div>
+          </div>
+        </div>
+      </div>
 
-          {/* Page indicators */}
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <span
-              key={i}
-              onClick={() => setPage(i)}
-              style={{
-                cursor: "pointer",
-                fontSize: "1.5rem",
-                color: i === page ? "#1e40af" : "#94a3b8",
-              }}
+      <div style={{ height: 24 }} />
+
+      <section className={pageStyles.card}>
+        <div className={pageStyles.cardHeader}>
+          <h2 className={pageStyles.cardHeaderTitle}>
+            <ChartNoAxesColumn size={20} /> Medicine Stock Analysis
+          </h2>
+        </div>
+        <div className={pageStyles.cardBody}>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
+              data={currentData}
+              layout="vertical"
+              margin={{ top: 10, right: 20, left: 110, bottom: 10 }}
+              barSize={26}
             >
-              o
-            </span>
-          ))}
+              <YAxis
+                dataKey="name"
+                type="category"
+                width={110}
+                tick={{ fontSize: 13, fill: "#334155" }}
+              />
+              <XAxis type="number" />
+              <Tooltip />
+              <Bar dataKey="stock" fill="#1a237e" />
+            </BarChart>
+          </ResponsiveContainer>
 
-          {/* Next Button */}
-          <button
-            disabled={page === totalPages - 1} // disable when on the last page
-            onClick={() => setPage((p) => p + 1)} // go forward one page
-            style={{
-              padding: "0.6rem 1.2rem",
-              cursor: page === totalPages - 1 ? "not-allowed" : "pointer",
-              borderRadius: "8px",
-              border: "none",
-              fontWeight: 600,
-              background: page === totalPages - 1
-                ? "#cbd5e1"
-                : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-              color: "white",
-              boxShadow: page === totalPages - 1 ? "none" : "0 4px 10px rgba(37,99,235,0.3)",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (page !== totalPages - 1) {
-                e.currentTarget.style.transform = "scale(1.05)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-          >
-            Next →
-          </button>
+          <div className={pageStyles.pagination}>
+            <button
+              className={pageStyles.button}
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+              type="button"
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <span
+                key={i}
+                className={`${pageStyles.pageDot} ${i === page ? pageStyles.pageDotActive : ''}`}
+                onClick={() => setPage(i)}
+              >
+                ●
+              </span>
+            ))}
+
+            <button
+              className={pageStyles.button}
+              disabled={page === totalPages - 1 || totalPages === 0}
+              onClick={() => setPage((p) => p + 1)}
+              type="button"
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
-
 export default Home;

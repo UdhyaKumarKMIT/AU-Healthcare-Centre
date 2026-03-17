@@ -15,12 +15,12 @@ import SelectRole from './pages/Login/SelectRole.jsx';
 import Dashboard from './pages/Pharmacist/Dashboard.tsx';
 import Home from './pages/Pharmacist/Home.tsx';
 import Profile from './pages/Pharmacist/Profile.tsx';
-import PrescriptionDetailsPage from './pages/Pharmacist/PrescriptionDetailsPage.jsx';
-import MedicinePage from './pages/Pharmacist/MedicinePage.jsx';
-import ExpiredStockPage from './pages/Pharmacist/ExpiredStock.jsx';
-import PendingPrescriptions from './pages/Pharmacist/PendingPrescriptions.jsx';
-import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.jsx';
-import MedicineVerification from './pages/Pharmacist/MedicineVerification.jsx';
+import PrescriptionDetailsPage from './pages/Pharmacist/PrescriptionDetailsPage.tsx';
+import MedicinePage from './pages/Pharmacist/MedicinePage.tsx';
+import ExpiredStockPage from './pages/Pharmacist/ExpiredStock.tsx';
+import PendingPrescriptions from './pages/Pharmacist/PendingPrescriptions.tsx';
+import PastPrescriptions from './pages/Pharmacist/PastPrescriptions.tsx';
+import MedicineVerification from './pages/Pharmacist/MedicineVerification.tsx';
 
 // Clerical Assistant Pages
 import CA_dashboard from './pages/Clerical_Assistant/Dashboard.tsx';

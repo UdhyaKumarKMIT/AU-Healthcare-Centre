@@ -4,6 +4,8 @@ import api from "../../api/axios";
 import { ChartColumnIncreasing } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import CustomModal from "./CustomModal";
+import { toast } from "react-toastify";
+import pageStyles from "../shared/RolePage.module.css";
 
 /* ---------- Component ---------- */
 const MedicinePage = () => {
@@ -23,18 +25,18 @@ const MedicinePage = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/login/pharmacist");
+      navigate("/login");
       return;
     }
 
     const loadMedicineDetails = async () => {
       try {
         const res = await api.get("/pharmacy/medicine");
-        console.log(res.data.medicines)
         setMedicine(res.data.medicines);
       } catch (err) {
         setModalMessage("Failed to load medicine details");
         setModalOpen(true);
+        toast.error("Failed to load medicine details");
         console.error(err);
       }
     };
@@ -134,43 +136,16 @@ const MedicinePage = () => {
         }}
       />
 
-      <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-        {/* HEADER */}
-        <header
-          style={{
-            background: "linear-gradient(90deg, #1e40af, #1e3a8a)",
-            color: "white",
-          }}
-        >
-        </header>
-        {/* MAIN */}
-        <main
-          style={{
-            maxWidth: 1200,
-            margin: "auto",
-            padding: "1rem",
-            color: "black",
-          }}
-        >
-          <div style={pageCardStyle}>
-            {/* TITLE */}
-            <h2 style={{ color: "#1e40af", margin: 0 }}>
-              <ChartColumnIncreasing /> Stock Analytics
-            </h2><br />
+      <section className={pageStyles.card}>
+        <div className={pageStyles.cardHeader}>
+          <h2 className={pageStyles.cardHeaderTitle}>
+            <ChartColumnIncreasing size={20} /> Stock Analytics
+          </h2>
+        </div>
 
-            {/* FILTER BAR */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.6rem",
-                flexWrap: "wrap",
-                marginBottom: "1.5rem",
-                padding: "0.75rem",
-                borderRadius: "8px"
-              }}
-            >
-              {/* SEARCH BAR */}
+        <div className={pageStyles.cardBody}>
+          <div className={pageStyles.toolbar}>
+            <div className={pageStyles.controls}>
               <input
                 type="text"
                 placeholder="Search medicine name"
@@ -179,177 +154,121 @@ const MedicinePage = () => {
                   setFilterType("name");
                   setSearchTerm(e.target.value);
                 }}
-                style={searchBarStyle}
+                className={pageStyles.input}
               />
 
-              {/* QUICK FILTERS */}
               <button
                 onClick={() => setQuickFilter("withStock")}
-                style={quickFilterButton(quickFilter === "withStock")}
+                className={`${pageStyles.button} ${quickFilter === "withStock" ? pageStyles.buttonPrimary : ""}`}
+                type="button"
               >
                 With Stock
               </button>
 
               <button
                 onClick={() => setQuickFilter("out")}
-                style={quickFilterButton(quickFilter === "out")}
+                className={`${pageStyles.button} ${quickFilter === "out" ? pageStyles.buttonPrimary : ""}`}
+                type="button"
               >
                 Out of Stock
               </button>
 
               <button
                 onClick={() => setQuickFilter("exp3")}
-                style={quickFilterButton(quickFilter === "exp3")}
+                className={`${pageStyles.button} ${quickFilter === "exp3" ? pageStyles.buttonPrimary : ""}`}
+                type="button"
               >
                 Expiring in 3 months
               </button>
 
               <button
                 onClick={() => setQuickFilter("exp1")}
-                style={quickFilterButton(quickFilter === "exp1")}
+                className={`${pageStyles.button} ${quickFilter === "exp1" ? pageStyles.buttonPrimary : ""}`}
+                type="button"
               >
                 Expiring in 1 month
               </button>
-
-              <button
-                onClick={() => {
-                  setQuickFilter("none");
-                  setSearchTerm("");
-                  setFilterType("all");
-                }}
-                style={clearFilterButtonStyle}
-              >
-                Clear
-              </button>
-
             </div>
 
+            <button
+              onClick={() => {
+                setQuickFilter("none");
+                setSearchTerm("");
+                setFilterType("all");
+              }}
+              className={`${pageStyles.button} ${pageStyles.buttonDanger}`}
+              type="button"
+            >
+              Clear
+            </button>
+          </div>
 
-            {/* LIST */}
-            {Object.keys(filteredMedicine).length === 0 ? (
-              <p>No medicines found.</p>
-            ) : (
-              filteredMedicine.map((med: any) => (
-                <div key={med.medicine_id} style={medicineCardStyle}>
-                  <div style={medicineHeaderStyle}>
-                    <h3 style={{ margin: 0 }}>
-                      {toTitleCase(med.medicine_name)}{" "}
-                      <span style={{ color: "#555", fontWeight: 500 }}>
-                        ({toTitleCase(med.type)})
-                      </span>
-                    </h3>
+          <div style={{ height: 16 }} />
 
-                  </div>
+          {Object.keys(filteredMedicine).length === 0 ? (
+            <p className={pageStyles.muted}>No medicines found.</p>
+          ) : (
+            filteredMedicine.map((med: any) => (
+              <section key={med.medicine_id} className={pageStyles.card} style={{ marginBottom: 16 }}>
+                <div className={pageStyles.cardHeader}>
+                  <h3 className={pageStyles.cardHeaderTitle}>
+                    {toTitleCase(med.medicine_name)}{" "}
+                    <span style={{ color: "#64748b", fontWeight: 600 }}>
+                      ({toTitleCase(med.type)})
+                    </span>
+                  </h3>
+                </div>
 
+                <div className={pageStyles.cardBody}>
                   {med.batches.length === 0 ? (
-                    <p style={{ fontFamily: "verdana" }}>Out of stock</p>
+                    <p className={pageStyles.muted}>Out of stock</p>
                   ) : (
                     med.batches.map((batch: any) => {
                       const remaining = getRemainingTime(batch.expiry_date);
-
                       return (
-                        <div key={batch.batch_id} style={{ ...batchCardStyle, fontFamily: "verdana" }}>
-                          <div style={{ paddingBottom: "2px" }}><strong>Batch ID:</strong> {batch.batch_id}</div>
-                          <div style={{ paddingBottom: "2px" }}><strong>In Stock:</strong> {batch.in_stock} units</div>
-                          <div style={{ paddingBottom: "2px" }}>
+                        <div
+                          key={batch.batch_id}
+                          style={{
+                            border: "1px solid #e2e8f0",
+                            borderRadius: 12,
+                            padding: 12,
+                            marginBottom: 10,
+                            background: "#ffffff",
+                          }}
+                        >
+                          <div style={{ paddingBottom: 2 }}>
+                            <strong>Batch ID:</strong> {batch.batch_id}
+                          </div>
+                          <div style={{ paddingBottom: 2 }}>
+                            <strong>In Stock:</strong> {batch.in_stock} units
+                          </div>
+                          <div style={{ paddingBottom: 2 }}>
                             <strong>Expiry:</strong>{" "}
                             {new Date(batch.expiry_date).toLocaleDateString()}
                           </div>
                           <div>
-                            <strong>Expiring in: </strong>{" "}
+                            <strong>Expiring in:</strong>{" "}
                             {remaining.expired ? (
-                              <span style={{ color: "#dc2626" }}>Already Expired</span>
+                              <span style={{ color: "#dc2626", fontWeight: 700 }}>Already Expired</span>
                             ) : (
-                              <b><span style={{ color: "#2563eb" }}>
-                                {remaining.years > 0 &&
-                                  `${remaining.years} year(s) `}
-                                {remaining.months > 0 &&
-                                  `${remaining.months} month(s) `}
+                              <span style={{ color: "#1a237e", fontWeight: 700 }}>
+                                {remaining.years > 0 && `${remaining.years} year(s) `}
+                                {remaining.months > 0 && `${remaining.months} month(s) `}
                                 {remaining.days} day(s)
-                              </span></b>
+                              </span>
                             )}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-start",
-                              marginTop: "0.6rem",
-                            }}
-                          >
                           </div>
                         </div>
                       );
                     })
                   )}
                 </div>
-              )
-              )
-            )}
-          </div>
-        </main>
-      </div>
+              </section>
+            ))
+          )}
+        </div>
+      </section>
     </>
   );
 };
-
-/* ---------- STYLES ---------- */
-
-const pageCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  borderRadius: "12px",
-  padding: "2rem",
-  border: "1px solid #cbd5e1",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-};
-
-const medicineCardStyle: React.CSSProperties = {
-  background: "#f3f8ff",
-  borderRadius: "10px",
-  padding: "1.25rem",
-  marginBottom: "1.5rem",
-  border: "1px solid #2563eb",
-};
-
-const medicineHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "0.75rem",
-};
-
-const batchCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  borderRadius: "8px",
-  padding: "0.75rem",
-  border: "1px solid #2563eb",
-  marginBottom: "0.5rem",
-};
-
-const quickFilterButton = (active: boolean): React.CSSProperties => ({
-  padding: "0.4rem",
-  background: active ? "#2563eb" : "white",
-  color: active ? "white" : "black",
-  borderRadius: "5px",
-  fontWeight: "500",
-  border: "1px solid #2563eb",
-});
-
-const clearFilterButtonStyle: React.CSSProperties = {
-  padding: "0.4rem",
-  background: "white",
-  color: "#b80a0a",
-  borderRadius: "5px",
-  fontWeight: "500",
-  border: "1px solid #dc2626",
-};
-
-const searchBarStyle: React.CSSProperties = {
-  padding: "0.45rem 0.6rem",
-  borderRadius: "6px",
-  border: "1px solid #2563eb",
-  fontWeight: 600,
-  width: "320px",
-  background: "white",
-};
-
 export default MedicinePage;

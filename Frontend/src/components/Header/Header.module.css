@@ -42,6 +42,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .logoText {
@@ -130,6 +137,11 @@
   font-weight: 600;
 }
 
+.userEmail {
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .logoutButton {
   background: rgba(239, 68, 68, 0.1);
   color: #feb2b2;
@@ -152,7 +164,7 @@
   .centerSection {
     display: none;
   }
-  
+
   .container {
     padding: 0 16px;
   }
@@ -162,25 +174,25 @@
   .header {
     height: 60px;
   }
-  
+
   .logoIcon {
     width: 40px;
     height: 40px;
     font-size: 24px;
   }
-  
+
   .title {
     font-size: 16px;
   }
-  
+
   .subtitle {
     font-size: 11px;
   }
-  
+
   .userInfo {
     display: none;
   }
-  
+
   .logoutButton {
     padding: 6px 16px;
     font-size: 13px;

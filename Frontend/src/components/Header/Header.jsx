@@ -12,6 +12,34 @@ const Header = () => {
   const token = localStorage.getItem('token');
   const isAuthenticated = !!user && !!token;
 
+  const normalizedRole = String(user?.role || '').toLowerCase();
+  const displayRoleLabel = (() => {
+    switch (normalizedRole) {
+      case 'doctor':
+        return 'Doctor';
+      case 'nurse_receptionist':
+      case 'receptionist':
+        return 'Nurse/Receptionist';
+      case 'admin':
+      case 'administrator':
+        return 'Administrator';
+      case 'pharmacist':
+        return 'Pharmacist';
+      case 'lab_technician':
+        return 'Lab Technician';
+      case 'clerical_assistant':
+        return 'Clerical Assistant';
+      case 'patient':
+        return 'Patient';
+      default:
+        return normalizedRole ? normalizedRole.replace(/_/g, ' ') : 'User';
+    }
+  })();
+
+  const displayName = user?.name || user?.username || user?.fullName || '';
+  const displayEmail = user?.email || '';
+  const shouldShowName = Boolean(displayName);
+
   useEffect(() => {
     // If token is missing, ensure we don't show auth UI and force login flow.
     if (!token) {
@@ -84,6 +112,11 @@ const Header = () => {
         <div className={styles.leftSection}>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>
+              <img
+                className={styles.logoImage}
+                src="/healthcenter.jpg"
+                alt="MIT Health Centre"
+              />
             </div>
             <div className={styles.logoText}>
               <h1 className={styles.title}>MIT Health Centre</h1>
@@ -100,17 +133,12 @@ const Header = () => {
             <>
               <div className={styles.userInfo}>
                 <div className={styles.userRole}>
-                  {user.role === 'DOCTOR' || user.role === 'doctor' ? 'Doctor' :
-                    user.role === 'NURSE_RECEPTIONIST' || user.role === 'receptionist' ? 'Nurse/Receptionist' :
-                      user.role === 'ADMIN' || user.role === 'administrator' ? 'Administrator' :
-                        user.role === 'PHARMACIST' ? 'Pharmacist' :
-                          user.role === 'LAB_TECHNICIAN' ? 'Lab Technician' :
-                            user.role === 'PATIENT' || user.role === 'patient' ? 'Patient' : 'User'}
+                  {displayRoleLabel}
                 </div>
-                {user.role === 'DOCTOR' || user.role === 'doctor' || user.role === 'ADMIN' || user.role === 'administrator' || user.role === 'LAB_TECHNICIAN' || user.role === 'lab_technician' || user.role === 'PATIENT' || user.role === 'patient' ? (
-                  <div className={styles.userName}>{user.name}</div>
+                {shouldShowName ? (
+                  <div className={styles.userName}>{displayName}</div>
                 ) : (
-                  <div className={styles.userEmail}>{user.email}</div>
+                  <div className={styles.userEmail}>{displayEmail}</div>
                 )}
               </div>
               <button className={styles.logoutButton} onClick={handleLogout}>

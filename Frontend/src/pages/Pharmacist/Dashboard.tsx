@@ -1,13 +1,12 @@
-import AULogo from "../../assets/AULogo.jpg";
-import { ChartNoAxesColumn, FileScan, ShieldX, FileCheck, LucideLogOut, CircleUser, LucideHome, PillBottleIcon } from "lucide-react";
+import { ChartNoAxesColumn, FileScan, ShieldX, FileCheck, LucideHome, PillBottleIcon } from "lucide-react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import Header from "../../components/Header/Header";
+import layoutStyles from "../shared/RoleSidebarLayout.module.css";
 
 
 /* ---------- Component ---------- */
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const location = useLocation();
   const isActive = (path: string) => {
     if (path === "/pharmacist/pendingPrescription") {
@@ -20,166 +19,74 @@ const Dashboard = () => {
     return location.pathname === path;
   };
 
-
-  const activeNavButtonStyle = (path: string): React.CSSProperties => ({
-    ...navButtonStyle,
-    background: isActive(path) ? "#00408e" : "#2563eb",
-  });
-
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
   /* ---------- UI ---------- */
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
-      {/* SIDEBAR */}
-      <aside
-        style={{
-          width: "250px",
-          background: "#1e40af",
-          color: "white",
-          padding: "1rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          position: "fixed",       // 👈 keeps sidebar static
-          top: 0,
-          left: 0,
-          bottom: 0,
-          height: "100vh",         // full height
-        }}
-      >
+    <div className={layoutStyles.page}>
+      <Header />
 
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginBottom: "2rem"
-        }}>
-          {/* Logo inside circle */}
-          <div
-            style={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: "white",   // optional background
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "0.75rem"
-            }}
-          >
-            <img
-              src={AULogo}   // if placed in public folder
-              alt="Anna University Logo"
-              style={{ width: "90%", height: "90%", objectFit: "cover" }}
-            />
+      <div className={layoutStyles.layout}>
+        {/* SIDEBAR */}
+        <aside className={layoutStyles.sidebar}>
+          <nav className={layoutStyles.nav}>
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/dashboard") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/dashboard")}
+              type="button"
+            >
+              <LucideHome size={20} /> Dashboard
+            </button>
+
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/pendingPrescription") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/pendingPrescription")}
+              type="button"
+            >
+              <FileScan size={20} /> Pending Prescriptions
+            </button>
+
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/medicineStock") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/medicineStock")}
+              type="button"
+            >
+              <ChartNoAxesColumn size={20} /> Stock Analysis
+            </button>
+
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/issuedMedicines") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/issuedMedicines")}
+              type="button"
+            >
+              <PillBottleIcon size={20} /> Issued Medicines
+            </button>
+
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/expiredStock") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/expiredStock")}
+              type="button"
+            >
+              <ShieldX size={20} /> Expired Medicine
+            </button>
+
+            <button
+              className={`${layoutStyles.navButton} ${isActive("/pharmacist/pastPrescription") ? layoutStyles.navButtonActive : ""}`}
+              onClick={() => navigate("/pharmacist/pastPrescription")}
+              type="button"
+            >
+              <FileCheck size={20} /> Past Prescriptions
+            </button>
+          </nav>
+        </aside>
+
+        {/* MAIN CONTENT */}
+        <main className={layoutStyles.main}>
+          <div className={layoutStyles.mainInner}>
+            <Outlet />
           </div>
-
-          {/* Text below logo */}
-          <h2 style={{ margin: 0, fontSize: "1.2rem", color: "white" }}>Anna University</h2>
-          <h3 style={{ margin: 0, fontSize: "1rem", color: "#e0e7ff", fontWeight: 400 }}>
-            Pharmacy System
-          </h3>
-        </div>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/dashboard")}
-          onClick={() => navigate("/pharmacist/dashboard")}
-        >
-          <LucideHome size={20} /> Dashboard
-        </button>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/pendingPrescription")}
-          onClick={() => navigate("/pharmacist/pendingPrescription")}
-        >
-          <FileScan size={20} /> Pending Prescriptions
-        </button>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/medicineStock")}
-          onClick={() => navigate("/pharmacist/medicineStock")}
-        >
-          <ChartNoAxesColumn size={20} /> Stock Analysis
-        </button>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/issuedMedicines")}
-          onClick={() => navigate("/pharmacist/issuedMedicines")}
-        >
-          <PillBottleIcon size={20} /> Issued Medicines
-        </button>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/expiredStock")}
-          onClick={() => navigate("/pharmacist/expiredStock")}
-        >
-          <ShieldX size={20} /> Expired Medicine
-        </button>
-
-        <button
-          style={activeNavButtonStyle("/pharmacist/pastPrescription")}
-          onClick={() => navigate("/pharmacist/pastPrescription")}
-        >
-          <FileCheck size={20} /> Past Prescriptions
-        </button>
-
-
-        {/* Profile + Logout Section */}
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <button
-            style={{
-              ...navButtonStyle,
-              background: isActive("/pharmacist/profile") ? "#1e3a8a" : "#3b82f6",
-            }}
-            onClick={() => navigate("/pharmacist/profile")}
-          >
-            <CircleUser /> View Profile
-          </button>
-
-          <button
-            style={{ ...navButtonStyle, background: "#162645" }}
-            onClick={handleLogout}
-          >
-            <LucideLogOut /> Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main
-        style={{
-          flex: 1,
-          padding: "2rem",
-          marginLeft: "250px",     // 👈 offset for sidebar width
-          overflowY: "auto",       // 👈 makes right side scrollable
-          height: "100vh",         // ensures scroll works
-        }}
-      >
-        <Outlet />
-      </main>
+        </main>
+      </div>
     </div>
   );
-};
-
-/* ---------- STYLES ---------- */
-const navButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.75rem",
-  fontWeight: "bold",
-  padding: "0.75rem 1rem",
-  background: "#2563eb",
-  border: "none",
-  borderRadius: "6px",
-  color: "white",
-  cursor: "pointer",
-  textAlign: "left",
 };
 
 export default Dashboard;
