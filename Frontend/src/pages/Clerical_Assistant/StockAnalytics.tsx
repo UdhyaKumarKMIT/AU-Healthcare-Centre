@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
-import { ChartColumnIncreasing, Plus, Trash2 } from "lucide-react";
+import { ChartColumnIncreasing, Plus, Trash2, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CustomModal from "./CustomModal";
 import pageStyles from "../shared/RolePage.module.css";
+import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 const stockLabels = [
   { key: "mainStock", label: "Main Stock" },
@@ -23,6 +25,9 @@ const StockAnalytics = () => {
   const [stockData, setStockData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showAddMedicine, setShowAddMedicine] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
 
   const [newMed, setNewMed] = useState({
     name: "",
@@ -136,9 +141,90 @@ const StockAnalytics = () => {
       setModalOpen(true);
       setNavigateOnClose(true);
 
+      toast.success("Medicine added successfully");
+
     } catch (err) {
       setModalMessage("Unable to add medicine. The medicine or Batch ID may already exist.");
       setModalOpen(true);
+      toast.error("Unable to add medicine");
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile) {
+      setModalMessage("Please select an Excel file first.");
+      setModalOpen(true);
+      toast.error("No file selected");
+      return;
+    }
+
+    const form = new FormData();
+    form.append("file", bulkFile);
+
+    setBulkUploading(true);
+    try {
+      const res = await api.post("/clerical_assistant/addMedicineBulk", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const inserted = res.data?.data?.inserted ?? 0;
+      const failed = res.data?.data?.failed ?? 0;
+      const errors = res.data?.data?.errors ?? [];
+
+      toast.success(`Upload complete: inserted ${inserted}, failed ${failed}`);
+
+      if (failed > 0 && errors.length) {
+        const top = errors.slice(0, 8).map((e: any) => `Row ${e.row}: ${e.message}`).join("\n");
+        setModalMessage(
+          `Some rows failed to import.\n\n${top}${errors.length > 8 ? "\n..." : ""}`
+        );
+        setModalOpen(true);
+      } else {
+        setModalMessage(`Upload complete: inserted ${inserted}.`);
+        setModalOpen(true);
+      }
+
+      setBulkFile(null);
+      setShowBulkUpload(false);
+      setNavigateOnClose(true);
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Bulk upload failed";
+      setModalMessage(message);
+      setModalOpen(true);
+      toast.error(message);
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
+  const handleDownloadBulkTemplate = () => {
+    try {
+      const data = [
+        ["name", "type", "batch_id", "expiry_date", "in_stock"],
+        ["Paracetamol 500mg", "tablet", "PCT-003", "2027-12-31", 100],
+        ["Cough Syrup", "syrup", "CS-001", "2027-06-30", 50],
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Medicines");
+
+      const file = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([file], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "medicine_bulk_template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast.error("Unable to download template");
     }
   };
 
@@ -201,16 +287,82 @@ const StockAnalytics = () => {
               <ChartColumnIncreasing size={20} /> Stock Analytics
             </h2>
 
-            <button
-              onClick={() => setShowAddMedicine(true)}
-              className={`${pageStyles.button} ${pageStyles.buttonPrimary}`}
-              type="button"
-            >
-              <Plus size={16} /> Add New Medicine
-            </button>
+            <div className={pageStyles.controls}>
+              <button
+                onClick={() => setShowAddMedicine(true)}
+                className={`${pageStyles.button} ${pageStyles.buttonPrimary}`}
+                type="button"
+              >
+                <Plus size={16} /> Add New Medicine
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowBulkUpload((s) => !s);
+                  setShowAddMedicine(false);
+                }}
+                className={pageStyles.button}
+                type="button"
+              >
+                <Upload size={16} /> Upload Excel
+              </button>
+            </div>
           </div>
 
           <div className={pageStyles.cardBody}>
+
+            {showBulkUpload && (
+              <section className={pageStyles.card} style={{ marginBottom: 16 }}>
+                <div className={pageStyles.cardHeader}>
+                  <h3 className={pageStyles.cardHeaderTitle}>Bulk Upload Medicines</h3>
+                </div>
+                <div className={pageStyles.cardBody}>
+                  <p className={pageStyles.muted} style={{ marginTop: 0 }}>
+                    Upload an Excel file with columns: <b>name</b>, <b>type</b>, <b>batch_id</b>, <b>expiry_date</b>, <b>in_stock</b>.
+                    Types supported: tablet, syrup, ointment, injection, drops, external.
+                  </p>
+
+                  <div className={pageStyles.controls}>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setBulkFile(e.target.files?.[0] ?? null)}
+                      className={pageStyles.input}
+                    />
+
+                    <button
+                      onClick={handleDownloadBulkTemplate}
+                      className={pageStyles.button}
+                      type="button"
+                      disabled={bulkUploading}
+                    >
+                      Download Template
+                    </button>
+
+                    <button
+                      onClick={handleBulkUpload}
+                      className={`${pageStyles.button} ${pageStyles.buttonPrimary}`}
+                      type="button"
+                      disabled={bulkUploading}
+                    >
+                      {bulkUploading ? "Uploading..." : "Upload"}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowBulkUpload(false);
+                        setBulkFile(null);
+                      }}
+                      className={`${pageStyles.button} ${pageStyles.buttonDanger}`}
+                      type="button"
+                      disabled={bulkUploading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {showAddMedicine && (
               <div style={inlineFormStyle}>

@@ -27,7 +27,7 @@ export const addMedicineBatch = async (batchData) => {
       ?,
       NOW()
     FROM medicine m
-    WHERE m.name = ?;
+    WHERE LOWER(m.name) = LOWER(?);
     `,
     {
       replacements: [batch_id, expiry_date, in_stock, medicine_name]
@@ -147,45 +147,274 @@ export const clearMedicineBatch = async (batch_id) => {
 export const addMedicine = async (medicineData) => {
   const { name, type, batch_id, expiry_date, in_stock } = medicineData;
 
-  if (!name || !type || !batch_id || !expiry_date || in_stock == null) {
+  const normalizedName = String(name ?? "").trim();
+  const normalizedType = normalizeMedicineType(type);
+  const normalizedBatchId = String(batch_id ?? "").trim();
+  const normalizedExpiry = normalizeDateOnly(expiry_date);
+  const normalizedQty = Number(in_stock);
+
+  if (
+    !normalizedName ||
+    !normalizedType ||
+    !normalizedBatchId ||
+    !normalizedExpiry ||
+    !Number.isFinite(normalizedQty) ||
+    !Number.isInteger(normalizedQty) ||
+    normalizedQty <= 0
+  ) {
     throw new Error("Missing required fields");
   }
 
   return await sequelize.transaction(async (transaction) => {
-    const medicine_id = randomUUID(); 
-    // Insert new medicine with custom error handling
-    try {
-      await sequelize.query(
-        `INSERT INTO medicine (medicine_id, name, type) VALUES (?, ?, ?);`,
-        {
-          replacements: [medicine_id, name, type],
-          transaction
+    let existing = await findExistingMedicineByName(normalizedName, transaction);
+    let medicine_id = existing?.medicine_id || randomUUID();
+
+    // If medicine already exists (case-insensitive), do NOT create a new record.
+    if (!existing) {
+      try {
+        await sequelize.query(
+          `INSERT INTO medicine (medicine_id, name, type) VALUES (?, ?, ?);`,
+          {
+            replacements: [medicine_id, normalizedName, normalizedType],
+            transaction
+          }
+        );
+      } catch (err) {
+        // If DB enforces uniqueness on name (possibly case-insensitive), reuse existing.
+        if (err?.original && (err.original.code === "ER_DUP_ENTRY" || err.original.errno === 1062)) {
+          existing = await findExistingMedicineByName(normalizedName, transaction);
+          if (existing?.medicine_id) {
+            medicine_id = existing.medicine_id;
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
         }
-      );
-    } catch (err) {
-      // If database throws a duplicate key error
-      if (err.original && (err.original.code === "ER_DUP_ENTRY" || err.original.errno === 1062)) {
-        throw new Error("Medicine already exist!");
       }
-      throw err; // re-throw any other errors
+    }
+
+    await upsertMainStockBatch(
+      {
+        batch_id: normalizedBatchId,
+        medicine_id,
+        expiry_date: normalizedExpiry,
+        quantity: normalizedQty,
+      },
+      transaction
+    );
+
+    return {
+      message: existing ? "Medicine stock updated successfully" : "Medicine and stock added successfully",
+      medicine_id,
+      created_new_medicine: !existing,
+    };
+  });
+};
+
+const MEDICINE_TYPE_MAP = {
+  tablet: "TABLET",
+  syrup: "SYRUP",
+  ointment: "OINTMENT",
+  injection: "INJECTION",
+  drops: "DROPS",
+  external: "EXTERNAL",
+};
+
+const normalizeMedicineType = (type) => {
+  if (!type) return null;
+  const t = String(type).trim();
+  if (!t) return null;
+
+  const normalized = t.toLowerCase();
+  if (MEDICINE_TYPE_MAP[normalized]) return MEDICINE_TYPE_MAP[normalized];
+
+  const upper = t.toUpperCase();
+  if (Object.values(MEDICINE_TYPE_MAP).includes(upper)) return upper;
+
+  return null;
+};
+
+const normalizeDateOnly = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().slice(0, 10);
+  }
+
+  const str = String(value).trim();
+  if (!str) return null;
+
+  // Accept YYYY-MM-DD directly
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+};
+
+const findExistingMedicineByName = async (name, transaction) => {
+  const rows = await sequelize.query(
+    `SELECT medicine_id, name, type FROM medicine WHERE LOWER(name) = LOWER(?) LIMIT 1;`,
+    {
+      replacements: [name],
+      type: QueryTypes.SELECT,
+      transaction
+    }
+  );
+
+  return rows?.[0] || null;
+};
+
+const upsertMainStockBatch = async ({ batch_id, medicine_id, expiry_date, quantity }, transaction) => {
+  const existingRows = await sequelize.query(
+    `SELECT medicine_id FROM medicine_main_stock WHERE batch_no = ? LIMIT 1;`,
+    {
+      replacements: [batch_id],
+      type: QueryTypes.SELECT,
+      transaction
+    }
+  );
+
+  const existing = existingRows?.[0] || null;
+
+  if (existing) {
+    if (String(existing.medicine_id) !== String(medicine_id)) {
+      throw new Error("Batch ID already exists for a different medicine");
     }
 
     await sequelize.query(
-      `
-      INSERT INTO medicine_main_stock
-      (main_stock_id, batch_no, medicine_id, expiry, quantity, mfd)
-      VALUES (UUID(), ?, ?, ?, ?, NOW());
-      `,
+      `UPDATE medicine_main_stock SET expiry = ?, quantity = quantity + ? WHERE batch_no = ?;`,
       {
-        replacements: [batch_id, medicine_id, expiry_date, in_stock],
+        replacements: [expiry_date, quantity, batch_id],
         transaction
       }
     );
 
-    return {
-      message: "Medicine and stock added successfully",
-      medicine_id
+    return { action: "updated" };
+  }
+
+  await sequelize.query(
+    `
+    INSERT INTO medicine_main_stock
+    (main_stock_id, batch_no, medicine_id, expiry, quantity, mfd)
+    VALUES (UUID(), ?, ?, ?, ?, NOW());
+    `,
+    {
+      replacements: [batch_id, medicine_id, expiry_date, quantity],
+      transaction
+    }
+  );
+
+  return { action: "inserted" };
+};
+
+/* ============================
+   Bulk add medicines (Excel upload)
+   - Inserts into `medicine` + first batch into `medicine_main_stock`
+   - Continues on row-level errors and reports failures
+============================ */
+export const bulkAddMedicines = async (rows) => {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error("No rows provided");
+  }
+
+  return await sequelize.transaction(async (transaction) => {
+    const results = {
+      inserted: 0,
+      failed: 0,
+      errors: []
     };
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const row = rows[idx] || {};
+      const rowNumber = idx + 2; // assumes header row in Excel
+
+      const name = String(row.name ?? "").trim();
+      const type = normalizeMedicineType(row.type);
+      const batch_id = String(row.batch_id ?? "").trim();
+      const expiry_date = normalizeDateOnly(row.expiry_date);
+      const in_stock = Number(row.in_stock);
+
+      if (
+        !name ||
+        !type ||
+        !batch_id ||
+        !expiry_date ||
+        !Number.isFinite(in_stock) ||
+        !Number.isInteger(in_stock) ||
+        in_stock <= 0
+      ) {
+        results.failed++;
+        results.errors.push({
+          row: rowNumber,
+          message: "Missing/invalid fields. Required: name, type, batch_id, expiry_date, in_stock"
+        });
+        continue;
+      }
+
+      let createdNewMedicine = false;
+      let medicine_id = null;
+
+      try {
+        let existingMedicine = await findExistingMedicineByName(name, transaction);
+        medicine_id = existingMedicine?.medicine_id || randomUUID();
+
+        if (!existingMedicine) {
+          try {
+            await sequelize.query(
+              `INSERT INTO medicine (medicine_id, name, type) VALUES (?, ?, ?);`,
+              {
+                replacements: [medicine_id, name, type],
+                transaction
+              }
+            );
+            createdNewMedicine = true;
+          } catch (err) {
+            if (err?.original && (err.original.code === "ER_DUP_ENTRY" || err.original.errno === 1062)) {
+              existingMedicine = await findExistingMedicineByName(name, transaction);
+              if (existingMedicine?.medicine_id) {
+                medicine_id = existingMedicine.medicine_id;
+              } else {
+                throw err;
+              }
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        await upsertMainStockBatch(
+          {
+            batch_id,
+            medicine_id,
+            expiry_date,
+            quantity: in_stock,
+          },
+          transaction
+        );
+
+        results.inserted++;
+      } catch (err) {
+        // If stock failed after creating a new medicine in this row, remove the orphan.
+        if (createdNewMedicine && medicine_id) {
+          try {
+            await sequelize.query(`DELETE FROM medicine WHERE medicine_id = ?;`, {
+              replacements: [medicine_id],
+              transaction
+            });
+          } catch {
+            // ignore cleanup failures
+          }
+        }
+
+        results.failed++;
+        const msg = err?.message || "Failed to insert/update stock";
+        results.errors.push({ row: rowNumber, message: msg });
+      }
+    }
+
+    return results;
   });
 };
 
@@ -246,7 +475,7 @@ export const getOutOfStock = async () => {
     total_stock: 0
   }));
 };
- 
+
 /* ============================
    Get batches (allocation logic)
 ============================ */

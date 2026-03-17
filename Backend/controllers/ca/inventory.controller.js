@@ -9,7 +9,30 @@
   getBatches
 } from "../../services/ca/inventory.raw.service";*/
 
+import * as XLSX from "xlsx";
 import * as InventoryService from "../../services/ca/inventory.service.js";
+
+const normalizeKey = (key) =>
+  String(key || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+
+const normalizeRow = (row) => {
+  const out = {};
+  for (const [k, v] of Object.entries(row || {})) {
+    out[normalizeKey(k)] = v;
+  }
+
+  return {
+    name: out.name ?? out.medicine_name ?? out.medicine,
+    type: out.type ?? out.medicine_type,
+    batch_id: out.batch_id ?? out.batch_no ?? out.batch,
+    expiry_date: out.expiry_date ?? out.expiry,
+    in_stock: out.in_stock ?? out.quantity ?? out.stock,
+  };
+};
 
 export const addMedicineBatch = async (req, res) => {
   try {
@@ -59,6 +82,38 @@ export const addMedicine = async (req, res) => {
     res.status(201).json({ success: true, data: result });
   } catch (err) {
     console.error("Add medicine error:", err.message);
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkAddMedicinesFromExcel = async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, message: "Excel file is required" });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, {
+      type: "buffer",
+      cellDates: true,
+    });
+
+    const sheetName = workbook.SheetNames?.[0];
+    if (!sheetName) {
+      return res.status(400).json({ success: false, message: "Excel file has no sheets" });
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    if (!rawRows.length) {
+      return res.status(400).json({ success: false, message: "Excel file is empty" });
+    }
+
+    const rows = rawRows.map(normalizeRow);
+    const result = await InventoryService.bulkAddMedicines(rows);
+
+    res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    console.error("Bulk add medicines error:", err.message);
     res.status(400).json({ success: false, message: err.message });
   }
 };

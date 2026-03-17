@@ -1,16 +1,22 @@
 // src/routes/clericalAssistant.routes.js
 import express from "express";
+import multer from "multer";
 import authenticate from "../middlewares/auth.middleware.js";
 import authorize from "../middlewares/role.middleware.js";
 import ROLES from "../constants/roles.js";
 
 // ✅ Separate controllers (NO logic change, only separation) 
 import * as RequestController from "../controllers/ca/request.controller.js";
-import * as IssueController from "../controllers/ca/issue.controller.js"; 
+import * as IssueController from "../controllers/ca/issue.controller.js";
 import * as InventoryController from "../controllers/ca/inventory.controller.js";
 import * as DashboardController from "../controllers/ca/dashboard.controller.js";
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 /* ===================== REQUESTS ===================== */
 
@@ -169,6 +175,23 @@ router.post(
   authenticate,
   authorize(ROLES.CLERICAL_ASSISTANT),
   InventoryController.addMedicine
+);
+
+/**
+ * @swagger
+ * /api/clerical_assistant/addMedicineBulk:
+ *   post:
+ *     summary: Bulk add medicines (Excel upload)
+ *     tags: [Clerical Assistant]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/addMedicineBulk",
+  authenticate,
+  authorize(ROLES.CLERICAL_ASSISTANT),
+  upload.single("file"),
+  InventoryController.bulkAddMedicinesFromExcel
 );
 
 /**
