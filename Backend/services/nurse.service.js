@@ -341,7 +341,12 @@ export const completeTask = async ({
 
     // Verify staff member exists
     const staff = await StaffDetails.findOne({
-      where: { code: staff_code, role: 'NURSE_RECEPTIONIST', status: 'ACTIVE' },
+      attributes: ['staff_id', 'role'],
+      where: {
+        code: staff_code,
+        role: { [Op.in]: ['NURSE_RECEPTIONIST', 'PHARMACIST'] },
+        status: 'ACTIVE'
+      },
       transaction: t
     });
 
@@ -434,7 +439,7 @@ export const completeTask = async ({
     // Log in system audit
     await SystemAuditLog.create({
       actor_code: staff_code,
-      actor_role: 'NURSE_RECEPTIONIST',
+      actor_role: staff?.role || 'NURSE_RECEPTIONIST',
       action: 'COMPLETE_TASK',
       entity_type: 'NURSE_TASK',
       entity_id: task_id,
@@ -559,7 +564,7 @@ export const verifyStaffCode = async (secret_code) => {
       ],
       where: {
         code: secret_code,
-        role: 'NURSE_RECEPTIONIST',
+        role: { [Op.in]: ['NURSE_RECEPTIONIST', 'PHARMACIST'] },
         status: 'ACTIVE'
       }
     });

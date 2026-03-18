@@ -130,7 +130,7 @@ export const clearMedicineBatchService = async (
       SELECT code
       FROM staff_details
       WHERE code = ?
-        AND role = 'PHARMACIST'
+        AND role IN ('PHARMACIST', 'NURSE_RECEPTIONIST')
         AND status = 'ACTIVE'
       `,
       {
@@ -144,7 +144,7 @@ export const clearMedicineBatchService = async (
       throw new Error("Invalid secret code");
     }
 
-    const pharmacist_code = staffRows[0].code;
+    const cleared_by_code = staffRows[0].code;
 
     const [insertResult] = await sequelize.query(
       `
@@ -167,7 +167,7 @@ export const clearMedicineBatchService = async (
       WHERE batch_no = ?;
       `,
       {
-        replacements: [pharmacist_code, batch_id],
+        replacements: [cleared_by_code, batch_id],
         transaction
       }
     );

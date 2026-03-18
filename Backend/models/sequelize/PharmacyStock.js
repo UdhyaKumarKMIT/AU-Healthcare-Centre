@@ -29,6 +29,10 @@ PharmacyStock.init(
       allowNull: false,
       defaultValue: 'waiting'
     },
+    verified_by_code: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+    },
   },
   {
     sequelize,

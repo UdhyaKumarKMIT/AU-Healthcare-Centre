@@ -195,13 +195,13 @@ export const issueMedicineService = async ({
       }
     );
 
-    // --- Step 3: Validate pharmacist secret code ---
+    // --- Step 3: Validate staff secret code (PHARMACIST or NURSE_RECEPTIONIST) ---
     const staffRows = await sequelize.query(
       `
       SELECT code
       FROM staff_details
       WHERE code = ?
-        AND role = 'PHARMACIST'
+        AND role IN ('PHARMACIST', 'NURSE_RECEPTIONIST')
         AND status = 'ACTIVE'
       `,
       {
@@ -215,7 +215,7 @@ export const issueMedicineService = async ({
       throw new Error("Invalid secret code");
     }
 
-    const pharmacist_code = staffRows[0].code;
+    const issued_by_code = staffRows[0].code;
 
     // --- Step 4: Insert transaction record ---
     const [result] = await sequelize.query(
@@ -228,7 +228,7 @@ export const issueMedicineService = async ({
       {
         replacements: [
           prescription_id,
-          pharmacist_code,
+          issued_by_code,
           issued_days
         ],
         transaction
