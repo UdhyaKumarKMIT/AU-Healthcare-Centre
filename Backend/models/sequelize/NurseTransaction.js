@@ -24,6 +24,7 @@ NurseTransaction.init(
         },
         performed_at: {
             type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW,
             allowNull: true,
         },
         remarks: {

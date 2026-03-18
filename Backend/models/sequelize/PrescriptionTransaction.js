@@ -22,6 +22,7 @@ PrescriptionTransaction.init(
     },
     issued_at: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
       allowNull: true,
     },
     issued_days: {

@@ -44,6 +44,7 @@ NurseTask.init(
         },
         assigned_at: {
             type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW,
             allowNull: true,
         },
     },

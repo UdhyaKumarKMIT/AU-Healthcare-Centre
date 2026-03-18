@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../../config/sequelize.js';
 
-class Prescription extends Model {}
+class Prescription extends Model { }
 
 Prescription.init(
   {
@@ -27,10 +27,12 @@ Prescription.init(
     },
     created_at: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
       allowNull: true,
     },
     updated_at: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
       allowNull: true,
     },
   },
@@ -38,7 +40,9 @@ Prescription.init(
     sequelize,
     modelName: 'Prescription',
     tableName: 'prescription',
-    timestamps: false, // Using explicit created_at and updated_at
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
 );
 

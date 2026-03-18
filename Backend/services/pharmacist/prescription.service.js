@@ -188,7 +188,7 @@ export const issueMedicineService = async ({
 
     // --- Step 2: Update prescription status ---
     await sequelize.query(
-      `UPDATE prescription SET status = 'ISSUED' WHERE prescription_id = ?`,
+      `UPDATE prescription SET status = 'ISSUED', updated_at = NOW() WHERE prescription_id = ?`,
       {
         replacements: [prescription_id],
         transaction
