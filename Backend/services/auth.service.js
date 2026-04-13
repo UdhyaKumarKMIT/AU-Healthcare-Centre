@@ -5,9 +5,7 @@ import User from '../models/sequelize/User.js';
 import Doctor from '../models/sequelize/Doctor.js';
 import StaffDetails from '../models/sequelize/StaffDetails.js';
 import ApiError from '../utils/ApiError.js';
-import dotenv from 'dotenv';
 import ROLES from '../constants/roles.js';
-dotenv.config();
 
 // Role-specific roles that use shared credentials
 const ROLE_SPECIFIC_ROLES = ['NURSE_RECEPTIONIST', 'PHARMACIST'];
