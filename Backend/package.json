@@ -4,7 +4,7 @@
   "packageManager": "npm@10.9.2",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node server.js",
+    "start": "node server.js",
     "dev": "cross-env NODE_ENV=development nodemon server.js",
     "seed": "node db/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
